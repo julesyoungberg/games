@@ -13,6 +13,8 @@ import path from 'node:path';
 
 const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const skipGames = process.argv.includes('--no-games');
+// Canonical address. Old per-game hosts (game.json legacyHosts) redirect here, so it must be absolute.
+const SITE = (process.env.GAMES_SITE_URL || 'https://couch-coop-games.vercel.app').replace(/\/$/, '');
 const out = path.join(root, '.vercel/output');
 const stat = path.join(out, 'static');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -64,7 +66,7 @@ fs.writeFileSync(path.join(stat, 'index.html'), tpl.replace('<!--GAMES-->', card
 // Routes
 const routes = [];
 for (const g of games) for (const host of g.legacyHosts || [])
-  routes.push({ src: '^/(.*)$', has: [{ type: 'host', value: host }], status: 308, headers: { Location: `/${g.slug}/$1` } });
+  routes.push({ src: '^/(.*)$', has: [{ type: 'host', value: host }], status: 308, headers: { Location: `${SITE}/${g.slug}/$1` } });
 for (const g of games) {
   const s = reEsc(g.slug);
   routes.push({ src: `^/${s}$`, status: 308, headers: { Location: `/${g.slug}/` } });
