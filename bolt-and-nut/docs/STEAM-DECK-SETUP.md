@@ -36,11 +36,13 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (0.4.0)
-16 shifts (levels), about 2 to 2.5 hours for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review, Shipping, Switchboard, Lumber Room, Night Shift, Spring Cleaning, Quality Control, Pneumatic Post, Overhead Rail.
+## What's in this version (0.5.0)
+**New look:** real textures, metal and paint that catch the light, proper shadows, a soft glow on lights and lasers, and new robot models. On a computer that draws with software (no graphics card), the game keeps the old simple look so it stays smooth. Options, Picture quality: "sharp" always uses the new look, "fast" always uses the simple one.
+
+18 shifts (levels), about 2.5 to 3 hours for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review, Shipping, Switchboard, Lumber Room, Night Shift, Spring Cleaning, Quality Control, Pneumatic Post, Overhead Rail, Slippery Slope, Cling Film.
 
 Also **Overtime**: short, harder bonus puzzles on the title screen. They unlock as you finish shifts.
 
-Toys added since 0.1.0: conveyor belts (some flip direction while their plate or switch is on), switches that Nut flips with a push (they stay on until pushed again), wooden crates that magnets can't move (walk into them to shove them), springs that bounce anything that lands on them, pneumatic tubes that shoot robots and crates to the other end, and anchor rings that glide along overhead rails. There are 5 Overtime bonus puzzles. If you already finished Shift 8, Shift 9 is unlocked.
+Toys added since 0.1.0: conveyor belts (some flip direction while their plate or switch is on), switches that Nut flips with a push (they stay on until pushed again), wooden crates that magnets can't move (walk into them to shove them), springs that bounce anything that lands on them, pneumatic tubes that shoot robots and crates to the other end, anchor rings that glide along overhead rails, slippery oil floors, and magnet plates on walls that Bolt can cling to. There are 8 Overtime bonus puzzles.
 
 Every shift also hides one **golden cog** off the main path (usually needs a boost, a launch, or Nut's rocket). **Choose a shift** shows which ones you've found. Progress saves automatically. **Choose a shift** and **Overtime** on the title screen let you jump to any level at any time, so a lost save never matters. Every shift has been finished start to end by scripted test robots.
