@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wick &amp; Shade has moved</title>
+<style>html,body{margin:0;background:#07060f;color:#f4ead8;font:18px/1.5 Georgia,serif}main{max-width:640px;margin:0 auto;padding:48px 16px}a{color:#ffd27a}</style>
+<script>
+// Wick & Shade moved to couch-coop-games.vercel.app. Browser saves are tied to an address, so this
+// page reads the save kept here and hands it to the new address in the link (#ws-import=...).
+(function () {
+  var NEW = 'https://couch-coop-games.vercel.app/wick-and-shade/';
+  var path = location.pathname.replace(/^\/+/, '');
+  var dest = NEW + (/^play(\/|$)/.test(path) ? 'play/' : '');
+  try {
+    var raw = localStorage.getItem('wick-and-shade-save-v1');
+    if (raw && JSON.parse(raw)) {
+      var b64 = btoa(unescape(encodeURIComponent(raw))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      dest += '#ws-import=' + b64;
+    }
+  } catch (e) {}
+  location.replace(dest);
+  window.__dest = dest;
+})();
+</script></head>
+<body><main><p>Wick &amp; Shade now lives at <a href="https://couch-coop-games.vercel.app/wick-and-shade/">couch-coop-games.vercel.app/wick-and-shade</a>. Taking you there with your progress&hellip;</p></main></body></html>

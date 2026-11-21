@@ -7,7 +7,5 @@
   "versionFrom": "package.json",
   "accent": "#ffd27a",
   "background": "#14102a",
-  "legacyHosts": [
-    "wick-and-shade.vercel.app"
-  ]
+  "legacyHosts": []
 }
