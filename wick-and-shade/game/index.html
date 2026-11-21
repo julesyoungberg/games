@@ -68,6 +68,7 @@ const SFX = {
   menu() { tone(720, 0.05, 'triangle', 0.06); },
   ok() { tone(520, 0.08, 'triangle', 0.08); tone(780, 0.12, 'triangle', 0.08, null, 0.06); },
   float() { tone(300 + Math.random() * 200, 0.2, 'sine', 0.025, 600); },
+  drum() { tone(110, 0.22, 'sine', 0.16, 55); tone(220, 0.08, 'triangle', 0.05, 160); },
 };
 function startMusic() {
   const g = AC.createGain(); g.gain.value = 0.03;
@@ -232,6 +233,7 @@ const LINES = {
   dropFirst: 'Wick put the lantern down. It will wait for you. Lanterns are patient like that.',
   throwFirst: "Wick threw the lantern! Wick. That is the light source. Be gentle with the light source.",
   waveFirst: 'Shade waves. Wick, I believe that is affection. Or a warning. Shade is hard to read.',
+  drumFirst: 'A drum. Land on it and up you go. Hold down if you would rather just stand there and be normal.',
   skip: "Skipping, are we? Fine. I'll tell everyone you solved it brilliantly.",
   swap: "Oh, you've swapped. That's allowed. Nobody here is defined by their lantern.",
 };
@@ -1304,6 +1306,180 @@ const LEVELS = [
     onPlate: (n, by, ch) => by === 'shade' ? 'Door open. Wick, go. Without the lantern. I know. I know.' : null,
     outro: "Totality. The eye saw nothing, the glass held, and the lantern is still back there, glowing at nobody. It is fine. It is a lantern.",
   },
+  { name: "Soundcheck", sub: "One, two. One, two. Is this thing on?", ambient: 0.65, chapter: "The Music Room",
+    map: [
+      '################################',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.............p.......#........#',
+      '#.........#######.....#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................P........#',
+      '#.....................P........#',
+      '#.....................P........#',
+      '#.WS....j.............P..p...E.#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The Music Room. Somebody left the drums out. Somebody always leaves the drums out.",
+      "Land on a drum and it throws you up. Hold down if you would like to stand on it like a grown-up.",
+    ],
+    hints: [
+      [40, "Shade, bounce off the drum and drift right onto the high shelf. The plate up there opens the door."],
+      [100, "Wick, through the door, and stand on the plate on the other side. That keeps it open for Shade."],
+    ],
+    onPlate: (n, by, ch) => n === 1 ? 'There it is. Doors love a good drum solo.' : null,
+    outro: "Soundcheck complete. Levels are good. The narrator is slightly too loud, apparently. I disagree.",
+  },
+  { name: "Call and Response", sub: "Shade plays the left drum. Wick plays the right one. Nobody plays the triangle.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#.................#............#',
+      '#.................#............#',
+      '#.................#............#',
+      '#.................#............#',
+      '#.................#............#',
+      '#.................P............#',
+      '#.................P............#',
+      '#.................P............#',
+      '#...........q.....P........p...#',
+      '#.........##########.....#####.#',
+      '#.................#............#',
+      '#.................#............#',
+      '#....v...v........Q.w...w......#',
+      '#....v...v........Q.w...w......#',
+      '#....v...v........Q.w...w......#',
+      '#.S..v.j.v..W.....Q.w.j.w.....E#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Two drums. One behind ink, one behind light. You know what that means by now.",
+      "Shade calls. Wick responds. Then the other way round.",
+    ],
+    hints: [
+      [40, "Shade, through the ink curtain, bounce, and land on the pink plate up on the left shelf."],
+      [100, "Wick, the pink door is open. The drum behind the gold curtain is yours. Bounce up to the teal plate."],
+      [160, "Shade, the high door is open now. Walk along the shelf and drop down to the exit."],
+    ],
+    onPlate: (n, by, ch) => ch === 'p' ? 'High door open. Shade, your cue.' : null,
+    outro: "Call, response, applause. I clapped. You could not hear it because I do not have hands.",
+  },
+  { name: "Throw It Up", sub: "The eye is over there. The lantern is over here. The drum is very much in the middle.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#.......#................#.....#',
+      '#.......#................#.....#',
+      '#.......#................#.....#',
+      '#.......#................#.....#',
+      '#.......#................#.....#',
+      '#.......#................#.....#',
+      '#.......#................#.....#',
+      '#.......#................#.....#',
+      '#.......#.............u..#.....#',
+      '#.......#................#.....#',
+      '#.......#................#.....#',
+      '#.......#................#.....#',
+      '#.......P................Q.....#',
+      '#.......P................Q.....#',
+      '#.......P................Q.....#',
+      '#.WS.p..Pjj..............Q.p..E#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The pink eye is far away, behind a door Wick cannot pass while holding the plate.",
+      "Drums throw lanterns too. I am told this is not how instruments work. It is how these ones work.",
+    ],
+    hints: [
+      [40, "Wick, stand on the teal plate and throw the lantern at the drum. Hold a direction and press the lantern button."],
+      [100, "Shade, through the teal door, over the drum, and through the pink door once the eye is lit."],
+      [160, "Shade, the plate past the pink door opens the teal door again for Wick."],
+    ],
+    onPlate: (n, by, ch) => by === 'light' ? 'The eye caught the light. That was a very good throw. Do not let it go to your head.' : null,
+    outro: "Lantern thrown, eye opened, nobody hurt. The lantern would like it noted that it did most of the work.",
+  },
+  { name: "Mute", sub: "A crate on a drum. The quietest instrument in the building.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................P........#',
+      '#.....................P........#',
+      '#.....................P........#',
+      '#.....................P......E.#',
+      '#......#########################',
+      '#.........#....................#',
+      '#.........Q....................#',
+      '#.........Q....................#',
+      '#.........Q....................#',
+      '#Sq..C..W.Q....p...............#',
+      '#####j##########################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The drum here is set into the floor, and somebody has put a crate on it. Rude.",
+      "Also there is a high door, and a plate that wants something heavy on it.",
+    ],
+    hints: [
+      [40, "Shade, hold the pink plate on the left so the door stays open."],
+      [100, "Wick, push the crate off the drum, through the pink door, and onto the teal plate."],
+      [160, "Wick, come back through before Shade lets go. Then both of you, bounce up and head right."],
+    ],
+    onPlate: (n, by, ch) => by === 'crate' ? 'The crate is holding the high door. Crates are excellent at sitting still.' : null,
+    outro: "Un-muted. I do love a crate with a purpose.",
+  },
+  { name: "Grand Finale", sub: "Every instrument, all at once. Try to finish together.", ambient: 0.55, cont: true,
+    map: [
+      '################################',
+      '#.....#................#.......#',
+      '#.....#................#.......#',
+      '#.....#................#.......#',
+      '#.....#................#.......#',
+      '#.....#................#.......#',
+      '#.....#................#.......#',
+      '#.....#................#.......#',
+      '#.....#................#.......#',
+      '#.....#............u...#.......#',
+      '#.....#................#.....E.#',
+      '#.....#................#...#####',
+      '#.....#................#.......#',
+      '#.....P................Q.......#',
+      '#.....P................Q.......#',
+      '#.....P................Q.......#',
+      '#WSp..Pjj..............Q.C..p..#',
+      '#########################j######',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The last room in the Music Room. A plate, a throw, an eye, a crate, and a drum in the floor.",
+      "Try to finish on the same beat. It is more dramatic that way.",
+    ],
+    hints: [
+      [40, "Wick, hold the teal plate and throw the lantern onto the drums. The pink eye needs to see it."],
+      [100, "Shade, through both doors. Get something onto the teal plate on the far side so Wick can follow."],
+      [160, "The crate on the floor drum has to move before anyone can bounce up to the exit."],
+    ],
+    onPlate: (n, by, ch) => by === 'light' ? 'The eye is open. Shade, go.' : null,
+    outro: "And the final chord. The Music Room is quiet again. Nobody put the drums away. Nobody ever does.",
+  },
   { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
     map: [
       '################################',
@@ -1498,6 +1674,68 @@ const LEVELS = [
     ],
     outro: "Wick walked backwards to help. That is the most romantic thing that has happened in this game.",
   },
+  { name: "Drumline", sub: "Shade walks the glass. Wick plays the drums.", ambient: 0.55, challenge: true, unlockAt: 31,
+    map: [
+      '################################',
+      '#.........#..................#.#',
+      '#.........#..................#.#',
+      '#.........#..................#.#',
+      '#.........#..................#.#',
+      '#.........#..................#.#',
+      '#.........#..................#.#',
+      '#.........#..................#.#',
+      '#.........#..................#.#',
+      '#.........#..................#.#',
+      '#.........#..................#.#',
+      '#.........#..................#.#',
+      '#H........#..................#.#',
+      '#.........P..................Q.#',
+      '#.........P..................Qu#',
+      '#.........v..................Q.#',
+      '#..WS.....v................p.QE#',
+      '###########xjxxxxxjxxxxxjxx#####',
+      '###########^#^^^^^#^^^^^#^^#####',
+      '################################',
+    ],
+    intro: [
+      "Dark glass over a long thorn pit, with three drums poking out of it. The glass only holds in the dark.",
+    ],
+    hints: [
+      [150, "Hang the lantern up first so Shade can cross in the dark. Then Wick takes it back and goes drum to drum."],
+    ],
+    outro: "Three drums, no misses. Somewhere a marching band is very proud of you.",
+  },
+  { name: "Updraft", sub: "A drum, a block, and a very particular place to stand.", ambient: 0.5, challenge: true, unlockAt: 33,
+    map: [
+      '################################',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#........p..............#......#',
+      '#.......####............#......#',
+      '#.......................#......#',
+      '#............BBB........#......#',
+      '#............BBB........#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................P......#',
+      '#.......................P......#',
+      '#.......................P......#',
+      '#..WS...........j.......P.p..E.#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The shelf is very high. The drum is not quite enough. The ink block is floating, which is suspicious.",
+    ],
+    hints: [
+      [150, "Wick stands right under the block, so its shadow points straight up. Shade bounces off the drum and drifts into that shadow."],
+    ],
+    outro: "A drum and a shadow, working together. I did not know they were even on speaking terms.",
+  },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
 // Challenge levels (challenge:true) live after the story and have their own menu.
@@ -1532,7 +1770,7 @@ function loadLevel(idx, opts = {}) {
   const def = LEVELS[idx];
   const grid = def.map.map(r => r.split(''));
   lv = { idx, def, grid, time: 0, plates: [], exits: [], occ: [], light: null, lit: new Uint8Array(COLS * ROWS),
-    pressed: { p: false, q: false }, doorAnim: { p: 0, q: 0 }, crates: [], saidPlate: new Set(), complete: false, completeT: 0, fadeIn: 1, hintsFired: new Set(),
+    pressed: { p: false, q: false }, doorAnim: { p: 0, q: 0 }, crates: [], drumHit: {}, saidPlate: new Set(), complete: false, completeT: 0, fadeIn: 1, hintsFired: new Set(),
     plateCount: 0, exitWait: 0, exitWaitSaid: false, idle: 0, particles: [], ambient: def.ambient ?? 0.6, exitKind: 'E',
     shadowSaid: false, hooks: [] };
   players = [mkPlayer('wick'), mkPlayer('shade')];
@@ -1570,7 +1808,7 @@ function tileAt(tx, ty) { if (tx < 0 || tx >= COLS || ty < 0) return '#'; if (ty
 function isLit(tx, ty) { return tx >= 0 && tx < COLS && ty >= 0 && ty < ROWS && lv.lit[ty * COLS + tx] === 1; }
 function tileSolid(c, tx, ty) {
   switch (c) {
-    case '#': case 'B': case 'v': return true;
+    case '#': case 'B': case 'v': case 'j': return true;
     case '=': return isLit(tx, ty);
     case 'x': return !isLit(tx, ty);
     case 'P': return !lv.pressed.p;
@@ -1641,7 +1879,7 @@ function moveY(e, dy) {
   if (!dy) return false;
   e.y += dy; let hit = false;
   forEachTile(e, (tx, ty) => {
-    if (solidFor(e, tx, ty)) { if (dy > 0) { e.y = Math.min(e.y, ty * T - e.h); e.onGround = true; } else e.y = Math.max(e.y, (ty + 1) * T); hit = true; }
+    if (solidFor(e, tx, ty)) { if (dy > 0) { e.y = Math.min(e.y, ty * T - e.h); e.onGround = true; if ((e.kind || e === lantern) && lv.grid[ty] && lv.grid[ty][tx] === 'j') e.onDrum = tx + ty * COLS + 1; } else e.y = Math.max(e.y, (ty + 1) * T); hit = true; }
   });
   for (const c of lv.crates) {
     if (!crateFor(e, c) || !overl(e.x, e.y, e.w, e.h, c.x, c.y, c.w, c.h)) continue;
@@ -1722,8 +1960,13 @@ function updateLantern(dt) {
   const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
   lantern.vy = Math.min(lantern.vy + 1900 * dt, 900);
   computeIgnore(lantern);
-  lantern.onGround = false;
+  lantern.onGround = false; lantern.onDrum = 0;
+  const vyb = lantern.vy;
   for (let i = 0; i < n; i++) { moveX(lantern, lantern.vx * sdt); moveY(lantern, lantern.vy * sdt); }
+  if (lantern.onDrum && vyb > 150) {
+    // a lantern dropped or thrown onto a drum gets thrown right back up
+    lantern.vy = -880; lantern.onGround = false; lv.drumHit[lantern.onDrum - 1] = lv.time; SFX.drum();
+  }
   if (lantern.onGround) lantern.vx *= Math.pow(0.0005, dt);
   if (lantern.y > H + 60) { returnLantern(); return; }
   let thorn = false;
@@ -1814,7 +2057,7 @@ function updatePlayer(p, inp, dt, i) {
   }
   // integrate
   const wasGround = p.onGround, vyBefore = p.vy;
-  p.onGround = false; p.onShadow = false;
+  p.onGround = false; p.onShadow = false; p.onDrum = 0;
   computeIgnore(p);
   const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
   for (let s = 0; s < n; s++) {
@@ -1824,6 +2067,12 @@ function updatePlayer(p, inp, dt, i) {
     if (shade) shadeContact(p, Math.abs(p.x - ox), Math.abs(p.y - oy));
   }
   if (!p.onGround && groundBelow(p) && p.vy >= 0) p.onGround = true;
+  if (p.onDrum && !(my > 0.5)) {
+    // drums: land on one and it throws you high, unless you hold down
+    p.vy = -1060; p.onGround = false; p.coyote = 0; p.jbuf = 0; p.jumpHeld = false;
+    lv.drumHit[p.onDrum - 1] = lv.time; SFX.drum(); dust(p);
+    if (!flags.drum) { flags.drum = true; narr.say(LINES.drumFirst, { ifQuiet: true }); }
+  }
   if (p.onGround && !wasGround && vyBefore > 300) { p.landT = 1; SFX.land(); dust(p); }
   if (!p.onGround) p.airT += dt; else p.airT = 0;
   // hazards
@@ -2080,6 +2329,18 @@ const CH_COL = { p: ['#43d6c3', 'rgba(67,214,195,0.35)', '#1d3b3b', 'rgba(67,214
 function drawDynamicTiles(t) {
   for (let ty = 0; ty < ROWS; ty++) for (let tx = 0; tx < COLS; tx++) {
     const c = lv.grid[ty][tx], px = tx * T, py = ty * T;
+    if (c === 'j') {
+      // drum: a squat red drum whose skin dips when someone lands on it
+      const ht = lv.drumHit[tx + ty * COLS], k = ht != null ? Math.max(0, 1 - (lv.time - ht) * 5) : 0, dip = k * 6;
+      ctx.fillStyle = '#8c2f3c'; ctx.fillRect(px + 2, py + 8, T - 4, T - 8);
+      ctx.fillStyle = '#b8434f'; ctx.fillRect(px + 2, py + 8, T - 4, 6);
+      ctx.strokeStyle = '#e8c37a'; ctx.lineWidth = 2;
+      for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(px + 4 + i * 10, py + 12); ctx.lineTo(px + 9 + i * 10, py + T - 2); ctx.stroke(); }
+      ctx.fillStyle = '#e8c37a'; ctx.fillRect(px + 1, py + 6, T - 2, 3); ctx.fillRect(px + 1, py + T - 3, T - 2, 3);
+      ctx.fillStyle = '#f4ead2'; ctx.beginPath(); ctx.moveTo(px + 2, py + 6); ctx.quadraticCurveTo(px + T / 2, py + 6 + dip * 2, px + T - 2, py + 6); ctx.lineTo(px + T - 2, py + 2); ctx.quadraticCurveTo(px + T / 2, py + 2 + dip * 2, px + 2, py + 2); ctx.fill();
+      if (k > 0) { ctx.strokeStyle = `rgba(255,236,190,${k * 0.6})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px + T / 2, py + 4, 10 + (1 - k) * 26, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+      continue;
+    }
     if (c === '=') {
       if (isLit(tx, ty)) {
         ctx.fillStyle = 'rgba(255,206,120,0.82)'; ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
