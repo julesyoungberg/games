@@ -6,7 +6,7 @@ version of each. One folder per game; each folder is its own Vercel project.
 | Game | Folder | Live site | Vercel project |
 |---|---|---|---|
 | Wick & Shade (2D, canvas) | [`wick-and-shade/`](wick-and-shade) | https://wick-and-shade.vercel.app | `wick-and-shade` (root directory `wick-and-shade`) |
-| Bolt & Nut (3D, three.js) | [`bolt-and-nut/`](bolt-and-nut) | https://bolt-and-nut.vercel.app | `bolt-and-nut` (root directory `bolt-and-nut`) |
+| Bolt & Nut (3D, three.js) | [`bolt-and-nut/`](bolt-and-nut) | https://bolt-and-nut-game.vercel.app (`bolt-and-nut.vercel.app` was taken) | `bolt-and-nut` (root directory `bolt-and-nut`) |
 
 Every site has the same three routes:
 
@@ -34,3 +34,9 @@ AppImages are never committed: Vercel builds them from source on every deploy. T
 1. Make a new folder with a `vercel.json` and `scripts/vercel-build.sh` (copy one of the existing games) that writes
    the site to `public/`.
 2. In Vercel, import this repo as a new project and set **Root Directory** to the new folder.
+
+## Vercel setup notes
+
+- Both projects live in the `jules-youngbergs-projects` team; each has **Root Directory** set to its game folder.
+  Build settings come from the folder's `vercel.json`.
+- Commits that only touch files outside a game's folder (like this README) skip that game's build.
