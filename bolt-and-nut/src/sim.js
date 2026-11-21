@@ -1,6 +1,6 @@
 // Bolt & Nut — game simulation. Pure JS, no DOM, so it can run headless for tests.
 // Coordinates: x to the right, y up, z toward the camera. 1 unit = 1 metre.
-import { LEVELS } from './levels.js';
+import { ALL } from './levels.js';
 
 export const C = {
   g: 32, jumpV: 9.6, run: 6.5, accelG: 70, accelA: 34, coyote: 0.1, buffer: 0.13,
@@ -54,6 +54,10 @@ function makeBuilder(w) {
     zone(id, x0, z0, x1, z1, y0 = -50, y1 = 50) { w.zones.push({ id, min: { x: Math.min(x0, x1), y: y0, z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), y: y1, z: Math.max(z0, z1) }, hit: false }); },
     // conveyor belt: floor that carries whatever stands on it at (vx, vz) m/s; reverses while chs are active
     conveyor(x0, z0, x1, z1, top, vx, vz, chs = null) { return L.box(x0, z0, x1, z1, top - 6, top + 0.01, 'conveyor', { conv: { vx, vz, chs: chs ? [].concat(chs) : null, rev: false } }); },
+    // bounce pad: anything that lands on it is thrown up at v m/s (v 14 is about 3 m, 18 about 5 m)
+    spring(x0, z0, x1, z1, top, v = 15) { const sp = { v, t: -9 }; w.springs.push(L.box(x0, z0, x1, z1, top - 6, top + 0.3, 'spring', { spring: sp })); return sp; },
+    // golden cog: optional collectible, one per level
+    cog(x, y, z) { w.cogs.push({ x, y, z, got: false }); },
     // push switch: Nut's push flips it on/off; it holds its channel while on
     button(x, z, ch, top = 0) { const b = { x, z, top, ch, on: false }; w.switches.push(b); L.box(x - 0.35, z - 0.35, x + 0.35, z + 0.35, top, top + 1.1, 'switch', { sw: b }); return b; },
     sign(x, y, z, text, ry = 0) { w.signs.push({ x, y, z, text, ry }); },
@@ -75,9 +79,10 @@ export function groundAt(w, x, z, fromY = 100, ignore = null) {
 }
 
 export function createWorld(index) {
-  const def = LEVELS[index];
+  // a level definition object can be passed directly (used by tests of work-in-progress levels)
+  let def; if (typeof index === 'object') { def = index; index = -1; } else def = ALL[index];
   const w = {
-    index, def, t: 0, solids: [], gates: [], bridges: [], movers: [], plates: [], lasers: [], fans: [], anchors: [], crates: [], switches: [], bodies: [], decos: [], zones: [], checkpoints: [], signs: [],
+    index, def, t: 0, solids: [], gates: [], bridges: [], movers: [], plates: [], lasers: [], fans: [], anchors: [], crates: [], switches: [], springs: [], cogs: [], bodies: [], decos: [], zones: [], checkpoints: [], signs: [],
     channels: {}, events: [], exit: null, exitT: 0, complete: false, spawn: null, stats: { falls: [0, 0], zaps: [0, 0], pulls: 0, pushes: 0, launches: 0 },
   };
   def.build(makeBuilder(w));
@@ -387,7 +392,13 @@ export function step(w, inputs, dt = 1 / 60) {
     const vyBefore = b.vel.y;
     moveBody(w, b, b.vel.x * dt, b.vel.y * dt, b.vel.z * dt);
     if (b.kind === 'player') {
-      if (b.grounded && !wasGrounded) { b.launched = false; if (vyBefore < -8) emit(w, 'land', { who: b.id, v: -vyBefore }); }
+      if (b.grounded && !wasGrounded) { b.launched = false; if (vyBefore < -8 && !(b.ground && b.ground.spring)) emit(w, 'land', { who: b.id, v: -vyBefore }); }
+    }
+    if (b.grounded && b.ground && b.ground.spring && !b.pulledBy) {
+      const sp = b.ground.spring; sp.t = w.t;
+      b.vel.y = sp.v; b.grounded = false; b.ground = null;
+      if (b.kind === 'player') { b.launched = true; b.coyote = 0; b.jumpHeld = false; }
+      emit(w, 'spring', { x: b.pos.x, y: b.pos.y - b.half.y, z: b.pos.z, who: b.id });
     }
   }
   // conveyor belts
@@ -446,6 +457,8 @@ export function step(w, inputs, dt = 1 / 60) {
     while (anyOverlap(w, c)) c.pos.y += 0.5;
     emit(w, 'crate-lost');
   }
+  // golden cogs
+  for (const g of w.cogs) if (!g.got) for (const p of w.players) if (p.alive && Math.hypot(p.pos.x - g.x, p.pos.y - g.y, p.pos.z - g.z) < 0.95) { g.got = true; emit(w, 'cog', { x: g.x, y: g.y, z: g.z, who: p.id }); break; }
   // checkpoints
   for (const cp of w.checkpoints) {
     if (cp.hit) continue;

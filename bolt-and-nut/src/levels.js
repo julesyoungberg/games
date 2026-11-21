@@ -14,6 +14,7 @@ export const LEVELS = [
       'Today you will learn to walk, jump, and leave a room together. Exciting stuff. Try to contain yourselves.',
     ],
     build(L) {
+      L.cog(9, 2.9, -7);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 16, 0, 0); BW(L, 0, 16, 0);
       L.floor(16, -8, 24, 0, 1); BW(L, 16, 24, 1);
@@ -51,6 +52,7 @@ export const LEVELS = [
       'Nut, you are about to be pulled around a lot. I would apologise in advance, but it is in your contract.',
     ],
     build(L) {
+      L.cog(27, 2.9, -7);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 12, 0, 0); BW(L, 0, 12, 0);
       L.plate(8.5, -6.3, 1, 0);
@@ -93,6 +95,7 @@ export const LEVELS = [
       'Attraction Industries accepts no responsibility for robots launched into the ceiling. We do accept compliments.',
     ],
     build(L) {
+      L.cog(6, 4.4, -7);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 12, 0, 0); BW(L, 0, 12, 0);
       L.floor(12, -8, 22, 0, 3); BW(L, 12, 22, 3);
@@ -131,6 +134,7 @@ export const LEVELS = [
       'You can grab a second anchor straight from the first one. Let go and press X again, quickly. Like a very slow, very heavy monkey.',
     ],
     build(L) {
+      L.cog(9, 4.6, -7);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 14, 0, 0); BW(L, 0, 14, 0);
       L.iron(8, -8, 14, -4.5, 0);
@@ -173,6 +177,7 @@ export const LEVELS = [
       'Today, the heavy things are crates. And also you.',
     ],
     build(L) {
+      L.cog(48, 10.3, -7);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 12, 0, 0); BW(L, 0, 12, 0);
       L.crate(8, -4, 0);
@@ -216,6 +221,7 @@ export const LEVELS = [
       'If you touch one, you will be safely returned to the last checkpoint. Crates pass through them fine. Crates have no feelings.',
     ],
     build(L) {
+      L.cog(34, 4.4, -7);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 62, 0, 0); BW(L, 0, 38, 0); BW(L, 42, 62, 0);
       L.laser(9, -8, 9.3, 0, 0, 5, null, [1.6, 1.8, 0]);
@@ -257,6 +263,7 @@ export const LEVELS = [
       'It is like flying, but with significantly more noise and slightly less dignity.',
     ],
     build(L) {
+      L.cog(30.5, 7.3, -2.5);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 10, 0, 0); BW(L, 0, 10, 0);
       L.fan(10, -6, 13, -2, 0, 7.5);
@@ -304,6 +311,7 @@ export const LEVELS = [
       'Management has never played it. Management has never played anything. Good luck.',
     ],
     build(L) {
+      L.cog(58, 7.6, -6);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 10, 0, 0); BW(L, 0, 10, 0);
       L.floor(10, -8, 22, 0, 3); BW(L, 10, 22, 3);
@@ -365,6 +373,7 @@ export const LEVELS = [
       'Shipping is where the floor moves. It moves things to where they need to go. Sometimes that is you.',
     ],
     build(L) {
+      L.cog(36, 1.0, -0.8);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 10, 0, 0); BW(L, 0, 10, 0);
       L.conveyor(10, -8, 22, 0, 0, -2.2, 0); BW(L, 10, 22, 0);
@@ -404,6 +413,7 @@ export const LEVELS = [
       'Switches stay how you leave them. So, unlike Management, they remember things.',
     ],
     build(L) {
+      L.cog(49.5, 7.3, -6.9);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 12, 0, 0); BW(L, 0, 12, 0);
       L.button(9, -7, 1);
@@ -450,6 +460,7 @@ export const LEVELS = [
       'You will have to move them the old-fashioned way. By walking into them. Like animals.',
     ],
     build(L) {
+      L.cog(25, 4.4, -7);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 16, 0, 0); BW(L, 0, 16, 0);
       L.crate(6, -6, 0, { wood: true });
@@ -501,6 +512,7 @@ export const LEVELS = [
       'It is just you two, me, and every single thing you have learned so far. Cosy.',
     ],
     build(L) {
+      L.cog(28, 11.3, -7);
       L.start(2.5, -3, 2.5, -5.5);
       L.floor(0, -8, 6, 0, 0); BW(L, 0, 6, 0);
       L.conveyor(6, -8, 16, 0, 0, 3, 0); BW(L, 6, 16, 0);
@@ -556,6 +568,13 @@ export const LEVELS = [
   },
 ];
 
+// Overtime: short, harder bonus puzzles. Each unlocks when the main shift `after` (0-based) is done.
+export const OVERTIME = [];
+OVERTIME.forEach((L, k) => { L.ot = k + 1; });
+
+export const ALL = [...LEVELS, ...OVERTIME];
+export const NMAIN = LEVELS.length;
+
 // Lines for things that can happen anywhere.
 export const LINES = {
   fall: [
@@ -575,6 +594,13 @@ export const LINES = {
   pullFirst: 'There it is. The pull. Feel the attraction. Not like that. Well, a little like that.',
   hangFirst: 'Hanging from an anchor. Very elegant, Bolt. Let go of X to drop.',
   rocketFirst: 'Nut shoved the floor, and the floor shoved back. Science.',
+  cog: [
+    'A golden cog! Management has lost one in every shift. That is {n} found. They will be thrilled. They will not notice.',
+    'Golden cog number {n}. Shiny. Pointless. Precious. Like a facilitator.',
+    'Ooh, a golden cog. {n} so far. Do not tell Accounting. They will want to count them.',
+  ],
+  cogAgain: 'You already found this cog. It has been returned to its hiding place for, ah, quality reasons.',
+  springFirst: 'Boing. That is the technical term. Springs throw whatever lands on them straight up. Including robots. Especially robots.',
   switchFirst: 'Click! Switches stay where you leave them. Unlike plates, which are needy.',
   crateLost: 'The crate fell out of the factory. A new crate has been issued. It is the same crate. Do not think about it.',
   exitOne: ['The exit needs both of you. That is sort of the whole point of the company. And the game.', 'One of you is at the exit. The other is... elsewhere. Reflecting on their choices.'],

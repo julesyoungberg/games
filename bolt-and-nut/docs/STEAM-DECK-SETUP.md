@@ -39,4 +39,6 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## What's in this version (0.2.0)
 12 shifts (levels), about 70 to 110 minutes for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review, Shipping, Switchboard, Lumber Room, Night Shift.
 
-New in 0.2.0: conveyor belts (some flip direction while their plate or switch is on), switches that Nut flips with a push (they stay on until pushed again), and wooden crates that magnets can't move (walk into them to shove them). If you already finished Shift 8, Shift 9 is unlocked. Progress saves automatically; **Continue** and **Choose a shift** appear on the title screen once you've played. Every shift has been finished start to end by scripted test robots.
+New in 0.2.0: conveyor belts (some flip direction while their plate or switch is on), switches that Nut flips with a push (they stay on until pushed again), and wooden crates that magnets can't move (walk into them to shove them). If you already finished Shift 8, Shift 9 is unlocked.
+
+Every shift also hides one **golden cog** off the main path (usually needs a boost, a launch, or Nut's rocket). **Choose a shift** shows which ones you've found. Progress saves automatically; **Continue** and **Choose a shift** appear on the title screen once you've played. Every shift has been finished start to end by scripted test robots.

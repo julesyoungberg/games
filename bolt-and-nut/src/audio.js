@@ -71,6 +71,8 @@ export const SFX = {
   zap() { tone('sawtooth', 900, 60, 0.35, 0.14); noise(0.25, 0.2, 6000, 2000, 2); },
   fall() { tone('sine', 700, 120, 0.6, 0.12); },
   respawn() { tone('sine', 520, 520, 0.08, 0.08); tone('sine', 780, 780, 0.1, 0.08, 0.08); tone('sine', 1040, 1040, 0.14, 0.07, 0.16); },
+  cog() { [880, 1175, 1568, 2093].forEach((f, i) => tone('triangle', f, f, 0.18, 0.08, i * 0.07)); },
+  boing() { tone('sine', 180, 720, 0.25, 0.14); tone('triangle', 360, 1100, 0.18, 0.05, 0.03); },
   toggle(on) { tone('square', on ? 660 : 440, on ? 990 : 330, 0.06, 0.07); tone('triangle', on ? 1320 : 660, on ? 1320 : 520, 0.12, 0.05, 0.05); },
   plate(on) { tone('square', on ? 500 : 300, on ? 700 : 220, 0.08, 0.06); noise(0.05, 0.15, 1500, 800, 3); },
   gate(open) { noise(0.7, 0.18, open ? 200 : 400, open ? 500 : 150, 1.2, 0, 'lowpass'); tone('sawtooth', 60, open ? 45 : 70, 0.6, 0.06); },

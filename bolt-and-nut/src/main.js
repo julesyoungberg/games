@@ -1,6 +1,8 @@
 // Bolt & Nut — app shell: screens, narrator, game loop.
 import { createWorld, step, restartFromCheckpoint } from './sim.js';
-import { LEVELS, LINES } from './levels.js';
+import { LEVELS, LINES, ALL, OVERTIME, NMAIN } from './levels.js';
+const lvName = i => ALL[i].ot ? `Overtime ${ALL[i].ot}` : `Shift ${i + 1}`;
+const otOpen = k => save.done.includes(OVERTIME[k].after);
 import { Input } from './input.js';
 import { initAudio, SFX, setVolumes, setMood } from './audio.js';
 import { View } from './render.js';
@@ -14,8 +16,9 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } },
 };
 const save = store.get('bn-save', { unlocked: 0, done: [] });
+if (!save.cogs) save.cogs = [];
 // new shifts get added over time: anything after a finished shift is unlocked
-if (save.done && save.done.length) save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length - 1, Math.max(...save.done) + 1));
+if (save.done && save.done.length) save.unlocked = Math.max(save.unlocked, Math.min(NMAIN - 1, Math.max(...save.done.filter(d => d < NMAIN), -1) + 1));
 const opts = Object.assign({ master: 8, music: 5, sfx: 8, narrAuto: false, quality: 'auto' }, store.get('bn-opts', {}));
 const saveOpts = () => { store.set('bn-opts', opts); setVolumes({ master: opts.master / 10, music: opts.music / 10, sfx: opts.sfx / 10 }); };
 
@@ -108,6 +111,7 @@ function goTitle() {
     cls: 'title', items: [
       { label: cont ? `Continue: Shift ${Math.min(save.unlocked, LEVELS.length - 1) + 1}` : 'Start orientation', act: () => goJoin(Math.min(save.unlocked, LEVELS.length - 1)) },
       { label: 'Choose a shift', hidden: !cont, act: chooseShift },
+      { label: 'Overtime (bonus puzzles)', hidden: !OVERTIME.some((_, k) => otOpen(k)), act: overtimeMenu },
       { label: 'Options', act: () => optionsMenu(goTitle) },
       { label: 'Quit', hidden: !APP, act: () => APP.quit() },
     ],
@@ -115,8 +119,14 @@ function goTitle() {
 }
 function chooseShift() {
   openMenu({
-    title: 'Choose a shift', back: goTitle,
-    items: LEVELS.map((L, i) => ({ label: `${i + 1}. ${L.name}${save.done.includes(i) ? ' ✓' : ''}`, dim: i > save.unlocked, act: () => { if (i <= save.unlocked) goJoin(i); else SFX.pullMiss(); } })).concat([{ label: 'Back', act: goTitle }]),
+    title: 'Choose a shift', sub: `Golden cogs found: ${save.cogs.filter(i => i < NMAIN).length} of ${NMAIN}`, back: goTitle,
+    items: LEVELS.map((L, i) => ({ label: `${i + 1}. ${L.name}${save.done.includes(i) ? ' ✓' : ''}${save.cogs.includes(i) ? ' ⚙' : ''}`, dim: i > save.unlocked, act: () => { if (i <= save.unlocked) goJoin(i); else SFX.pullMiss(); } })).concat([{ label: 'Back', act: goTitle }]),
+  });
+}
+function overtimeMenu() {
+  openMenu({
+    title: 'Overtime', sub: 'Short, tricky bonus puzzles. Unpaid, obviously.', back: goTitle,
+    items: OVERTIME.map((L, k) => { const i = NMAIN + k, open = otOpen(k); return { label: open ? `${k + 1}. ${L.name}${save.done.includes(i) ? ' ✓' : ''}` : `${k + 1}. Locked: finish Shift ${L.after + 1}`, dim: !open, act: () => { if (open) goJoin(i); else SFX.pullMiss(); } }; }).concat([{ label: 'Back', act: goTitle }]),
   });
 }
 function optionsMenu(back) {
@@ -184,9 +194,9 @@ function startLevel(i) {
   levelIdx = i; world = createWorld(i); view.build(world); closeMenu();
   mode = 'play'; setScreen('hud'); narr.clear(); hint = null; firsts = {}; lineCd = {}; completeT = -1; accumulator = 0;
   lastProgress = performance.now(); idleSaid = 0; hudT = 0;
-  setMood(LEVELS[i].theme === 5 || LEVELS[i].theme === 11 ? 1 : 0);
-  const L = LEVELS[i];
-  $('bannerN').textContent = `Shift ${i + 1}`; $('bannerT').textContent = L.name; $('bannerS').textContent = L.sub;
+  setMood(ALL[i].theme === 5 || ALL[i].theme === 11 ? 1 : 0);
+  const L = ALL[i];
+  $('bannerN').textContent = lvName(i); $('bannerT').textContent = L.name; $('bannerS').textContent = L.sub;
   $('banner').classList.remove('on'); void $('banner').offsetWidth; $('banner').classList.add('on');
   narr.say(L.intro);
   const sp = Input.split();
@@ -197,7 +207,7 @@ function startLevel(i) {
 function pauseMenu(note) {
   mode = 'paused'; SFX.stopAll();
   openMenu({
-    title: 'Paused', sub: note || `Shift ${levelIdx + 1}: ${LEVELS[levelIdx].name}`, back: resume,
+    title: 'Paused', sub: note || `${lvName(levelIdx)}: ${ALL[levelIdx].name}`, back: resume,
     items: [
       { label: 'Resume', act: resume },
       { label: 'Ask Margaret for a hint', act: () => { resume(); narr.say(hint || 'My advice: try things. Pull things. Push things. Stand on things. That is basically the job.', true); } },
@@ -238,13 +248,15 @@ function handleEvents(evts) {
       case 'respawn': SFX.respawn(); { const p = world.players[e.who]; view.burst(p.pos.x, p.pos.y, p.pos.z, e.who ? 0x3d8bfd : 0xe5484d, 14, 3, 3, 0.6); } break;
       case 'plate': SFX.plate(e.on); if (e.on) lastProgress = performance.now(); break;
       case 'gate': SFX.gate(e.open); break;
+      case 'cog': SFX.cog(); view.burst(e.x, e.y, e.z, 0xffc53d, 26, 5, 4, 0.8); Input.rumble(e.who, 0.4, 150); { const had = save.cogs.includes(levelIdx); if (!had) { save.cogs.push(levelIdx); store.set('bn-save', save); } narr.sayIfQuiet(had ? LINES.cogAgain : pick(LINES.cog).replace('{n}', String(save.cogs.filter(i => i < NMAIN).length))); } break;
+      case 'spring': SFX.boing(); view.burst(e.x, e.y + 0.1, e.z, 0xf2b84b, 8, 3, 2, 0.4); if (e.who !== undefined) Input.rumble(e.who, 0.3, 90); if (!firsts.spring && e.who !== undefined) { firsts.spring = 1; narr.sayIfQuiet(LINES.springFirst); } break;
       case 'switch': SFX.toggle(e.on); lastProgress = performance.now(); if (!firsts.sw) { firsts.sw = 1; narr.sayIfQuiet(LINES.switchFirst); } break;
       case 'bridge': SFX.bridge(e.on); break;
       case 'checkpoint': SFX.checkpoint(); lastProgress = performance.now(); break;
       case 'crate-lost': if (!firsts.crate) { firsts.crate = 1; narr.sayIfQuiet(LINES.crateLost); } break;
       case 'exit-one': if (!firsts.exit) { firsts.exit = 1; narr.sayIfQuiet(pick(LINES.exitOne)); } break;
       case 'zone': {
-        const z = LEVELS[levelIdx].zones[e.id]; lastProgress = performance.now();
+        const z = ALL[levelIdx].zones[e.id]; lastProgress = performance.now();
         if (z) { if (z.say) narr.say(z.say); if (z.hint) hint = z.hint; }
         break;
       }
@@ -254,20 +266,28 @@ function handleEvents(evts) {
 }
 function finishLevel() {
   mode = 'complete';
+  const L = ALL[levelIdx], ot = !!L.ot;
   if (!save.done.includes(levelIdx)) save.done.push(levelIdx);
-  save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length - 1, levelIdx + 1));
-  if (levelIdx === LEVELS.length - 1) save.finished = true;
+  if (!ot) save.unlocked = Math.max(save.unlocked, Math.min(NMAIN - 1, levelIdx + 1));
+  if (levelIdx === NMAIN - 1) save.finished = true;
   store.set('bn-save', save);
   const s = world.stats;
-  const last = levelIdx === LEVELS.length - 1;
-  narr.say(LEVELS[levelIdx].outro);
+  const last = levelIdx === NMAIN - 1;
+  const newOt = OVERTIME.findIndex(o => o.after === levelIdx);
+  narr.say(newOt >= 0 && !ot ? [L.outro, 'Also: Overtime is now open. Bonus puzzles, from the title screen. Unpaid. Very rewarding. Spiritually.'] : L.outro);
+  const nextOt = ot && NMAIN + L.ot < ALL.length && otOpen(L.ot) ? NMAIN + L.ot : -1;
+  const items = ot ? [
+    nextOt >= 0 ? { label: `Next: Overtime ${L.ot + 1}`, act: () => { narr.clear(); startLevel(nextOt); } } : null,
+    { label: 'Replay this one', act: () => startLevel(levelIdx) },
+    { label: 'Back to Overtime', act: () => { narr.clear(); goTitle(); overtimeMenu(); } },
+    { label: 'Quit to title', act: goTitle },
+  ].filter(Boolean) : [
+    { label: last ? 'Read your performance review' : `Clock in for shift ${levelIdx + 2}`, act: () => { narr.clear(); last ? goCredits() : startLevel(levelIdx + 1); } },
+    { label: 'Replay this shift', act: () => startLevel(levelIdx) },
+    { label: 'Quit to title', act: goTitle },
+  ];
   openMenu({
-    cls: 'done', title: `Shift ${levelIdx + 1} complete`, sub: LEVELS[levelIdx].name,
-    items: [
-      { label: last ? 'Read your performance review' : `Clock in for shift ${levelIdx + 2}`, act: () => { narr.clear(); last ? goCredits() : startLevel(levelIdx + 1); } },
-      { label: 'Replay this shift', act: () => startLevel(levelIdx) },
-      { label: 'Quit to title', act: goTitle },
-    ],
+    cls: 'done', title: `${lvName(levelIdx)} complete`, sub: L.name, items,
     foot: `Falls: Bolt ${s.falls[0]}, Nut ${s.falls[1]} · Launches: ${s.launches} · Pulls: ${s.pulls} · Lasered: ${s.zaps[0] + s.zaps[1]}`,
   });
 }
@@ -327,7 +347,7 @@ function frame(now) {
     idleStep(dt);
   }
   narr.update(dt);
-  view.draw(world, dt, { title: mode === 'title' || mode === 'join' || mode === 'credits', showTarget: mode === 'play' });
+  view.draw(world, dt, { title: mode === 'title' || mode === 'join' || mode === 'credits', showTarget: mode === 'play', cogsFound: save.cogs.includes(levelIdx) });
   view.adapt(dtMs);
 }
 function idleStep(dt) {

@@ -233,6 +233,7 @@ export class View {
       else if (s.style === 'fan') gb.box(mn, mx, T.fan, T.fan, {});
       else if (s.style === 'conveyor') gb.box(mn, [mx[0], mx[1] - 0.02, mx[2]], col(0x2b2e36), col(0x3a3f4b), { lip: col(0xf2b84b) });
       else if (s.style === 'switch') continue;
+      else if (s.style === 'spring') gb.box(mn, [mx[0], mx[1] - 0.3, mx[2]], col(0x3a3f4b), col(0x3a3f4b), {});
       else gb.box(mn, mx, T.side, T.side);
     }
     // background: soft pillars and stripes on the back wall
@@ -308,6 +309,26 @@ export class View {
       if (lamp) { lamp.position.set(s.min.x + 0.3, s.max.y + 0.06, s.min.z + 0.3); this.level.add(lamp); }
       this.belts.push({ s, tex, tex2, mat, ang, speed: Math.hypot(cv.vx, cv.vz), along, lamp });
     }
+    this.springMeshes = w.springs.map(s => {
+      const sx = s.max.x - s.min.x, sz = s.max.z - s.min.z, base = s.max.y - 0.3;
+      const g = new THREE.Group(); g.position.set((s.min.x + s.max.x) / 2, base, (s.min.z + s.max.z) / 2);
+      const coilM = new THREE.MeshLambertMaterial({ color: 0x9aa3b2 });
+      const coils = new THREE.Group(); g.add(coils);
+      for (let i = 0; i < 3; i++) { const c = new THREE.Mesh(new THREE.TorusGeometry(Math.min(sx, sz) * 0.3, 0.05, 4, 16), coilM); c.rotation.x = Math.PI / 2; c.position.y = 0.06 + i * 0.08; coils.add(c); }
+      const top = new THREE.Mesh(new THREE.BoxGeometry(sx - 0.1, 0.1, sz - 0.1), new THREE.MeshLambertMaterial({ color: 0xf2b84b, emissive: 0xf2b84b, emissiveIntensity: 0.15 }));
+      top.position.y = 0.25; g.add(top);
+      const arrow = new THREE.Mesh(new THREE.ConeGeometry(Math.min(sx, sz) * 0.22, 0.25, 4), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 }));
+      arrow.position.y = 0.45; g.add(arrow);
+      this.level.add(g); return { sp: s.spring, top, coils, arrow };
+    });
+    this.cogMeshes = w.cogs.map(cg => {
+      const g = new THREE.Group(); g.position.set(cg.x, cg.y, cg.z);
+      const m = new THREE.MeshLambertMaterial({ color: 0xffc53d, emissive: 0xb07a10, emissiveIntensity: 0.6, transparent: true });
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.12, 6, 18), m); g.add(ring);
+      for (let k = 0; k < 8; k++) { const t = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.16, 0.2), m); const a = k / 8 * Math.PI * 2; t.position.set(Math.cos(a) * 0.48, Math.sin(a) * 0.48, 0); t.rotation.z = a; g.add(t); }
+      const glow = new THREE.Mesh(new THREE.SphereGeometry(0.75, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffd76a, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(glow);
+      this.level.add(g); return { cg, g, m, glow };
+    });
     this.switchMeshes = w.switches.map(sw => {
       const g = new THREE.Group(); g.position.set(sw.x, sw.top, sw.z);
       const c = CH_COLORS[sw.ch] || 0x999999;
@@ -501,6 +522,18 @@ export class View {
       lm.beams.forEach((b, i) => { b.visible = vis; b.scale.set(1, warn && !l.on ? 0.4 : 1 + Math.sin(t * 40 + i) * 0.2, 1); });
       lm.beamMat.opacity = l.on ? 0.85 + Math.sin(t * 50) * 0.1 : 0.35;
       lm.sheet.visible = l.on;
+    }
+    // golden cogs (faded if found on an earlier visit)
+    for (const c of this.cogMeshes) {
+      c.g.visible = !c.cg.got; c.g.rotation.y = t * 1.6; c.g.position.y = c.cg.y + Math.sin(t * 2 + c.cg.x) * 0.12;
+      c.m.opacity = opts.cogsFound ? 0.45 : 1; c.glow.material.opacity = opts.cogsFound ? 0.06 : 0.16 + Math.sin(t * 3) * 0.05;
+    }
+    // springs
+    for (const sm of this.springMeshes) {
+      const k = Math.max(0, 1 - (w.t - sm.sp.t) / 0.25); // 1 right after a bounce
+      const sq = k > 0 ? 1 - Math.sin(k * Math.PI) * 0.6 : 1;
+      sm.top.position.y = 0.05 + 0.2 * sq + (k > 0 ? Math.sin(k * Math.PI) * 0.15 : 0); sm.coils.scale.y = sq;
+      sm.arrow.position.y = 0.5 + Math.sin(t * 4) * 0.08; sm.top.material.emissiveIntensity = 0.15 + k * 0.6;
     }
     // belts + switches
     for (const b of this.belts) { const dir = b.s.conv.rev ? -1 : 1; const tx = b.s.conv.rev ? b.tex2 : b.tex; if (b.mat.map !== tx) { tx.offset.copy(b.mat.map.offset); b.mat.map = tx; b.mat.needsUpdate = true; } tx.offset.x -= dir * b.s.conv.vx * dt / 1.2; tx.offset.y += dir * b.s.conv.vz * dt / 1.2; if (b.lamp) b.lamp.material.color.set(b.s.conv.rev ? CH_COLORS[b.s.conv.chs[0]] : 0x333333); }
