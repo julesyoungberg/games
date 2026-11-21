@@ -4,7 +4,7 @@
   "installCommand": "npm ci",
   "buildCommand": "bash scripts/vercel-build.sh",
   "outputDirectory": "public",
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- .",
+  "ignoreCommand": "bash -c 'git diff --quiet HEAD^ HEAD -- . 2>/dev/null; [ $? -eq 0 ]'",
   "headers": [
     {
       "source": "/WickAndShade.AppImage",
