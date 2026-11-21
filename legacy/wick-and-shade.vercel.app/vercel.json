@@ -5,9 +5,9 @@
     { "source": "/icon.png", "destination": "https://couch-coop-games.vercel.app/wick-and-shade/icon.png", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/:path*", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
-    { "source": "/:path*", "headers": [ { "key": "Cache-Control", "value": "no-cache" } ] }
+    { "source": "/(.*)", "headers": [ { "key": "Cache-Control", "value": "no-cache" } ] }
   ]
 }
