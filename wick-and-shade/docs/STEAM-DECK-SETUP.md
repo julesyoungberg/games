@@ -46,9 +46,10 @@ Download the new `WickAndShade.AppImage` and replace the old file in `/home/deck
 - **Drums** throw whoever lands on them high into the air. Hold down to stand on one without bouncing. A dropped or thrown lantern bounces off drums too.
 - **Conveyor belts** carry whatever stands on them: you, crates, the lantern.
 - **Ink wells** are for Shade only: stand on one and press down to come up out of its partner. Wells pair up from left to right (the first with the second, the third with the fourth).
+- **Mirror balls** light up when the lantern can see them and shine too, a bit less far. They can open sun-eyes, hold up gold glass, melt dark glass and wipe out shadows. Hide one from the lantern (behind a crate or an ink block) to switch it off.
 - Both of you have to be in the door to finish a chapter.
 
-17 chapters, plus one you have to find. Chapters 11 to 16 (The Stockroom, The Gallery, Backstage, The Observatory, The Music Room, The Print Shop) are long ones with five rooms in a row; the game shows which room you're in. Separate from the story there are **Challenges**: short, tough rooms with no story. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
+18 chapters, plus one you have to find. Chapters 11 to 17 (The Stockroom, The Gallery, Backstage, The Observatory, The Music Room, The Print Shop, The Lighthouse) are long ones with five rooms in a row; the game shows which room you're in. Separate from the story there are **Challenges**: short, tough rooms with no story. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
 
 ## Other files
 - `index.html` is the same game as a single web page, for playing on any computer in a browser.

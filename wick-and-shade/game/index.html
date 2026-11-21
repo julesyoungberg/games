@@ -1655,6 +1655,178 @@ const LEVELS = [
     onPlate: (n, by, ch) => by === 'crate' ? 'The crate is in position. The presses are running.' : null,
     outro: "The press run is done. Everything printed, nothing smudged. Mostly. Shade smudged a bit.",
   },
+  { name: "Reflection", sub: "The eye is too far for the lantern. It is not too far for the mirror ball.", ambient: 0.6, chapter: "The Lighthouse",
+    map: [
+      '################################',
+      '#............#........#........#',
+      '#............#........#........#',
+      '#............#........#........#',
+      '#............#........#........#',
+      '#............#........#........#',
+      '#............#........#........#',
+      '#............#........#........#',
+      '#............#....m...#..u.....#',
+      '#............#........#........#',
+      '#............#........#........#',
+      '#............#........#........#',
+      '#............#........#........#',
+      '#............Q........P........#',
+      '#............Q........P........#',
+      '#............Q........P........#',
+      '#.WS.........Q....p...P...p..E.#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The Lighthouse. Full of mirror balls. When the lantern can see one, it lights up and shines too, just not as far.",
+      "Mirror balls do not light each other. They only listen to the lantern.",
+    ],
+    hints: [
+      [40, "Wick, walk up to the pink door. The mirror ball over the wall will catch your light and pass it to the eye."],
+      [100, "Through you both go. Then one of you holds a teal plate while the other passes the next door."],
+    ],
+    onPlate: (n, by, ch) => by === 'light' ? 'The mirror ball passed it on. Teamwork, of a sort.' : null,
+    outro: "Reflection. The lantern did the hard part and the mirror ball took the credit. Typical.",
+  },
+  { name: "Two Suns", sub: "The mirror ball is very helpful. Too helpful.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#..................o......#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....P.........................#',
+      '#....P.........................#',
+      '#....P........m................#',
+      '#.E..P......WC.S...............#',
+      '#######xxxxx####################',
+      '#######^^^^^####################',
+      '################################',
+    ],
+    intro: [
+      "Dark glass over thorns, and a mirror ball right next to it, lighting it up whenever it sees the lantern.",
+      "The eye by the door needs the lantern. The glass needs the mirror ball to stop helping.",
+    ],
+    hints: [
+      [40, "Wick, push the crate right, under the mirror ball, and leave it on the far side."],
+      [100, "Put the lantern down just past the crate, so the crate hides it from the mirror ball. The eye can still see it."],
+      [160, "Now the glass is dark and solid. Both of you, hop the crate and cross."],
+    ],
+    onPlate: (n, by, ch) => by === 'light' ? 'The eye is open. Now make the mirror ball look away.' : null,
+    outro: "Two suns, one crate. The mirror ball sulked the whole time. Mirror balls are like that.",
+  },
+  { name: "Mirror, Mirror", sub: "Two eyes at the far ends of the hall. One lantern in the middle. Two mirror balls doing the rest.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#...................#...#......#',
+      '#...................#...#......#',
+      '#...................#...#......#',
+      '#...................#...#......#',
+      '#...................#...#......#',
+      '#...................#...#......#',
+      '#.o.....m...........#..m#....u.#',
+      '#...................#...#......#',
+      '#...................#...#......#',
+      '#..............H....#...#......#',
+      '#...................#...#......#',
+      '#...................#...#......#',
+      '#...................P...Q......#',
+      '#............#####..P...Q......#',
+      '#...................P...Q......#',
+      '#.WS................P...Q....E.#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Two doors, two eyes, one at each end of the hall. Neither eye is anywhere near anything sensible.",
+      "There is a hook in the middle, up on the ledge. And two mirror balls, which is suspicious.",
+    ],
+    hints: [
+      [40, "Wick, up onto the ledge and hang the lantern on the hook. It can see both mirror balls from there."],
+      [100, "Both doors are open. Off you go, and leave the lantern where it is."],
+    ],
+    onPlate: (n, by, ch) => by === 'light' ? 'One eye open. And the other. Show-offs.' : null,
+    outro: "Mirror, mirror, on the wall. You know the rest. It was you two. You are the fairest.",
+  },
+  { name: "Relay", sub: "The lantern reaches halfway. The mirror ball does the other half.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.....m...................#',
+      '#....P.........................#',
+      '#....P.........................#',
+      '#....v.........................#',
+      '#WS..v..............p........E.#',
+      '######============##############',
+      '######^^^^^^^^^^^^##############',
+      '################################',
+    ],
+    intro: [
+      "Gold glass over thorns. Shade has to cross it, and Wick cannot come along yet.",
+      "The lantern reaches about halfway. Luckily, there is a mirror ball for the rest.",
+    ],
+    hints: [
+      [40, "Wick, stay by the curtain. Your light holds the near half of the glass, and the mirror ball holds the far half."],
+      [100, "Shade, across, and onto the teal plate. That opens the slot above the curtain for Wick."],
+    ],
+    onPlate: (n, by, ch) => 'Slot open. Wick, jump in, and bring the light.',
+    outro: "A relay. The lantern handed off to the mirror ball, which handed off to Shade. Nobody dropped the baton.",
+  },
+  { name: "Lighthouse", sub: "Two mirror balls, one crate, one lantern, and a long walk in the dark.", ambient: 0.55, cont: true,
+    map: [
+      '################################',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#........u........#....#',
+      '#.......#.m...............#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#o................#....#',
+      '#.......#.................#....#',
+      '#.......Q......m..........P....#',
+      '#.......Q.................P....#',
+      '#.......Q.................P....#',
+      '#.WS....Q.........C.......P..E.#',
+      '####################xxxxx#######',
+      '####################^^^^^#######',
+      '################################',
+    ],
+    intro: [
+      "The top of the Lighthouse. A mirror ball for the first door, a mirror ball for the glass, and a crate for the mirror ball.",
+      "You know all of this already. You just have to do it in the right order.",
+    ],
+    hints: [
+      [40, "Wick, light the high mirror ball from your side of the wall. The pink door opens."],
+      [100, "Bring the crate back under the low mirror ball, all the way over to the teal eye. Put the lantern down just left of the crate."],
+      [160, "The crate hides the lantern from the low mirror ball, so the dark glass holds. Hop the crate and cross."],
+    ],
+    onPlate: (n, by, ch) => by === 'light' && ch === 'p' ? 'The teal door is open. The rest is a walk in the dark.' : null,
+    outro: "The Lighthouse is done. The lantern stays up here to keep an eye on things. It volunteered. Lanterns are like that.",
+  },
   { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
     map: [
       '################################',
@@ -1988,6 +2160,7 @@ function loadLevel(idx, opts = {}) {
     else if (c === 'L') { lanSpawn = [x, y]; grid[y][x] = '.'; }
     else if (c === 'H') { lv.hooks.push({ tx: x, ty: y }); grid[y][x] = '.'; }
     else if (c === 'k') { (lv.wells = lv.wells || []).push({ tx: x, ty: y }); }
+    else if (c === 'm') { (lv.mirrors = lv.mirrors || []).push({ tx: x, ty: y, on: false }); }
     else if (c === 'E' || c === 'F') { lv.exits.push({ tx: x, ty: y, kind: c }); grid[y][x] = '.'; }
     else if (c === 'p' || c === 'q') { lv.plates.push({ tx: x, ty: y, ch: c, down: false }); grid[y][x] = '.'; }
     else if (c === 'o' || c === 'u') { lv.plates.push({ tx: x, ty: y, ch: c === 'o' ? 'p' : 'q', down: false, sensor: true }); grid[y][x] = '.'; }
@@ -2017,7 +2190,7 @@ function tileAt(tx, ty) { if (tx < 0 || tx >= COLS || ty < 0) return '#'; if (ty
 function isLit(tx, ty) { return tx >= 0 && tx < COLS && ty >= 0 && ty < ROWS && lv.lit[ty * COLS + tx] === 1; }
 function tileSolid(c, tx, ty) {
   switch (c) {
-    case '#': case 'B': case 'v': case 'j': case '<': case '>': case 'k': return true;
+    case '#': case 'B': case 'v': case 'j': case '<': case '>': case 'k': case 'm': return true;
     case '=': return isLit(tx, ty);
     case 'x': return !isLit(tx, ty);
     case 'P': return !lv.pressed.p;
@@ -2119,13 +2292,22 @@ function wellUnder(e) {
 }
 
 /* ------------------------------ light & shadow ------------------------------ */
+const RM = 320; // reach of the light a mirror ball throws back
 function computeLight() {
-  if (!lantern) { lv.light = null; return; }
-  lv.light = { x: lantern.x + 7, y: lantern.y + 6 };
-  const L = lv.light, r2 = RL * RL;
+  if (!lantern) { lv.light = null; lv.lights = []; return; }
+  lv.light = { x: lantern.x + 7, y: lantern.y + 6, r: RL };
+  const L = lv.light;
+  lv.lights = [L];
+  // mirror balls: one the lantern can see shines too, a little weaker (they don't light each other)
+  if (lv.mirrors) for (const m of lv.mirrors) {
+    const mx = (m.tx + 0.5) * T, my = (m.ty + 0.5) * T, dx = mx - L.x, dy = my - L.y;
+    m.on = dx * dx + dy * dy < RL * RL && !shadowFrom(L, mx, my);
+    if (m.on) lv.lights.push({ x: mx, y: my, r: RM, mirror: true });
+  }
   for (let ty = 0; ty < ROWS; ty++) for (let tx = 0; tx < COLS; tx++) {
-    const dx = (tx + 0.5) * T - L.x, dy = (ty + 0.5) * T - L.y;
-    lv.lit[ty * COLS + tx] = dx * dx + dy * dy < r2 ? 1 : 0;
+    let on = 0;
+    for (const S of lv.lights) { const dx = (tx + 0.5) * T - S.x, dy = (ty + 0.5) * T - S.y; if (dx * dx + dy * dy < S.r * S.r) { on = 1; break; } }
+    lv.lit[ty * COLS + tx] = on;
   }
 }
 function segRect(lx, ly, dx, dy, r) {
@@ -2139,9 +2321,21 @@ function segRect(lx, ly, dx, dy, r) {
 // a lantern resting on top of a crate only shadows the floor under the crate itself, so that crate is skipped
 const restsOn = (L, r) => r.crate && L.x > r.x - 2 && L.x < r.x + r.w + 2 && L.y < r.y && r.y - L.y < 30;
 function isShadow(px, py) {
-  const L = lv.light; if (!L) return false;
-  const dx = px - L.x, dy = py - L.y;
-  if (dx * dx + dy * dy > RL * RL) return false;
+  // shadow: inside the reach of at least one light, and hidden from every light that reaches it
+  if (!lv.light) return false;
+  if (lv.lights.length < 2) return shadowFrom(lv.light, px, py);
+  let any = false;
+  for (const S of lv.lights) {
+    const dx = px - S.x, dy = py - S.y;
+    if (dx * dx + dy * dy > S.r * S.r) continue;
+    if (!shadowFrom(S, px, py)) return false;
+    any = true;
+  }
+  return any;
+}
+function shadowFrom(L, px, py) {
+  const dx = px - L.x, dy = py - L.y, R = L.r || RL;
+  if (dx * dx + dy * dy > R * R) return false;
   for (const r of lv.occAll) {
     if (L.x > r.x && L.x < r.x + r.w && L.y > r.y && L.y < r.y + r.h) continue;
     if (restsOn(L, r)) continue;
@@ -2579,6 +2773,23 @@ function drawDynamicTiles(t) {
       for (let k = 0; k < 2; k++) { const a = lv.time * dir * 4; ctx.beginPath(); ctx.moveTo(px + 10 + k * 20, py + 22); ctx.lineTo(px + 10 + k * 20 + Math.cos(a) * 6, py + 22 + Math.sin(a) * 6); ctx.stroke(); }
       continue;
     }
+    if (c === 'm') {
+      // mirror ball: a brass-and-glass orb on a chalk stand that throws the lantern's light back out
+      const m = lv.mirrors && lv.mirrors.find(q => q.tx === tx && q.ty === ty), on = m && m.on, cx = px + T / 2, cy = py + T / 2;
+      ctx.fillStyle = '#b5a888'; ctx.fillRect(px + 6, py + 30, T - 12, 10); ctx.fillStyle = '#7d6f55'; ctx.fillRect(px + 6, py + 37, T - 12, 3);
+      if (on && lv.light) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(255,220,150,0.18)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(lv.light.x, lv.light.y); ctx.lineTo(cx, cy - 3); ctx.stroke();
+        const g = ctx.createRadialGradient(cx, cy - 3, 0, cx, cy - 3, 34); g.addColorStop(0, 'rgba(255,230,170,0.7)'); g.addColorStop(1, 'rgba(255,200,120,0)');
+        ctx.fillStyle = g; ctx.fillRect(cx - 34, cy - 37, 68, 68); ctx.restore();
+      }
+      ctx.fillStyle = on ? '#ffe6a8' : '#8f8aa3'; ctx.beginPath(); ctx.arc(cx, cy - 3, 13, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#e8c37a'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = on ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
+      for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.ellipse(cx, cy - 3, 13, Math.abs(k) * 5 + 1, 0, 0, TAU); ctx.stroke(); }
+      ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(cx - 6, cy - 10, 3, 3);
+      continue;
+    }
     if (c === 'k') {
       // ink well: a chalk basin full of ink that Shade can dive into
       ctx.fillStyle = '#b5a888'; ctx.fillRect(px, py, T, T);
@@ -2755,6 +2966,8 @@ function drawDarkness(t) {
   dctx.globalCompositeOperation = 'destination-out';
   const L = lv.light;
   if (L) dctx.drawImage(lightHole, Math.round(L.x - LS), Math.round(L.y - LS));
+  const mk = RM / RL;
+  for (const S of lv.lights || []) if (S.mirror) dctx.drawImage(lightHole, S.x - LS * mk, S.y - LS * mk, LS * 2 * mk, LS * 2 * mk);
   const [wk, sh] = players;
   if (sh.dead <= 0) hole(sh.x + sh.w / 2, sh.y + sh.h / 2, 80, 0.6);
   if (wk.dead <= 0) hole(wk.x + wk.w / 2, wk.y + wk.h / 2, 50, 0.4);
@@ -2762,6 +2975,9 @@ function drawDarkness(t) {
   for (const pl of lv.plates) hole((pl.tx + 0.5) * T, (pl.ty + 1) * T, 36, 0.5);
   dctx.globalCompositeOperation = 'source-over';
   if (L) dctx.drawImage(warmGlow, Math.round(L.x - LS), Math.round(L.y - LS));
+  dctx.globalAlpha = 0.6;
+  for (const S of lv.lights || []) if (S.mirror) dctx.drawImage(warmGlow, S.x - LS * mk, S.y - LS * mk, LS * 2 * mk, LS * 2 * mk);
+  dctx.globalAlpha = 1;
   ctx.drawImage(dcv, 0, 0);
 }
 function hull(pts) {
@@ -2772,9 +2988,40 @@ function hull(pts) {
   for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
+function shadowPath(g, L) {
+  for (const r of lv.occAll) {
+    if (L.x > r.x && L.x < r.x + r.w && L.y > r.y && L.y < r.y + r.h) continue;
+    if (restsOn(L, r)) continue;
+    const cs = [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]];
+    const pts = cs.slice();
+    for (const [x, y] of cs) { const dx = x - L.x, dy = y - L.y, l = Math.hypot(dx, dy) || 1, k = (RL * 2.5) / l; pts.push([L.x + dx * (1 + k), L.y + dy * (1 + k)]); }
+    const h = hull(pts);
+    g.moveTo(h[0][0], h[0][1]); for (let i = 1; i < h.length; i++) g.lineTo(h[i][0], h[i][1]); g.closePath();
+  }
+}
+const smCv = document.createElement('canvas'), slCv = document.createElement('canvas');
+smCv.width = slCv.width = W; smCv.height = slCv.height = H;
+const smx = smCv.getContext('2d'), slx = slCv.getContext('2d');
+function drawShadowsMulti(t) {
+  // several lights: shadow is where at least one light reaches and every light that reaches is blocked
+  smx.globalCompositeOperation = 'source-over'; smx.clearRect(0, 0, W, H); smx.fillStyle = '#fff';
+  for (const S of lv.lights) { smx.beginPath(); smx.arc(S.x, S.y, S.r, 0, TAU); smx.fill(); }
+  for (const S of lv.lights) {
+    // what S lights = its disc minus its shadow volumes; cut that out of the mask
+    slx.globalCompositeOperation = 'source-over'; slx.clearRect(0, 0, W, H); slx.fillStyle = '#fff';
+    slx.beginPath(); slx.arc(S.x, S.y, S.r, 0, TAU); slx.fill();
+    slx.globalCompositeOperation = 'destination-out'; slx.beginPath(); shadowPath(slx, S); slx.fill('nonzero');
+    smx.globalCompositeOperation = 'destination-out'; smx.drawImage(slCv, 0, 0);
+  }
+  if (!hatchPat) hatchPat = ctx.createPattern(hatch, 'repeat');
+  try { hatchPat.setTransform(new DOMMatrix().translate((t * 12) % 20, 0)); } catch (e) {}
+  smx.globalCompositeOperation = 'source-in'; smx.globalAlpha = 0.8; smx.fillStyle = hatchPat; smx.fillRect(0, 0, W, H); smx.globalAlpha = 1;
+  ctx.drawImage(smCv, 0, 0);
+}
 function drawShadows(t) {
   // One path of convex shadow volumes (same winding, so overlaps don't double up), filled straight onto the screen.
   const L = lv.light; if (!L || !lv.occAll.length) return;
+  if (lv.lights && lv.lights.length > 1) return drawShadowsMulti(t);
   ctx.save(); ctx.beginPath(); ctx.arc(L.x, L.y, RL, 0, TAU); ctx.clip();
   ctx.beginPath();
   for (const r of lv.occAll) {
@@ -3136,7 +3383,7 @@ requestAnimationFrame(frame);
 /* test hooks (harmless in normal play) */
 window.__ws = {
   get lv() { return lv; }, get players() { return players; }, get lantern() { return lantern; }, get state() { return gstate; },
-  isShadow, loadLevel: (i) => { startLevel(i); }, step, render,
+  isShadow, computeLight, loadLevel: (i) => { startLevel(i); }, step, render,
   setManual(v) { manual = v; }, setForced(f) { forced = f; }, LEVELS, narr,
   setState(s) { gstate = s; },
 };
