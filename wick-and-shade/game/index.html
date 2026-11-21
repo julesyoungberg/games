@@ -68,6 +68,7 @@ const SFX = {
   menu() { tone(720, 0.05, 'triangle', 0.06); },
   ok() { tone(520, 0.08, 'triangle', 0.08); tone(780, 0.12, 'triangle', 0.08, null, 0.06); },
   float() { tone(300 + Math.random() * 200, 0.2, 'sine', 0.025, 600); },
+  well() { tone(180, 0.25, 'sine', 0.12, 520); tone(90, 0.2, 'sine', 0.08, 60, 0.05); },
   drum() { tone(110, 0.22, 'sine', 0.16, 55); tone(220, 0.08, 'triangle', 0.05, 160); },
 };
 function startMusic() {
@@ -233,6 +234,7 @@ const LINES = {
   dropFirst: 'Wick put the lantern down. It will wait for you. Lanterns are patient like that.',
   throwFirst: "Wick threw the lantern! Wick. That is the light source. Be gentle with the light source.",
   waveFirst: 'Shade waves. Wick, I believe that is affection. Or a warning. Shade is hard to read.',
+  wellFirst: 'Shade dove into the ink and came out of the other well. Wick, do not try that. You would just be a wet lantern.',
   drumFirst: 'A drum. Land on it and up you go. Hold down if you would rather just stand there and be normal.',
   skip: "Skipping, are we? Fine. I'll tell everyone you solved it brilliantly.",
   swap: "Oh, you've swapped. That's allowed. Nobody here is defined by their lantern.",
@@ -1748,7 +1750,8 @@ const CH_NUM = [], ROOM_NUM = [], CH_START = [], CH_ROOMS = {};
   CH_NUM[i] = cn; ROOM_NUM[i] = rn; CH_ROOMS[cn] = rn;
 }); })();
 const CHALLENGES = LEVELS.map((d, i) => d.challenge ? i : -1).filter(i => i >= 0);
-const challengeOpen = i => save.unlocked >= (LEVELS[i].unlockAt || 0);
+// every chapter, room and challenge can be picked from the menus, so a lost save never costs any progress
+const challengeOpen = i => true;
 const NATIVE = /Electron/.test(navigator.userAgent);
 function quitGame() { try { window.close(); } catch (e) {} }
 
@@ -1780,6 +1783,7 @@ function loadLevel(idx, opts = {}) {
     if (c === 'W' || c === 'S') { const p = players[c === 'W' ? 0 : 1]; p.sx = p.x = x * T + (T - p.w) / 2; p.sy = p.y = (y + 1) * T - p.h; grid[y][x] = '.'; }
     else if (c === 'L') { lanSpawn = [x, y]; grid[y][x] = '.'; }
     else if (c === 'H') { lv.hooks.push({ tx: x, ty: y }); grid[y][x] = '.'; }
+    else if (c === 'k') { (lv.wells = lv.wells || []).push({ tx: x, ty: y }); }
     else if (c === 'E' || c === 'F') { lv.exits.push({ tx: x, ty: y, kind: c }); grid[y][x] = '.'; }
     else if (c === 'p' || c === 'q') { lv.plates.push({ tx: x, ty: y, ch: c, down: false }); grid[y][x] = '.'; }
     else if (c === 'o' || c === 'u') { lv.plates.push({ tx: x, ty: y, ch: c === 'o' ? 'p' : 'q', down: false, sensor: true }); grid[y][x] = '.'; }
@@ -1793,6 +1797,7 @@ function loadLevel(idx, opts = {}) {
       else x++;
     }
   }
+  if (lv.wells) lv.wells.sort((a, b) => a.tx - b.tx || a.ty - b.ty); // wells pair up left to right: 1st with 2nd, 3rd with 4th
   lv.occAll = lv.crates.length ? lv.occ.concat(lv.crates) : lv.occ;
   lantern = { x: 0, y: 0, w: 14, h: 18, vx: 0, vy: 0, held: !lanSpawn, onGround: false, ign: null, spin: 0, hung: null };
   if (lanSpawn) { lantern.x = lanSpawn[0] * T + 13; lantern.y = (lanSpawn[1] + 1) * T - 18; }
@@ -1808,7 +1813,7 @@ function tileAt(tx, ty) { if (tx < 0 || tx >= COLS || ty < 0) return '#'; if (ty
 function isLit(tx, ty) { return tx >= 0 && tx < COLS && ty >= 0 && ty < ROWS && lv.lit[ty * COLS + tx] === 1; }
 function tileSolid(c, tx, ty) {
   switch (c) {
-    case '#': case 'B': case 'v': case 'j': return true;
+    case '#': case 'B': case 'v': case 'j': case '<': case '>': case 'k': return true;
     case '=': return isLit(tx, ty);
     case 'x': return !isLit(tx, ty);
     case 'P': return !lv.pressed.p;
@@ -1897,6 +1902,18 @@ function groundBelow(e) {
   return false;
 }
 
+// conveyor belts: '<' and '>' carry whatever stands on them
+const BELT = 115;
+function beltUnder(e) {
+  const ty = Math.floor((e.y + e.h + 1) / T), tx = Math.floor((e.x + e.w / 2) / T), c = tileAt(tx, ty);
+  return c === '<' ? -1 : c === '>' ? 1 : 0;
+}
+function wellUnder(e) {
+  if (!lv.wells) return -1;
+  const ty = Math.floor((e.y + e.h + 1) / T), tx = Math.floor((e.x + e.w / 2) / T);
+  return lv.wells.findIndex(w => w.tx === tx && w.ty === ty);
+}
+
 /* ------------------------------ light & shadow ------------------------------ */
 function computeLight() {
   if (!lantern) { lv.light = null; return; }
@@ -1967,7 +1984,7 @@ function updateLantern(dt) {
     // a lantern dropped or thrown onto a drum gets thrown right back up
     lantern.vy = -880; lantern.onGround = false; lv.drumHit[lantern.onDrum - 1] = lv.time; SFX.drum();
   }
-  if (lantern.onGround) lantern.vx *= Math.pow(0.0005, dt);
+  if (lantern.onGround) { lantern.vx *= Math.pow(0.0005, dt); const bd = beltUnder(lantern); if (bd) moveX(lantern, bd * BELT * dt); }
   if (lantern.y > H + 60) { returnLantern(); return; }
   let thorn = false;
   forEachTile(lantern, (tx, ty) => { if (tileAt(tx, ty) === '^') thorn = true; });
@@ -1983,6 +2000,7 @@ function updateCrates(dt) {
     computeIgnore(c); c.onGround = false;
     const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
     for (let i = 0; i < n; i++) moveY(c, c.vy * sdt);
+    if (c.onGround) { const bd = beltUnder(c); if (bd) { const d = bd * BELT * dt; cratePush({ x: bd > 0 ? c.x + d : c.x + c.w + d, w: 0, y: c.y }, c, d); } }
     if (c.onGround && !wasG && vy0 > 300) { SFX.land(); for (let k = 0; k < 8; k++) lv.particles.push({ x: c.x + rand(0, T), y: c.y + T, vx: rand(-80, 80), vy: rand(-60, -10), life: 0.4, max: 0.4, c: '#7b56c9', s: 2 }); }
     if (c.y > H + 60) {
       // anything riding the crate (the lantern, usually) comes back with it
@@ -2067,6 +2085,20 @@ function updatePlayer(p, inp, dt, i) {
     if (shade) shadeContact(p, Math.abs(p.x - ox), Math.abs(p.y - oy));
   }
   if (!p.onGround && groundBelow(p) && p.vy >= 0) p.onGround = true;
+  if (p.onGround) { const bd = beltUnder(p); if (bd) moveX(p, bd * BELT * dt); }
+  if (shade && my < 0.3) p.wellLock = false;
+  if (shade && p.onGround && my > 0.5 && !p.wellLock) {
+    // ink wells: Shade dives into one and comes up out of its partner
+    const wi = wellUnder(p);
+    if (wi >= 0 && lv.wells.length > 1) {
+      const to = lv.wells[wi ^ 1] || lv.wells[0];
+      burst(p.x + p.w / 2, p.y + p.h, '#b89cff', 14);
+      p.x = to.tx * T + (T - p.w) / 2; p.y = to.ty * T - p.h; p.vx = p.vy = 0; p.wellLock = true; p.landT = 1;
+      burst(p.x + p.w / 2, p.y + p.h, '#b89cff', 18); SFX.well();
+      lv.wellT = lv.time; lv.wellAt = [wi, lv.wells.indexOf(to)];
+      if (!flags.well) { flags.well = true; narr.say(LINES.wellFirst, { ifQuiet: true }); }
+    }
+  }
   if (p.onDrum && !(my > 0.5)) {
     // drums: land on one and it throws you high, unless you hold down
     p.vy = -1060; p.onGround = false; p.coyote = 0; p.jbuf = 0; p.jumpHeld = false;
@@ -2329,6 +2361,30 @@ const CH_COL = { p: ['#43d6c3', 'rgba(67,214,195,0.35)', '#1d3b3b', 'rgba(67,214
 function drawDynamicTiles(t) {
   for (let ty = 0; ty < ROWS; ty++) for (let tx = 0; tx < COLS; tx++) {
     const c = lv.grid[ty][tx], px = tx * T, py = ty * T;
+    if (c === '<' || c === '>') {
+      // conveyor belt: a dark roller bed with chevrons sliding the way it runs
+      const dir = c === '>' ? 1 : -1, off = ((lv.time * BELT * dir) % 20 + 20) % 20;
+      ctx.fillStyle = '#3a3346'; ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#58506a'; ctx.fillRect(px, py, T, 7);
+      ctx.save(); ctx.beginPath(); ctx.rect(px, py, T, 7); ctx.clip();
+      ctx.strokeStyle = '#e8c37a'; ctx.lineWidth = 2;
+      for (let k = -1; k < 3; k++) { const bx = px + k * 20 + off; ctx.beginPath(); ctx.moveTo(bx - 3 * dir, py + 1); ctx.lineTo(bx + 2 * dir, py + 3.5); ctx.lineTo(bx - 3 * dir, py + 6); ctx.stroke(); }
+      ctx.restore();
+      ctx.fillStyle = '#251f2e'; for (let k = 0; k < 2; k++) { ctx.beginPath(); ctx.arc(px + 10 + k * 20, py + 22, 7, 0, TAU); ctx.fill(); }
+      ctx.strokeStyle = '#8a7fa0'; ctx.lineWidth = 1.5;
+      for (let k = 0; k < 2; k++) { const a = lv.time * dir * 4; ctx.beginPath(); ctx.moveTo(px + 10 + k * 20, py + 22); ctx.lineTo(px + 10 + k * 20 + Math.cos(a) * 6, py + 22 + Math.sin(a) * 6); ctx.stroke(); }
+      continue;
+    }
+    if (c === 'k') {
+      // ink well: a chalk basin full of ink that Shade can dive into
+      ctx.fillStyle = '#b5a888'; ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#7d6f55'; ctx.fillRect(px, py + T - 3, T, 3);
+      ctx.fillStyle = '#0c0912'; ctx.beginPath(); ctx.ellipse(px + T / 2, py + 5, 17, 5 + Math.sin(lv.time * 2 + tx) * 0.8, 0, 0, TAU); ctx.fill();
+      const wi = lv.wells ? lv.wells.findIndex(w => w.tx === tx && w.ty === ty) : -1, fl = lv.wellT != null && lv.wellAt && lv.wellAt.includes(wi) ? Math.max(0, 1 - (lv.time - lv.wellT) * 2) : 0;
+      ctx.strokeStyle = `rgba(184,156,255,${0.45 + fl * 0.5})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(px + T / 2, py + 5, 17 + fl * 6, 5 + fl * 2, 0, 0, TAU); ctx.stroke();
+      ctx.fillStyle = 'rgba(184,156,255,0.8)'; ctx.font = 'bold 11px Georgia'; ctx.textAlign = 'center'; ctx.fillText(wi >= 0 ? 'I II III IV'.split(' ')[wi >> 1] || '' : '', px + T / 2, py + 26); ctx.textAlign = 'left';
+      continue;
+    }
     if (c === 'j') {
       // drum: a squat red drum whose skin dips when someone lands on it
       const ht = lv.drumHit[tx + ty * COLS], k = ht != null ? Math.max(0, 1 - (lv.time - ht) * 5) : 0, dip = k * 6;
@@ -2645,15 +2701,26 @@ function titleItems() {
   const it = [];
   if (save.unlocked > 0) { const ci = Math.min(save.unlocked, MAIN_COUNT - 1); it.push({ label: 'Continue  ·  Chapter ' + CH_NUM[ci] + (CH_ROOMS[CH_NUM[ci]] > 1 ? ', room ' + ROOM_NUM[ci] : ''), act: () => goJoin(ci) }); }
   it.push({ label: 'New Game', act: () => { run = { deaths: [0, 0], abandon: 0, throws: 0, waves: 0, start: performance.now() }; flags = {}; goJoin(0); } });
-  if (save.unlocked > 0) it.push({ label: 'Chapter Select', act: () => { menuMode = 'chapters'; menuSel = 0; } });
+  it.push({ label: 'Chapter Select', act: () => { menuMode = 'chapters'; menuSel = 0; } });
   if (CHALLENGES.some(challengeOpen)) it.push({ label: 'Challenges', act: () => { menuMode = 'challenges'; menuSel = 0; } });
   if (NATIVE) it.push({ label: 'Quit', act: quitGame }); else it.push({ label: 'Fullscreen', act: toggleFullscreen });
   return it;
 }
 function chapterItems() {
   const it = [];
-  for (const i of CH_START) if (i <= save.unlocked && i < MAIN_COUNT) it.push({ label: CH_NUM[i] + '.  ' + (LEVELS[i].chapter || LEVELS[i].name), act: () => goJoin(i) });
+  for (const i of CH_START) if (i < MAIN_COUNT) {
+    const n = CH_NUM[i], many = CH_ROOMS[n] > 1;
+    it.push({ label: n + '.  ' + (LEVELS[i].chapter || LEVELS[i].name) + (many ? '  \u203a' : ''), act: () => { if (many) { menuCh = i; menuMode = 'rooms'; menuSel = 0; SFX.menu(); } else goJoin(i); } });
+  }
   it.push({ label: 'Back', act: () => { menuMode = 'main'; menuSel = 0; } });
+  return it;
+}
+let menuCh = 0;
+function roomItems() {
+  // long chapters: jump straight to any room inside them
+  const it = [], n = CH_NUM[menuCh];
+  for (let i = menuCh; i < MAIN_COUNT && CH_NUM[i] === n; i++) it.push({ label: 'Room ' + ROOM_NUM[i] + '.  ' + LEVELS[i].name, act: () => goJoin(i) });
+  it.push({ label: 'Back', act: () => { menuMode = 'chapters'; menuSel = Math.max(0, CH_START.indexOf(menuCh)); } });
   return it;
 }
 function challengeItems() {
@@ -2664,7 +2731,7 @@ function challengeItems() {
   it.push({ label: 'Back', act: () => { menuMode = 'main'; menuSel = 0; } });
   return it;
 }
-const menuItemsFor = () => menuMode === 'chapters' ? chapterItems() : menuMode === 'challenges' ? challengeItems() : titleItems();
+const menuItemsFor = () => menuMode === 'chapters' ? chapterItems() : menuMode === 'rooms' ? roomItems() : menuMode === 'challenges' ? challengeItems() : titleItems();
 function goJoin(idx) {
   pendingLevel = idx; SFX.ok();
   if (assign[0] && assign[1] && devState[assign[0]] && devState[assign[1]]) { narr.clear(); startLevel(idx); return; }
@@ -2679,6 +2746,7 @@ function updateTitle(dt) {
   const mi = menuInput();
   const items = menuItemsFor();
   if (menuSel >= items.length) menuSel = 0;
+  if (mi.back && menuMode === 'rooms') { menuMode = 'chapters'; menuSel = Math.max(0, CH_START.indexOf(menuCh)); SFX.menu(); return; }
   if (mi.back && menuMode !== 'main') { menuMode = 'main'; menuSel = 0; SFX.menu(); return; }
   runMenu(items, mi);
 }
