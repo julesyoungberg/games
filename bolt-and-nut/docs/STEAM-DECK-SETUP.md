@@ -36,5 +36,7 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (0.1.0)
-8 shifts (levels), about 45 to 75 minutes for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review. Progress saves automatically; **Continue** and **Choose a shift** appear on the title screen once you've played. Every shift has been finished start to end by scripted test robots.
+## What's in this version (0.2.0)
+12 shifts (levels), about 70 to 110 minutes for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review, Shipping, Switchboard, Lumber Room, Night Shift.
+
+New in 0.2.0: conveyor belts (some flip direction while their plate or switch is on), switches that Nut flips with a push (they stay on until pushed again), and wooden crates that magnets can't move (walk into them to shove them). If you already finished Shift 8, Shift 9 is unlocked. Progress saves automatically; **Continue** and **Choose a shift** appear on the title screen once you've played. Every shift has been finished start to end by scripted test robots.

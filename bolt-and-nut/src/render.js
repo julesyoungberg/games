@@ -11,6 +11,10 @@ export const THEMES = [
   { bg: 0x2a2236, f1: 0x5e5674, f2: 0x524a68, side: 0x3b3451, wall: 0x40375a, shelf: 0x4b4168, pipe: 0x342c48, gear: 0x3a3150, mover: 0xf2b84b },
   { bg: 0xbfe3f5, f1: 0xf1f8fc, f2: 0xe0eef6, side: 0x9cc1d4, wall: 0x6fa7c8, shelf: 0x5d95b8, pipe: 0x4f84a6, gear: 0x9fcbe3, mover: 0xf2b84b },
   { bg: 0xf3c1a6, f1: 0xf8eee7, f2: 0xefdfd2, side: 0xc89f8d, wall: 0xb8687a, shelf: 0xa65a6c, pipe: 0x8d4b5b, gear: 0xe3a48d, mover: 0x6cc2a8 },
+  { bg: 0xe9dcc4, f1: 0xf6f0e3, f2: 0xe9e0cc, side: 0xbfa985, wall: 0xc4955e, shelf: 0xae7f4a, pipe: 0x8f6a42, gear: 0xd9c19a, mover: 0x6cc2a8 },
+  { bg: 0xd3e4f2, f1: 0xf0f5fa, f2: 0xdfe8f1, side: 0x9fb2c6, wall: 0x56708f, shelf: 0x4a6280, pipe: 0x3f546e, gear: 0xa8bdd2, mover: 0xf2b84b },
+  { bg: 0xdfe8cf, f1: 0xf4f6ea, f2: 0xe5ead6, side: 0xadb58f, wall: 0x7f9a5a, shelf: 0x6c874a, pipe: 0x8a6a46, gear: 0xbfcd9f, mover: 0xf2b84b },
+  { bg: 0x161b2e, f1: 0x4a5270, f2: 0x404763, side: 0x2c3248, wall: 0x262c44, shelf: 0x343c5a, pipe: 0x20263a, gear: 0x232a40, mover: 0xf2b84b },
 ];
 export const CH_COLORS = { 1: 0x2ec4b6, 2: 0xff9f1c, 3: 0xf15bb5, 4: 0x8ac926, 5: 0x9b5de5 };
 const RED = 0xe5484d, BLUE = 0x3d8bfd;
@@ -167,6 +171,21 @@ export class View {
       g.fillStyle = '#c7ced8'; for (const [x, y] of [[7, 7], [w - 7, 7], [7, h - 7], [w - 7, h - 7]]) { g.beginPath(); g.arc(x, y, 4, 0, 7); g.fill(); }
       g.fillStyle = '#f2b84b'; g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('AI', w / 2 + 22, h / 2 - 22);
     });
+    this.woodTex = canvasTex(128, 128, (g, w, h) => {
+      g.fillStyle = '#b07a44'; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#9a6634'; for (let y = 0; y < h; y += 32) g.fillRect(0, y, w, 4);
+      g.strokeStyle = '#7d5129'; g.lineWidth = 2; for (let i = 0; i < 9; i++) { g.beginPath(); const y = 8 + i * 13; g.moveTo(0, y); g.bezierCurveTo(w * 0.3, y + 4, w * 0.6, y - 4, w, y + 2); g.stroke(); }
+      g.fillStyle = '#7d5129'; g.fillRect(0, 0, w, 12); g.fillRect(0, h - 12, w, 12); g.fillRect(0, 0, 12, h); g.fillRect(w - 12, 0, 12, h);
+      g.fillStyle = '#f7ead2'; g.font = 'bold 22px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('NOT', w / 2, h / 2 - 12); g.fillText('IRON', w / 2, h / 2 + 12);
+    });
+    // chevron textures: canvas right = world +x, canvas down = world +z (top-down)
+    const chev = (dx, dz) => canvasTex(64, 64, (g, w, h) => {
+      g.fillStyle = '#30343e'; g.fillRect(0, 0, w, h);
+      g.translate(32, 32); g.rotate(Math.atan2(dz, dx)); g.translate(-32, -32);
+      g.strokeStyle = '#f2b84b'; g.lineWidth = 7; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(18, 12); g.lineTo(42, 32); g.lineTo(18, 52); g.stroke();
+    });
+    this.beltTexFor = (dx, dz) => { const t = chev(dx, dz); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
     this.resize();
     addEventListener('resize', () => this.resize());
     this.frameT = []; this.time = 0;
@@ -199,8 +218,9 @@ export class View {
     const th = THEMES[w.def.theme || 0]; this.theme = th;
     this.scene.background = col(th.bg);
     this.scene.fog = new THREE.Fog(th.bg, 45, 110);
-    this.hemi.color.set(w.def.theme === 5 ? 0xb8b0ff : 0xffffff); this.hemi.groundColor.set(th.side);
-    this.hemi.intensity = w.def.theme === 5 ? 0.9 : 1.25;
+    const dark = w.def.theme === 5 || w.def.theme === 11;
+    this.hemi.color.set(w.def.theme === 11 ? 0x9fb4ff : dark ? 0xb8b0ff : 0xffffff); this.hemi.groundColor.set(th.side);
+    this.hemi.intensity = dark ? 0.95 : 1.25;
     const gb = new GeoBuilder();
     const T = { f1: col(th.f1), f2: col(th.f2), side: col(th.side), wall: col(th.wall), shelf: col(th.shelf), iron1: col(0x4a4f5a), iron2: col(0x3d424c), ironSide: col(0x353943), lip: col(0xffffff).lerp(col(th.f1), 0.4), fan: col(0x51586a), pipe: col(th.pipe) };
     for (const s of w.solids) {
@@ -211,6 +231,8 @@ export class View {
       else if (s.style === 'backwall') gb.box(mn, mx, T.wall.clone().multiplyScalar(1.08), T.wall, { dark: 0.75 });
       else if (s.style === 'shelf') gb.box(mn, mx, T.shelf.clone().lerp(col(0xffffff), 0.25), T.shelf, { lip: T.lip });
       else if (s.style === 'fan') gb.box(mn, mx, T.fan, T.fan, {});
+      else if (s.style === 'conveyor') gb.box(mn, [mx[0], mx[1] - 0.02, mx[2]], col(0x2b2e36), col(0x3a3f4b), { lip: col(0xf2b84b) });
+      else if (s.style === 'switch') continue;
       else gb.box(mn, mx, T.side, T.side);
     }
     // background: soft pillars and stripes on the back wall
@@ -270,8 +292,35 @@ export class View {
       ring.position.set(p.x, p.top + 0.03, p.z);
       this.level.add(m, ring); this.dyn.push({ kind: 'plate', o: p, m });
     }
+    this.belts = [];
+    for (const s of w.solids) if (s.style === 'conveyor') {
+      const sx = s.max.x - s.min.x, sz = s.max.z - s.min.z, cv = s.conv;
+      const along = Math.abs(cv.vx) >= Math.abs(cv.vz);
+      const tex = this.beltTexFor(along ? Math.sign(cv.vx) : 0, along ? 0 : Math.sign(cv.vz));
+      const tex2 = this.beltTexFor(along ? -Math.sign(cv.vx) : 0, along ? 0 : -Math.sign(cv.vz));
+      tex.repeat.set(sx / 1.2, sz / 1.2); tex2.repeat.copy(tex.repeat);
+      const ang = 0;
+      const mat = new THREE.MeshLambertMaterial({ map: tex });
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(sx - 0.1, sz - 0.1), mat);
+      m.rotation.x = -Math.PI / 2; m.position.set((s.min.x + s.max.x) / 2, s.max.y + 0.005, (s.min.z + s.max.z) / 2);
+      this.level.add(m);
+      const lamp = cv.chs ? new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.12, 0.35), new THREE.MeshBasicMaterial({ color: CH_COLORS[cv.chs[0]] })) : null;
+      if (lamp) { lamp.position.set(s.min.x + 0.3, s.max.y + 0.06, s.min.z + 0.3); this.level.add(lamp); }
+      this.belts.push({ s, tex, tex2, mat, ang, speed: Math.hypot(cv.vx, cv.vz), along, lamp });
+    }
+    this.switchMeshes = w.switches.map(sw => {
+      const g = new THREE.Group(); g.position.set(sw.x, sw.top, sw.z);
+      const c = CH_COLORS[sw.ch] || 0x999999;
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.7), new THREE.MeshLambertMaterial({ color: 0x6b7385 })); post.position.y = 0.4; g.add(post);
+      const band = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.22, 0.74), new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.25 })); band.position.y = 0.6; g.add(band);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.07, 4, 20), new THREE.MeshBasicMaterial({ color: c })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.04; g.add(ring);
+      const bulbM = new THREE.MeshLambertMaterial({ color: 0x8a8f99, emissive: 0x000000 });
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 8), bulbM); bulb.position.y = 0.98; g.add(bulb);
+      const lever = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.55, 0.12), new THREE.MeshLambertMaterial({ color: 0xf2b84b })); lever.position.set(0.38, 0.65, 0); g.add(lever);
+      this.level.add(g); return { sw, bulbM, lever, c };
+    });
     this.crateMeshes = w.crates.map(c => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshLambertMaterial({ map: this.crateTex }));
+      const m = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), new THREE.MeshLambertMaterial({ map: c.wood ? this.woodTex : this.crateTex }));
       this.level.add(m);
       const sh = new THREE.Mesh(this.shadowGeo, this.shadowMat); sh.scale.setScalar(0.85); this.level.add(sh);
       return { c, m, sh };
@@ -360,7 +409,7 @@ export class View {
     this.pl = []; this.parts.count = 0;
   }
   clear() {
-    const kill = o => { o.traverse(c => { if (c.geometry && c.geometry !== this.shadowGeo) c.geometry.dispose(); if (c.material && c.material !== this.shadowMat) { const ms = [].concat(c.material); ms.forEach(m => { if (m.map && m.map !== this.crateTex) m.map.dispose(); m.dispose(); }); } }); };
+    const kill = o => { o.traverse(c => { if (c.geometry && c.geometry !== this.shadowGeo) c.geometry.dispose(); if (c.material && c.material !== this.shadowMat) { const ms = [].concat(c.material); ms.forEach(m => { if (m.map && m.map !== this.crateTex && m.map !== this.woodTex) m.map.dispose(); m.dispose(); }); } }); };
     for (const c of [...this.level.children]) { kill(c); this.level.remove(c); }
   }
 
@@ -453,6 +502,9 @@ export class View {
       lm.beamMat.opacity = l.on ? 0.85 + Math.sin(t * 50) * 0.1 : 0.35;
       lm.sheet.visible = l.on;
     }
+    // belts + switches
+    for (const b of this.belts) { const dir = b.s.conv.rev ? -1 : 1; const tx = b.s.conv.rev ? b.tex2 : b.tex; if (b.mat.map !== tx) { tx.offset.copy(b.mat.map.offset); b.mat.map = tx; b.mat.needsUpdate = true; } tx.offset.x -= dir * b.s.conv.vx * dt / 1.2; tx.offset.y += dir * b.s.conv.vz * dt / 1.2; if (b.lamp) b.lamp.material.color.set(b.s.conv.rev ? CH_COLORS[b.s.conv.chs[0]] : 0x333333); }
+    for (const sm of this.switchMeshes) { const on = sm.sw.on; sm.bulbM.color.set(on ? sm.c : 0x8a8f99); sm.bulbM.emissive.set(on ? sm.c : 0x000000); sm.bulbM.emissiveIntensity = on ? 0.7 : 0; sm.lever.rotation.z = on ? -0.6 : 0.6; }
     // fans
     for (const fm of this.fanMeshes) {
       const on = fm.f.on; fm.spin += dt * (on ? 18 : 1); fm.blades.rotation.y = fm.spin;

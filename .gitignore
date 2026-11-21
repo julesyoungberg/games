@@ -3,3 +3,4 @@ dist/
 public/
 .vercel/
 bolt-and-nut/app/game/
+bolt-and-nut/shots/

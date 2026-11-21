@@ -357,6 +357,203 @@ export const LEVELS = [
     },
     outro: 'Performance Review: Bolt and Nut. Teamwork: excellent. Magnetism: undeniable. Recommended action: give them a day off. Welcome to Attraction Industries.',
   },
+  /* ------------------------------------------------------------ 9 */
+  {
+    name: 'Shipping', sub: 'Shift 9. Conveyor belts. The floor has opinions now.', theme: 8,
+    intro: [
+      'Welcome back! After your Performance Review, Management has promoted you. To Shipping.',
+      'Shipping is where the floor moves. It moves things to where they need to go. Sometimes that is you.',
+    ],
+    build(L) {
+      L.start(2.5, -3, 2.5, -5.5);
+      L.floor(0, -8, 10, 0, 0); BW(L, 0, 10, 0);
+      L.conveyor(10, -8, 22, 0, 0, -2.2, 0); BW(L, 10, 22, 0);
+      L.crate(19, -4, 0);
+      L.floor(22, -8, 30, 0, 0); BW(L, 22, 30, 0);
+      L.plate(26, -6.3, 1, 0);
+      L.conveyor(30, -8, 42, 0, 0, -9, 0, [1]); BW(L, 30, 42, 0);
+      L.floor(42, -8, 48, 0, 0); BW(L, 42, 48, 0);
+      L.plate(45, -6.3, 2, 0);
+      L.conveyor(48, -8, 56, 0, 0, -9, 0, [2]); BW(L, 48, 56, 0);
+      L.floor(56, -8, 68, 0, 0); BW(L, 56, 68, 0);
+      L.exit(62, -6.5, 66, -1.5, 0);
+      L.checkpoint(22.5, -8, 30, 0, 23.5, -2.5, 23.5, -5);
+      L.checkpoint(42.5, -8, 48, 0, 43.5, -2.5, 43.5, -4.5);
+      L.checkpoint(56.5, -8, 68, 0, 57.5, -2.5, 57.5, -5);
+      L.zone('belt', 6, -8, 10, 0);
+      L.zone('fast', 22.2, -8, 30, 0);
+      L.zone('split', 42.2, -8, 48, 0);
+      L.zone('end', 58, -8, 68, 0);
+      L.deco(4, -11, 5.5, -9.5, 0, 8, 'pipe'); L.deco(60, -11, 61.5, -9.5, 0, 10, 'pipe');
+      L.sign(5, 1.6, -7.9, 'SHIPPING');
+      L.sign(36, 1.6, -7.9, '← FAST ←');
+    },
+    zones: {
+      belt: { say: ['A conveyor belt. It runs the wrong way, because of course it does. Walk against it. You are stronger than a belt.', 'Oh, and it is delivering a crate to you. Bolt, I would hang on to that. Hold X to carry it.'], hint: 'Walk across the belt. Bolt should carry the crate along (hold X).' },
+      fast: { say: ['This belt is much faster. Too fast to walk against. Belts with a coloured light run backwards while their plate is pressed.'], hint: 'Put the crate on the plate. The fast belt flips direction and carries you both across.' },
+      split: { say: ['One plate, one belt, two robots. Somebody stands on the plate. Somebody rides.', 'Things being pulled by a magnet do not touch the belt. I mention this for no reason at all.'], hint: 'Nut stands on the plate while Bolt rides across. Then Bolt pulls Nut over the belt (pulled things ignore belts).' },
+      end: { say: ['Shipped! Both of you. Signed for and everything.'] },
+    },
+    outro: 'Shift nine complete. Shipping says you arrived in excellent condition. Slightly dizzy. Excellent condition.',
+  },
+  /* ------------------------------------------------------------ 10 */
+  {
+    name: 'Switchboard', sub: 'Shift 10. Nut finds out what buttons are for.', theme: 9,
+    intro: [
+      'Shift ten. The Switchboard. These posts are switches. Nut, give one a push with X and it flips on. Push again, it flips off.',
+      'Switches stay how you leave them. So, unlike Management, they remember things.',
+    ],
+    build(L) {
+      L.start(2.5, -3, 2.5, -5.5);
+      L.floor(0, -8, 12, 0, 0); BW(L, 0, 12, 0);
+      L.button(9, -7, 1);
+      L.gate(12, -8, 13, 0, 0, 10, [1]);
+      L.floor(12, -8, 30, 0, 0); BW(L, 12, 30, 0);
+      L.laser(19.5, -8, 19.8, 0, 0, 6, [2]);
+      L.button(22.3, -7, 2);
+      L.button(27.5, -7, 3);
+      L.box(32, -8, 33, -7, -6, 0, 'shelf'); L.button(32.5, -7.5, 4);
+      L.bridge(30, -6.5, 35, -1.5, 0, [4], { invert: true });
+      L.floor(35, -8, 54, 0, 0); BW(L, 30, 54, 0);
+      L.gate(40, -8, 41, 0, 0, 10, [3, 4]);
+      L.button(45, -1.5, 5);
+      L.mover(48, -7, 51, -3.5, 0.02, [[0, 0, 0], [0, 6, 0]], 2.6, [5]);
+      L.floor(51, -8, 64, 0, 6); BW(L, 51, 64, 6);
+      L.box(48, -8, 51, -7, -6, 6, 'shelf');
+      L.exit(58, -6.5, 62, -1.5, 6);
+      L.checkpoint(13.5, -8, 19, 0, 14.5, -2.5, 14.5, -5);
+      L.checkpoint(20.5, -8, 29.5, 0, 21.5, -2.5, 21.5, -5);
+      L.checkpoint(41.5, -8, 47.5, 0, 42.5, -2.5, 42.5, -5);
+      L.checkpoint(51.5, -8, 64, 0, 52.5, -2.5, 52.5, -5);
+      L.zone('switch', 4, -8, 12, 0);
+      L.zone('reach', 13.5, -8, 19, 0);
+      L.zone('order', 24, -8, 30, 0);
+      L.zone('lift', 41.5, -8, 47.5, 0);
+      L.zone('end', 54, -8, 64, 0, 4, 50);
+      L.deco(3, -11, 4.5, -9.5, 0, 9, 'pipe'); L.deco(56, -11, 57.5, -9.5, 6, 15, 'pipe');
+      L.sign(6, 1.6, -7.9, 'SWITCHBOARD');
+    },
+    zones: {
+      switch: { say: ['There is your first switch. The gate has the same colour. Nut, walk up and push it.', 'Bolt, if you stand next to Nut while she pushes, you will go flying. That is not a warning. That is a feature.'], hint: 'Nut: walk next to the teal switch and press X.' },
+      reach: { say: ['A laser. And the switch for the laser is behind the laser. This is the kind of design that gets a person promoted here.', 'Nut, your push reaches a little way. Through things. Ask me how. I will not know.'], hint: 'Nut: stand close to the laser (not in it) and press X. The push reaches the orange switch on the other side.' },
+      order: { say: ['Two switches for the gate ahead. One of them also switches off that bridge. Hmm. Order of operations, robots.'], hint: 'Flip pink first. Cross the bridge. Then Nut flips green from the far side. Green turns the bridge off, but you are already over.' },
+      lift: { say: ['A lift, and a switch for it. Whoever rides it goes up. Whoever pushes the switch... does not.'], hint: 'Bolt stands on the lift. Nut flips the purple switch (from a little way off, or Bolt gets launched). Bolt then pulls Nut up past the lift, not under it.' },
+      end: { say: ['Very good. Every switch, flipped. I will be writing a strongly worded memo to whoever invented switches. It will say: "nice".'] },
+    },
+    outro: 'Shift ten complete. The Switchboard has been switched. All of it. Management is impressed and slightly frightened.',
+  },
+  /* ------------------------------------------------------------ 11 */
+  {
+    name: 'Lumber Room', sub: 'Shift 11. Wooden crates. Magnets are not interested.', theme: 10,
+    intro: [
+      'Shift eleven. The Lumber Room. These crates are made of wood. Bolt cannot pull them. Nut cannot push them.',
+      'You will have to move them the old-fashioned way. By walking into them. Like animals.',
+    ],
+    build(L) {
+      L.start(2.5, -3, 2.5, -5.5);
+      L.floor(0, -8, 16, 0, 0); BW(L, 0, 16, 0);
+      L.crate(6, -6, 0, { wood: true });
+      L.plate(11, -6.2, 1, 0);
+      L.gate(14, -8, 15, 0, 0, 10, [1]);
+      L.floor(15, -8, 30, 0, 0); BW(L, 15, 30, 0);
+      L.crate(21, -4, 0, { wood: true });
+      L.floor(30, -8, 44, 0, 4.5); BW(L, 30, 44, 4.5);
+      L.crate(34, -6.3, 4.5, { wood: true });
+      L.crate(33, -2.5, 4.5);
+      L.plate(40, -6.3, 2, 4.5); L.plate(42, -1.8, 3, 4.5);
+      L.bridge(44, -6, 52, -2, 4.5, [2, 3]);
+      L.floor(52, -8, 64, 0, 4.5); BW(L, 44, 64, 4.5);
+      L.plate(56, -6.3, 4, 4.5);
+      L.gate(60, -8, 61, 0, 4.5, 15, [4]);
+      L.conveyor(64, -8, 74, 0, 4.5, -3, 0); BW(L, 64, 74, 4.5);
+      L.crate(71, -4, 4.5, { wood: true });
+      L.floor(74, -8, 96, 0, 4.5); BW(L, 74, 96, 4.5);
+      L.plate(78, -6.2, 5, 4.5);
+      L.gate(82, -8, 83, 0, 4.5, 15, [5]);
+      L.exit(89, -6.5, 93, -1.5, 4.5);
+      L.checkpoint(15.5, -8, 29, 0, 16.5, -2.5, 16.5, -5);
+      L.checkpoint(30.5, -8, 44, 0, 31.5, -1.5, 31.5, -4.5);
+      L.checkpoint(52.5, -8, 59.5, 0, 53.5, -2.5, 53.5, -5);
+      L.checkpoint(61.5, -8, 63.5, 0, 62, -2.5, 62, -5);
+      L.checkpoint(83.5, -8, 96, 0, 84.5, -2.5, 84.5, -5);
+      L.zone('wood', 2, -8, 8, 0);
+      L.zone('high', 18, -8, 30, 0);
+      L.zone('both', 30.5, -8, 44, 0, 3, 50);
+      L.zone('belt', 61.5, -8, 64, 0, 3, 50);
+      L.zone('end', 84, -8, 96, 0, 3, 50);
+      L.deco(26, -11, 27.5, -9.5, 0, 10, 'pipe'); L.deco(86, -11, 87.5, -9.5, 4.5, 14, 'pipe');
+      L.sign(9, 1.6, -7.9, 'LUMBER');
+    },
+    zones: {
+      wood: { say: ['A wooden crate. Bolt, go on, try to pull it. I will wait.', 'Nothing. Wood. Not magnetic. Walk into it to shove it. Gently. It is older than both of you.'], hint: 'Walk into the wooden crate to shove it onto the plate.' },
+      high: { say: ['That ledge is taller than a launch. Unless, of course, you launch from something taller than the floor. Like a crate. Hint, hint. That was the hint.'], hint: 'Shove the crate against the ledge. Bolt stands on the crate. Nut stands behind it and launches him. Then Bolt pulls Nut up.' },
+      both: { say: ['This bridge needs both plates pressed. You have two crates. One is wood, and it stays where you put it. The other is iron, and it can follow you.'], hint: 'Wood crate on one plate, iron crate on the other. Cross. Then Bolt pulls the iron crate over the gap to the plate by the gate.' },
+      belt: { say: ['The belt is bringing you a crate. It is also taking it away again. Shove it the other way. Belts respect persistence.'], hint: 'Shove the wooden crate against the belt, all the way to the plate by the gate.' },
+      end: { say: ['The Lumber Room is tidy. Every crate exactly where it should be. I could cry. I will not. Facilitators do not have the hardware.'] },
+    },
+    outro: 'Shift eleven complete. You have moved wood with your bodies. Your ancestors, the forklifts, would be proud.',
+  },
+  /* ------------------------------------------------------------ 12 */
+  {
+    name: 'Night Shift', sub: 'Shift 12. Everything, but after hours.', theme: 11,
+    intro: [
+      'Shift twelve. The Night Shift. Everyone else has gone home. The lights are low. The machines are still on.',
+      'It is just you two, me, and every single thing you have learned so far. Cosy.',
+    ],
+    build(L) {
+      L.start(2.5, -3, 2.5, -5.5);
+      L.floor(0, -8, 6, 0, 0); BW(L, 0, 6, 0);
+      L.conveyor(6, -8, 16, 0, 0, 3, 0); BW(L, 6, 16, 0);
+      L.laser(12.5, -8, 12.8, 0, 0, 6, null, [1.4, 1.8, 0]);
+      L.floor(16, -8, 21, 0, 0);
+      L.button(18, -7, 1);
+      L.fan(21, -6, 24, -2, 0, 8.5, [1]);
+      L.floor(21, -8, 24, -6, 0); L.floor(21, -2, 24, 0, 0); BW(L, 16, 24, 0);
+      L.floor(24, -8, 40, 0, 7); BW(L, 24, 40, 7);
+      L.laser(31.5, -8, 31.8, 0, 7, 13, [2]);
+      L.button(34.1, -7, 2, 7);
+      L.anchor(43.5, 11, -4); L.anchor(50, 11, -4);
+      L.floor(49, -8, 52, 0, 7); L.floor(56, -8, 64, 0, 7); BW(L, 49, 64, 7);
+      L.conveyor(52, -8, 56, 0, 7, 0, 2.5);
+      L.crate(54, -7.3, 7);
+      L.plate(59.5, -6.3, 3, 7);
+      L.gate(62, -8, 63, 0, 7, 17, [3]);
+      L.button(65.5, -7, 4, 7);
+      L.floor(64, -8, 67, 0, 7);
+      L.conveyor(67, -8, 79, 0, 7, -8, 0, [4]); BW(L, 64, 79, 7);
+      L.crate(65.8, -3, 7, { wood: true });
+      L.floor(79, -8, 98, 0, 7); BW(L, 79, 98, 7);
+      L.plate(81.5, -6.2, 5, 7);
+      L.gate(86, -8, 87, 0, 7, 17, [5]);
+      L.exit(92, -6.5, 96, -1.5, 7);
+      L.checkpoint(16.5, -8, 21, 0, 17, -2.5, 17, -5);
+      L.checkpoint(24.5, -8, 31, 0, 25.5, -2.5, 25.5, -5);
+      L.checkpoint(32.5, -8, 40, 0, 33.5, -2.5, 33.5, -5);
+      L.checkpoint(49.5, -8, 52, 0, 50.5, -2.5, 50.5, -5);
+      L.checkpoint(63.5, -8, 67, 0, 64.2, -2.5, 64.2, -4.5);
+      L.checkpoint(79.5, -8, 86, 0, 80.5, -2, 80.5, -3.5);
+      L.checkpoint(87.5, -8, 98, 0, 88.5, -2.5, 88.5, -5);
+      L.zone('belt', 4, -8, 7, 0);
+      L.zone('fan', 16.5, -8, 21, 0);
+      L.zone('ledge', 24.5, -8, 31, 0, 5, 50);
+      L.zone('swing', 36, -8, 40, 0, 5, 50);
+      L.zone('catch', 49.5, -8, 52, 0, 5, 50);
+      L.zone('last', 63.5, -8, 67, 0, 5, 50);
+      L.zone('end', 88, -8, 98, 0, 5, 50);
+      L.deco(2, -11, 3.5, -9.5, 0, 9, 'pipe'); L.deco(90, -11, 91.5, -9.5, 7, 16, 'pipe');
+      L.sign(3, 1.6, -7.9, 'NIGHT SHIFT');
+    },
+    zones: {
+      belt: { say: ['This belt wants to deliver you into a laser. Walk against it while the laser is on. Walk with it while it is off. Dancing, basically.'], hint: 'Hold back against the belt while the laser is on, then go when it blinks off.' },
+      fan: { say: ['A fan, and it is switched off. Nut, you know what to do. I believe in you. Quietly. It is night.'], hint: 'Nut flips the teal switch. The fan blows you both up onto the high ledge.' },
+      ledge: { say: ['A laser and its switch, on the wrong side again. Some people never learn. I mean Management.'], hint: 'Nut: stand right by the laser and press X to flip the orange switch behind it.' },
+      swing: { say: ['The anchors. Bolt, swing across. Nut, prepare for your traditional reeling-in.'], hint: 'Bolt grabs the near ring, then the far ring, drops onto the floor, and pulls Nut across.' },
+      catch: { say: ['This belt runs off the edge of the factory. And it is carrying a crate. Bolt, catch!'], hint: 'Bolt grabs the crate off the belt (hold X) and carries it to the pink plate.' },
+      last: { say: ['Last one. A belt, a switch, a wooden crate, and a plate far away. Put it all together. That is what the night shift does.'], hint: 'Nut flips the green switch so the belt carries everything forward. Ride it with the wooden crate, then shove the crate onto the plate.' },
+      end: { say: ['That is the Night Shift done. Go home, robots. You are allowed to go home now. You live here. Go to bed, then.'] },
+    },
+    outro: 'Shift twelve complete. The factory is quiet. The belts are still. Management says: same time tomorrow.',
+  },
 ];
 
 // Lines for things that can happen anywhere.
@@ -378,6 +575,7 @@ export const LINES = {
   pullFirst: 'There it is. The pull. Feel the attraction. Not like that. Well, a little like that.',
   hangFirst: 'Hanging from an anchor. Very elegant, Bolt. Let go of X to drop.',
   rocketFirst: 'Nut shoved the floor, and the floor shoved back. Science.',
+  switchFirst: 'Click! Switches stay where you leave them. Unlike plates, which are needy.',
   crateLost: 'The crate fell out of the factory. A new crate has been issued. It is the same crate. Do not think about it.',
   exitOne: ['The exit needs both of you. That is sort of the whole point of the company. And the game.', 'One of you is at the exit. The other is... elsewhere. Reflecting on their choices.'],
   idle: [

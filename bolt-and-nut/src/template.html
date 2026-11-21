@@ -23,7 +23,7 @@ canvas#c { position:fixed; inset:0; width:100vw; height:100vh; display:block; im
 #menu.on:has(.box.title) { background:transparent; }
 #menu h2 { margin:0 0 6px; font-size:30px; font-weight:900; }
 #menu .sub { margin:0 0 14px; font-size:18px; opacity:.8; max-width:620px; line-height:1.35; }
-#menu ul { list-style:none; margin:0; padding:0; }
+#menu ul { list-style:none; margin:0; padding:0; max-height:66vh; overflow-y:auto; scrollbar-width:none; }
 #menu li { position:relative; font-size:22px; font-weight:800; padding:9px 14px 9px 34px; border-radius:12px; display:flex; justify-content:space-between; gap:24px; }
 #menu li.sel { background:var(--ink); color:var(--cream); }
 #menu li.sel::before { content:"▸"; position:absolute; left:13px; }
@@ -75,7 +75,7 @@ canvas#c { position:fixed; inset:0; width:100vw; height:100vh; display:block; im
   <div id="banner"><div class="n" id="bannerN"></div><div class="t" id="bannerT"></div><div class="s" id="bannerS"></div></div>
   <div id="ctrls"><div id="ctrlB"></div><div id="ctrlN"></div><div id="ctrlM"></div></div>
 </div>
-<div id="credits" class="screen"><div class="box"><h2>Orientation complete</h2><p>Bolt &amp; Nut: employees of the month. Every month. There are two employees.</p><p style="font-size:18px">Press A to return to the title</p></div></div>
+<div id="credits" class="screen"><div class="box"><h2>All shifts complete</h2><p>Bolt &amp; Nut: employees of the month. Every month. There are two employees.</p><p style="font-size:18px">More shifts are on the way. Management is building them right now. Badly.</p><p style="font-size:18px">Press A to return to the title</p></div></div>
 <div id="narr"><div class="who">Margaret · Orientation Facilitator</div><div id="narrTxt"></div><div id="narrMore"></div><div id="narrNext"><span class="y">Y</span> ▸</div></div>
 <div id="menu"></div>
 <div id="toast"></div>

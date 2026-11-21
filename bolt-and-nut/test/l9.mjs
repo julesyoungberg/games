@@ -1,0 +1,13 @@
+import { Bot } from './bot.mjs';
+const t = new Bot(8); const c = t.w.crates;
+t.idle(4); console.log('crate arrived', t.pos(c[0]));
+t.go(0, c[0].pos.x - 1.8, c[0].pos.z); t.grab(1, 0, 0.6); console.log('grab', !!c[0].pulledBy);
+t.carry(c[0], 26, -6.3, 0, -1); t.both(24, -2.5, 23.5, -4.5);
+console.log('ch1', t.w.channels[1], t.pos(c[0]), t.st());
+t.run(3, b => b.steer(b.b, 44, -3), b => b.steer(b.n, 43.5, -4.5)); t.both(44, -3, 43.5, -4.5);
+console.log('across B', t.st());
+t.go(1, 45, -6.3); t.go(0, 47.5, -4, 4, 0.25, {}); t.run(2.5, b => b.b.pos.x < 57.5 ? { mx: 1 } : {});
+console.log('bolt rode', t.st());
+t.go(0, 57.5, -5); t.go(1, 47.9, -5); t.pullNut(60, -4); console.log('pulled', t.st());
+t.both(63, -3, 64, -5); t.idle(1.5);
+console.log(t.st(), 'complete', t.w.complete, t.log);

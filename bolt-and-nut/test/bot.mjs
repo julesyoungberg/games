@@ -71,7 +71,7 @@ Bot.prototype.pullNut = function (tx, tz, sec = 4) {
 };
 Bot.prototype.grab = function (fx, fz, sec = 2) { this.tick({ mx: fx * 0.3, mz: fz * 0.3 }, {}); this.run(sec, () => ({ power: true })); };
 Bot.prototype.carry = function (crate, px, pz, fx, fz) {
-  for (let i = 0; i < 400; i++) { if (Math.hypot(crate.pos.x - px, crate.pos.z - pz) < 0.3) break; this.tick({ power: true, ...this.steer(this.b, px - fx * 1.7, pz - fz * 1.7) }, {}); if (Math.hypot(this.b.pos.x - (px - fx * 1.7), this.b.pos.z - (pz - fz * 1.7)) < 0.2) this.tick({ power: true, mx: fx * 0.3, mz: fz * 0.3 }, {}); }
+  for (let i = 0; i < 900; i++) { if (Math.hypot(crate.pos.x - px, crate.pos.z - pz) < 0.3) break; this.tick({ power: true, ...this.steer(this.b, px - fx * 1.7, pz - fz * 1.7) }, {}); if (Math.hypot(this.b.pos.x - (px - fx * 1.7), this.b.pos.z - (pz - fz * 1.7)) < 0.2) this.tick({ power: true, mx: fx * 0.3, mz: fz * 0.3 }, {}); }
   this.idle(0.8);
 };
 Bot.prototype.waitFor = function (cond, sec = 20, a = {}, b = {}) { for (let i = 0; i < sec * 60; i++) { if (cond(this)) return true; this.tick(typeof a === 'function' ? a(this) : a, typeof b === 'function' ? b(this) : b); } return false; };

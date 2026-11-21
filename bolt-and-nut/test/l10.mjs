@@ -1,0 +1,14 @@
+import { Bot } from './bot.mjs';
+const t = new Bot(9); const sw = t.w.switches;
+const press = () => { t.tick({}, { power: true }); t.idle(0.3); };
+t.go(1, 8, -6); press(); console.log('sw1', sw[0].on, t.w.gates[0].open);
+t.idle(1); t.both(18, -3, 18.9, -6.8); press(); console.log('sw2', sw[1].on, t.w.lasers[0].on);
+t.both(25, -2, 26.5, -6); press(); console.log('sw3', sw[2].on, 'sw4', sw[3].on);
+t.both(36, -3, 36, -5); console.log('across', t.st());
+t.go(1, 35.6, -6.8); press(); console.log('sw4', sw[3].on, 'gate', t.w.gates[1].open, 'bridge', t.w.bridges[0].on);
+t.idle(1); t.both(43, -3, 43, -5);
+t.go(0, 49.5, -5.5); t.go(1, 45, -0.6); press(); console.log('sw5', sw[4].on);
+t.idle(3.5); console.log('lift', t.st(), t.w.movers[0].off);
+t.go(0, 53.5, -2); t.go(1, 46.5, -1.5); t.go(0, 53, -1.8); t.pullNut(55, -3); console.log('pulled', t.st());
+t.both(59, -3, 60.5, -5); t.idle(1.5);
+console.log(t.st(), 'complete', t.w.complete, t.log);

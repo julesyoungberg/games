@@ -45,13 +45,17 @@ function makeBuilder(w) {
       m.total = m.len[m.len.length - 1]; m.s = 0;
       w.solids.push(m); w.movers.push(m); return m;
     },
-    crate(x, z, top = 0) { const c = makeBody('crate', x, top + 0.6, z, 0.6, 0.6, 0.6); c.home = { x, y: top + 0.6, z }; w.crates.push(c); w.bodies.push(c); return c; },
+    crate(x, z, top = 0, opt = {}) { const c = makeBody('crate', x, top + 0.6, z, 0.6, 0.6, 0.6); c.wood = !!opt.wood; c.home = { x, y: top + 0.6, z }; w.crates.push(c); w.bodies.push(c); return c; },
     anchor(x, y, z) { w.anchors.push({ x, y, z, kind: 'anchor' }); },
     laser(x0, z0, x1, z1, y0, y1, chs = null, timer = null, any = false) { w.lasers.push({ any, min: { x: Math.min(x0, x1), y: y0, z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), y: y1, z: Math.max(z0, z1) }, chs: chs ? [].concat(chs) : null, timer, on: true }); },
     fan(x0, z0, x1, z1, base, height, chs = null) { w.fans.push({ min: { x: Math.min(x0, x1), y: base, z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), y: base + height, z: Math.max(z0, z1) }, chs: chs ? [].concat(chs) : null, on: true }); L.box(x0, z0, x1, z1, base - 6, base, 'fan'); },
     checkpoint(x0, z0, x1, z1, bx, bz, nx, nz) { w.checkpoints.push({ min: { x: Math.min(x0, x1), z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), z: Math.max(z0, z1) }, b: { x: bx, z: bz }, n: { x: nx, z: nz }, hit: false }); },
     exit(x0, z0, x1, z1, top = 0) { w.exit = { min: { x: Math.min(x0, x1), y: top - 1, z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), y: top + 4, z: Math.max(z0, z1) }, top }; },
     zone(id, x0, z0, x1, z1, y0 = -50, y1 = 50) { w.zones.push({ id, min: { x: Math.min(x0, x1), y: y0, z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), y: y1, z: Math.max(z0, z1) }, hit: false }); },
+    // conveyor belt: floor that carries whatever stands on it at (vx, vz) m/s; reverses while chs are active
+    conveyor(x0, z0, x1, z1, top, vx, vz, chs = null) { return L.box(x0, z0, x1, z1, top - 6, top + 0.01, 'conveyor', { conv: { vx, vz, chs: chs ? [].concat(chs) : null, rev: false } }); },
+    // push switch: Nut's push flips it on/off; it holds its channel while on
+    button(x, z, ch, top = 0) { const b = { x, z, top, ch, on: false }; w.switches.push(b); L.box(x - 0.35, z - 0.35, x + 0.35, z + 0.35, top, top + 1.1, 'switch', { sw: b }); return b; },
     sign(x, y, z, text, ry = 0) { w.signs.push({ x, y, z, text, ry }); },
   };
   return L;
@@ -73,7 +77,7 @@ export function groundAt(w, x, z, fromY = 100, ignore = null) {
 export function createWorld(index) {
   const def = LEVELS[index];
   const w = {
-    index, def, t: 0, solids: [], gates: [], bridges: [], movers: [], plates: [], lasers: [], fans: [], anchors: [], crates: [], bodies: [], decos: [], zones: [], checkpoints: [], signs: [],
+    index, def, t: 0, solids: [], gates: [], bridges: [], movers: [], plates: [], lasers: [], fans: [], anchors: [], crates: [], switches: [], bodies: [], decos: [], zones: [], checkpoints: [], signs: [],
     channels: {}, events: [], exit: null, exitT: 0, complete: false, spawn: null, stats: { falls: [0, 0], zaps: [0, 0], pulls: 0, pushes: 0, launches: 0 },
   };
   def.build(makeBuilder(w));
@@ -111,9 +115,10 @@ function moveAxis(w, b, ax, d, depth = 0) {
   b.pos[ax] += d;
   for (const s of w.solids) {
     if (!solidActive(s) || !overlap(b, s.min, s.max)) continue;
-    if (ax !== 'y' && b.kind === 'player' && (b.grounded || b.coyote > 0) && s.max.y - (b.pos.y - b.half.y) <= C.stepUp && !b.target) {
+    const rise = s.max.y - (b.pos.y - b.half.y);
+    if (ax !== 'y' && ((b.kind === 'player' && (b.grounded || b.coyote > 0) && rise <= (b.target ? 0.12 : C.stepUp)) || (b.kind === 'crate' && b.grounded && rise <= 0.12))) {
       const oy = b.pos.y; b.pos.y = s.max.y + b.half.y + EPS;
-      if (!anyOverlap(w, b)) continue;
+      if (!anyOverlap(w, b, b.kind === 'player')) continue;
       b.pos.y = oy;
     }
     resolve(b, ax, d, s.min, s.max, s);
@@ -135,9 +140,9 @@ function moveAxis(w, b, ax, d, depth = 0) {
   }
   return b.pos[ax] - start;
 }
-function anyOverlap(w, b) {
+function anyOverlap(w, b, skipCrates = false) {
   for (const s of w.solids) if (solidActive(s) && overlap(b, s.min, s.max)) return true;
-  for (const o of w.bodies) if (o !== b && o.alive && b.pulledBy !== o && o.pulledBy !== b && overlap(b, bmin(o), bmax(o))) return true;
+  for (const o of w.bodies) if (o !== b && o.alive && b.pulledBy !== o && o.pulledBy !== b && !(skipCrates && o.kind === 'crate') && overlap(b, bmin(o), bmax(o))) return true;
   return false;
 }
 function resolve(b, ax, d, mn, mx, ref) {
@@ -252,7 +257,7 @@ export function pickTarget(w, bolt) {
     cands.push({ obj, kind, score: d * (2 - 1.5 * dot) * (kind === 'nut' ? 0.8 : 1) * (kind === 'anchor' && bolt.grounded && hd < 2.2 ? 2.5 : 1) });
   };
   if (nut.alive) add(nut, nut.pos.x, nut.pos.y, nut.pos.z, 'nut');
-  for (const c of w.crates) if (c.alive) add(c, c.pos.x, c.pos.y, c.pos.z, 'crate');
+  for (const c of w.crates) if (c.alive && !c.wood) add(c, c.pos.x, c.pos.y, c.pos.z, 'crate');
   for (const a of w.anchors) if (!(bolt.target && bolt.target.obj === a) && !(bolt.lastAnchor === a && bolt.lastAnchorT > 0)) add(a, a.x, a.y, a.z, 'anchor');
   cands.sort((a, b) => a.score - b.score);
   return cands[0] || null;
@@ -309,7 +314,8 @@ function updatePlayer(w, p, inp, dt) {
       return true;
     };
     if (grounded && other.alive && push(other, C.launchV, C.launchH)) { other.launched = true; other.coyote = 0; hit = true; w.stats.launches++; emit(w, 'launch', { who: other.id }); }
-    for (const c of w.crates) if (c.alive && push(c, C.crateLaunchV, C.crateLaunchH)) { hit = true; emit(w, 'crate-launch'); }
+    for (const c of w.crates) if (c.alive && !c.wood && push(c, C.crateLaunchV, C.crateLaunchH)) { hit = true; emit(w, 'crate-launch'); }
+    for (const sw of w.switches) if (Math.hypot(sw.x - p.pos.x, sw.top + 0.6 - p.pos.y, sw.z - p.pos.z) < C.pushR + 0.4) { sw.on = !sw.on; hit = true; emit(w, 'switch', { on: sw.on, ch: sw.ch }); }
     emit(w, 'push', { x: p.pos.x, y: p.pos.y, z: p.pos.z, hit });
   }
   // --- movement
@@ -384,6 +390,20 @@ export function step(w, inputs, dt = 1 / 60) {
       if (b.grounded && !wasGrounded) { b.launched = false; if (vyBefore < -8) emit(w, 'land', { who: b.id, v: -vyBefore }); }
     }
   }
+  // conveyor belts
+  if (!w.belts) w.belts = w.solids.filter(s => s.conv).map(s => s.conv);
+  for (const g of w.belts) g.rev = g.chs ? chActive(w, g.chs, true) : false;
+  for (const b of w.bodies) {
+    const g = b.alive && b.grounded && b.ground && b.ground.conv;
+    if (!g || b.pulledBy) {
+      // a crate coming off a belt keeps some of its speed, so belts can deliver crates onto floors
+      if (b.beltV && b.kind === 'crate' && !b.pulledBy) { b.vel.x = b.beltV.x; b.vel.z = b.beltV.z; }
+      b.beltV = null; continue;
+    }
+    const k = (g.rev ? -1 : 1);
+    moveAxis(w, b, 'x', g.vx * k * dt); moveAxis(w, b, 'z', g.vz * k * dt);
+    b.beltV = { x: g.vx * k, z: g.vz * k };
+  }
   // riders on bodies (standing on partner / on a crate being carried)
   for (const b of w.bodies) {
     if (!b.alive || !b.ground || !b.ground.pos) continue;
@@ -405,6 +425,7 @@ export function step(w, inputs, dt = 1 / 60) {
     pl.pressed = pressed;
     if (pressed) ch[pl.ch] = true;
   }
+  for (const sw of w.switches) if (sw.on) ch[sw.ch] = true;
   w.channels = ch;
   // lasers
   for (const l of w.lasers) {

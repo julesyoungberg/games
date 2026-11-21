@@ -14,6 +14,8 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } },
 };
 const save = store.get('bn-save', { unlocked: 0, done: [] });
+// new shifts get added over time: anything after a finished shift is unlocked
+if (save.done && save.done.length) save.unlocked = Math.max(save.unlocked, Math.min(LEVELS.length - 1, Math.max(...save.done) + 1));
 const opts = Object.assign({ master: 8, music: 5, sfx: 8, narrAuto: false, quality: 'auto' }, store.get('bn-opts', {}));
 const saveOpts = () => { store.set('bn-opts', opts); setVolumes({ master: opts.master / 10, music: opts.music / 10, sfx: opts.sfx / 10 }); };
 
@@ -78,6 +80,7 @@ function renderMenu() {
   const items = menu.items.filter(i => !i.hidden);
   menu.sel = Math.max(0, Math.min(items.length - 1, menu.sel));
   menuEl.innerHTML = `<div class="box ${menu.cls || ''}">${menu.title ? `<h2>${menu.title}</h2>` : ''}${menu.sub ? `<p class="sub">${menu.sub}</p>` : ''}<ul>${items.map((it, i) => `<li class="${i === menu.sel ? 'sel' : ''} ${it.dim ? 'dim' : ''}">${it.label}${it.get ? `<span class="val">◂ ${it.get()} ▸</span>` : ''}</li>`).join('')}</ul>${menu.foot ? `<p class="foot">${menu.foot}</p>` : ''}</div>`;
+  const selEl = menuEl.querySelector('li.sel'); if (selEl) selEl.scrollIntoView({ block: 'nearest' });
 }
 function menuInput(m) {
   if (!menu) return;
@@ -181,7 +184,7 @@ function startLevel(i) {
   levelIdx = i; world = createWorld(i); view.build(world); closeMenu();
   mode = 'play'; setScreen('hud'); narr.clear(); hint = null; firsts = {}; lineCd = {}; completeT = -1; accumulator = 0;
   lastProgress = performance.now(); idleSaid = 0; hudT = 0;
-  setMood(i === 5 ? 1 : 0);
+  setMood(LEVELS[i].theme === 5 || LEVELS[i].theme === 11 ? 1 : 0);
   const L = LEVELS[i];
   $('bannerN').textContent = `Shift ${i + 1}`; $('bannerT').textContent = L.name; $('bannerS').textContent = L.sub;
   $('banner').classList.remove('on'); void $('banner').offsetWidth; $('banner').classList.add('on');
@@ -235,6 +238,7 @@ function handleEvents(evts) {
       case 'respawn': SFX.respawn(); { const p = world.players[e.who]; view.burst(p.pos.x, p.pos.y, p.pos.z, e.who ? 0x3d8bfd : 0xe5484d, 14, 3, 3, 0.6); } break;
       case 'plate': SFX.plate(e.on); if (e.on) lastProgress = performance.now(); break;
       case 'gate': SFX.gate(e.open); break;
+      case 'switch': SFX.toggle(e.on); lastProgress = performance.now(); if (!firsts.sw) { firsts.sw = 1; narr.sayIfQuiet(LINES.switchFirst); } break;
       case 'bridge': SFX.bridge(e.on); break;
       case 'checkpoint': SFX.checkpoint(); lastProgress = performance.now(); break;
       case 'crate-lost': if (!firsts.crate) { firsts.crate = 1; narr.sayIfQuiet(LINES.crateLost); } break;
