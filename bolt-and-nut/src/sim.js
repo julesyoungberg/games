@@ -52,6 +52,10 @@ function makeBuilder(w) {
       if (opt.path) { a.home = { x, y, z }; a.path = opt.path; a.speed = opt.speed || 2; a.s = 0; a.dir = 1; a.wait = 0; a.len = [0]; for (let i = 1; i < opt.path.length; i++) { const p0 = opt.path[i - 1], p1 = opt.path[i]; a.len.push(a.len[i - 1] + Math.hypot(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2])); } a.total = a.len[a.len.length - 1]; }
       w.anchors.push(a); return a;
     },
+    // oily floor: slippery, robots and crates keep sliding
+    oil(x0, z0, x1, z1, top = 0) { return L.box(x0, z0, x1, z1, top - 6, top, 'oil', { oil: true }); },
+    // magnet plate on a wall: Bolt grapples it like a ring and clings to the wall in front of it. face = [nx, nz] points out of the wall.
+    magnet(x, y, z, face = [0, 1]) { w.anchors.push({ x, y, z, kind: 'anchor', wall: true, face, ox: face[0] * 0.55, oz: face[1] * 0.55 }); },
     // pneumatic tube between two floor hatches: step in at one end, pop out of the other. opt.outA / opt.outB: [dx, dz] exit direction.
     tube(ax, az, atop, bx, bz, btop, opt = {}) { const d = Math.sign(bx - ax) || 1; w.tubes.push({ a: { x: ax, z: az, top: atop, out: opt.outA || [-d, 0] }, b: { x: bx, z: bz, top: btop, out: opt.outB || [d, 0] }, t: -9 }); },
     laser(x0, z0, x1, z1, y0, y1, chs = null, timer = null, any = false) { w.lasers.push({ any, min: { x: Math.min(x0, x1), y: y0, z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), y: y1, z: Math.max(z0, z1) }, chs: chs ? [].concat(chs) : null, timer, on: true }); },
@@ -141,6 +145,7 @@ function moveAxis(w, b, ax, d, depth = 0) {
       // shove the crate by the overlap
       const pen = d > 0 ? (b.pos[ax] + b.half[ax]) - (o.pos[ax] - o.half[ax]) : (b.pos[ax] - b.half[ax]) - (o.pos[ax] + o.half[ax]);
       moveAxis(w, o, ax, pen, depth + 1);
+      if (o.grounded && o.ground && o.ground.oil && b.vel) o.vel[ax] = b.vel[ax];
       if (!overlap(b, bmin(o), bmax(o))) continue;
     }
     if (ax === 'y' && d > 0 && o.ground === b && depth < 3) {
@@ -359,7 +364,7 @@ function updatePlayer(w, p, inp, dt) {
   if (p.pulledBy) { p.coyote = 0; return; } // handled by puller
   if (p.id === 0 && p.target && p.target.kind === 'anchor') {
     const a = p.target.obj;
-    const tx = a.x, ty = a.y - 1.0, tz = a.z;
+    const tx = a.x + (a.ox || 0), ty = a.y - (a.wall ? 0.5 : 1.0), tz = a.z + (a.oz || 0);
     const dx = tx - p.pos.x, dy = ty - p.pos.y, dz = tz - p.pos.z, d = Math.hypot(dx, dy, dz);
     if (d < 0.25) { p.vel.x = dx / dt; p.vel.y = dy / dt; p.vel.z = dz / dt; if (!p.hang) emit(w, 'hang'); p.hang = true; }
     else { const s = Math.min(C.grappleSpeed, d / dt) / d; p.vel.x = dx * s; p.vel.y = dy * s; p.vel.z = dz * s; }
@@ -368,7 +373,7 @@ function updatePlayer(w, p, inp, dt) {
   }
   const speed = C.run * (p.id === 0 && p.target ? 0.7 : 1);
   const tvx = mx * speed / Math.max(1, mag), tvz = mz * speed / Math.max(1, mag);
-  const acc = (p.grounded ? C.accelG : C.accelA) * dt;
+  const acc = (p.grounded ? (p.ground && p.ground.oil ? 7 : C.accelG) : C.accelA) * dt;
   const approach = (v, t) => v < t ? Math.min(t, v + acc) : Math.max(t, v - acc);
   if (p.launched && !p.grounded) {
     // keep launch momentum but allow steering
@@ -415,7 +420,7 @@ export function step(w, inputs, dt = 1 / 60) {
     } else {
       b.vel.y -= C.g * dt;
       if (b.vel.y < -30) b.vel.y = -30;
-      if (b.kind === 'crate' && b.grounded) { const f = Math.max(0, 1 - dt * 10); b.vel.x *= f; b.vel.z *= f; }
+      if (b.kind === 'crate' && b.grounded) { const f = Math.max(0, 1 - dt * (b.ground && b.ground.oil ? 0.6 : 10)); b.vel.x *= f; b.vel.z *= f; }
     }
     // fans
     for (const f of w.fans) if (f.on && b.pos.x > f.min.x && b.pos.x < f.max.x && b.pos.z > f.min.z && b.pos.z < f.max.z && b.pos.y - b.half.y < f.max.y && b.pos.y - b.half.y >= f.min.y - 0.05 && !b.pulledBy) {

@@ -233,6 +233,7 @@ export class View {
       else if (s.style === 'fan') gb.box(mn, mx, T.fan, T.fan, {});
       else if (s.style === 'conveyor') gb.box(mn, [mx[0], mx[1] - 0.02, mx[2]], col(0x2b2e36), col(0x3a3f4b), { lip: col(0xf2b84b) });
       else if (s.style === 'switch') continue;
+      else if (s.style === 'oil') gb.box(mn, mx, col(0x2e2a3a), T.side, { tiles: [col(0x2e2a3a), col(0x39334a)], lip: col(0x7a6cff) });
       else if (s.style === 'spring') gb.box(mn, [mx[0], mx[1] - 0.3, mx[2]], col(0x3a3f4b), col(0x3a3f4b), {});
       else gb.box(mn, mx, T.side, T.side);
     }
@@ -368,6 +369,13 @@ export class View {
       g.add(ring);
       const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 8, 4), new THREE.MeshLambertMaterial({ color: 0x6b7280 })); chain.position.y = 4.5; g.add(chain);
       const halo = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 4, 20), new THREE.MeshBasicMaterial({ color: 0xff8c8c, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(halo);
+      if (a.wall) { // magnet plate on a wall instead of a hanging ring
+        g.remove(chain); ring.visible = false;
+        const plate = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 0.18), new THREE.MeshLambertMaterial({ color: 0x9aa3b2, emissive: 0x000000 }));
+        plate.lookAt(a.face[0], 0, a.face[1]); g.add(plate);
+        const mark = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.07, 4, 16), new THREE.MeshBasicMaterial({ color: 0xe5484d })); mark.position.set(a.face[0] * 0.1, 0, a.face[1] * 0.1); mark.lookAt(a.face[0] * 2, 0, a.face[1] * 2); g.add(mark);
+        ring.material = plate.material;
+      }
       if (a.path) { // overhead rail the moving ring hangs from
         const railM = new THREE.MeshLambertMaterial({ color: 0x6b7280 });
         for (let i = 1; i < a.path.length; i++) { const p0 = a.path[i - 1], p1 = a.path[i]; const A = new THREE.Vector3(a.home.x + p0[0], a.home.y + p0[1] + 8.5, a.home.z + p0[2]), B = new THREE.Vector3(a.home.x + p1[0], a.home.y + p1[1] + 8.5, a.home.z + p1[2]); const L = A.distanceTo(B); const r = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, L + 0.25), railM); r.position.copy(A).add(B).multiplyScalar(0.5); r.lookAt(B); this.level.add(r); }
@@ -514,7 +522,7 @@ export class View {
       const on = tgt && tgt.obj === am.a;
       am.halo.material.opacity = on ? (B.target ? 0.9 : 0.45 + Math.sin(t * 6) * 0.15) : 0;
       am.ring.material.emissive.set(on ? 0x662222 : 0x000000);
-      am.g.rotation.y = Math.sin(t * 0.8 + am.a.x) * 0.3;
+      if (!am.a.wall) am.g.rotation.y = Math.sin(t * 0.8 + am.a.x) * 0.3;
       if (am.a.path) am.g.position.set(am.a.x, am.a.y, am.a.z);
     }
     if (tgt && !B.target && tgt.kind !== 'anchor' && opts.showTarget) {

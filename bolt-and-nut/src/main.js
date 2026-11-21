@@ -2,7 +2,7 @@
 import { createWorld, step, restartFromCheckpoint } from './sim.js';
 import { LEVELS, LINES, ALL, OVERTIME, NMAIN } from './levels.js';
 const lvName = i => ALL[i].ot ? `Overtime ${ALL[i].ot}` : `Shift ${i + 1}`;
-const otOpen = k => save.done.includes(OVERTIME[k].after);
+const otOpen = k => true; // every level is always open, so lost saves never matter
 import { Input } from './input.js';
 import { initAudio, SFX, setVolumes, setMood } from './audio.js';
 import { View } from './render.js';
@@ -110,8 +110,8 @@ function goTitle() {
   openMenu({
     cls: 'title', items: [
       { label: cont ? `Continue: Shift ${Math.min(save.unlocked, LEVELS.length - 1) + 1}` : 'Start orientation', act: () => goJoin(Math.min(save.unlocked, LEVELS.length - 1)) },
-      { label: 'Choose a shift', hidden: !cont, act: chooseShift },
-      { label: 'Overtime (bonus puzzles)', hidden: !OVERTIME.some((_, k) => otOpen(k)), act: overtimeMenu },
+      { label: 'Choose a shift', act: chooseShift },
+      { label: 'Overtime (bonus puzzles)', act: overtimeMenu },
       { label: 'Options', act: () => optionsMenu(goTitle) },
       { label: 'Quit', hidden: !APP, act: () => APP.quit() },
     ],
@@ -119,8 +119,8 @@ function goTitle() {
 }
 function chooseShift() {
   openMenu({
-    title: 'Choose a shift', sub: `Golden cogs found: ${save.cogs.filter(i => i < NMAIN).length} of ${NMAIN}`, back: goTitle,
-    items: LEVELS.map((L, i) => ({ label: `${i + 1}. ${L.name}${save.done.includes(i) ? ' ✓' : ''}${save.cogs.includes(i) ? ' ⚙' : ''}`, dim: i > save.unlocked, act: () => { if (i <= save.unlocked) goJoin(i); else SFX.pullMiss(); } })).concat([{ label: 'Back', act: goTitle }]),
+    title: 'Choose a shift', sub: `Every shift is open. Golden cogs found: ${save.cogs.filter(i => i < NMAIN).length} of ${NMAIN}`, back: goTitle,
+    items: LEVELS.map((L, i) => ({ label: `${i + 1}. ${L.name}${save.done.includes(i) ? ' ✓' : ''}${save.cogs.includes(i) ? ' ⚙' : ''}`, act: () => goJoin(i) })).concat([{ label: 'Back', act: goTitle }]),
   });
 }
 function overtimeMenu() {
@@ -275,7 +275,7 @@ function finishLevel() {
   const s = world.stats;
   const last = levelIdx === NMAIN - 1;
   const newOt = OVERTIME.findIndex(o => o.after === levelIdx);
-  narr.say(newOt >= 0 && !ot ? [L.outro, 'Also: Overtime is now open. Bonus puzzles, from the title screen. Unpaid. Very rewarding. Spiritually.'] : L.outro);
+  narr.say(newOt >= 0 && !ot ? [L.outro, 'Also: there is an Overtime bonus puzzle that goes with this shift. Title screen, Overtime. Unpaid. Very rewarding. Spiritually.'] : L.outro);
   const nextOt = ot && NMAIN + L.ot < ALL.length && otOpen(L.ot) ? NMAIN + L.ot : -1;
   const items = ot ? [
     nextOt >= 0 ? { label: `Next: Overtime ${L.ot + 1}`, act: () => { narr.clear(); startLevel(nextOt); } } : null,
