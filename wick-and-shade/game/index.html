@@ -3263,7 +3263,7 @@ function roomItems() {
 }
 function challengeItems() {
   const it = [];
-  CHALLENGES.forEach((i, k) => { if (challengeOpen(i)) it.push({ label: (k + 1) + '.  ' + LEVELS[i].name + (save.done && save.done[LEVELS[i].name] ? '  \u2713' : ''), lvl: i, act: () => goJoin(i) }); });
+  CHALLENGES.forEach((i, k) => { if (challengeOpen(i)) it.push({ label: (k + 1) + '.  ' + LEVELS[i].name + '', lvl: i, act: () => goJoin(i) }); });
   const locked = CHALLENGES.filter(i => !challengeOpen(i)).length;
   if (locked) it.push({ label: locked + ' more unlock as you play the story', act: () => {} });
   it.push({ label: 'Back', act: () => { menuMode = 'main'; menuSel = 0; } });
@@ -3369,6 +3369,22 @@ function wrapText(str, x, y, maxW, lh, maxLines = 2) {
   for (const w of words) { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { ctx.fillText(line, x, y + n * lh); line = w; if (++n >= maxLines) return; } else line = t; }
   if (line) ctx.fillText(line, x, y + n * lh);
 }
+// progress: a room is done once the save has moved past it (or a challenge was cleared)
+const roomDone = i => !!((save.done && save.done[LEVELS[i].name]) || (!LEVELS[i].challenge && save.unlocked > i));
+function chapterProgress(i) { const n = CH_NUM[i]; let d = 0, k = i; for (; k < MAIN_COUNT && CH_NUM[k] === n; k++) if (roomDone(k)) d++; return [d, k - i]; }
+function drawStatus(x, y, kind, txt) {
+  // little badge at the right end of a menu row
+  if (kind === 'done') { ctx.fillStyle = 'rgba(255,210,122,0.9)'; ctx.beginPath(); ctx.arc(x, y - 7, 10, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#1a1230'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(x - 4.5, y - 7); ctx.lineTo(x - 1, y - 3.5); ctx.lineTo(x + 5, y - 11); ctx.stroke(); }
+  else if (kind === 'part') { ctx.font = '600 15px ' + FONT_B; ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(255,210,122,0.75)'; ctx.fillText(txt, x + 10, y - 1); ctx.textAlign = 'left'; }
+  else if (kind === 'here') { ctx.font = 'italic 14px ' + FONT_B; ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(196,173,255,0.85)'; ctx.fillText('up next', x + 10, y - 1); ctx.textAlign = 'left'; }
+}
+function itemStatus(it) {
+  const i = it.lvl; if (i == null) return null;
+  if (menuMode === 'chapters') { const [d, n] = chapterProgress(i); if (d >= n) return ['done']; if (d > 0) return ['part', d + ' / ' + n]; return save.unlocked === i ? ['here'] : null; }
+  if (roomDone(i)) return ['done'];
+  return !LEVELS[i].challenge && save.unlocked === i ? ['here'] : null;
+}
 let browseScroll = 0, browseFade = { lvl: -1, t: 0 };
 function drawBrowse(items, t) {
   ctx.fillStyle = 'rgba(8,5,16,0.55)'; ctx.fillRect(0, 0, W, H);
@@ -3386,9 +3402,10 @@ function drawBrowse(items, t) {
     const sel = i === menuSel;
     if (sel) { ctx.fillStyle = 'rgba(255,210,122,0.09)'; roundRect(70, y - 27, 510, 38, 8); ctx.fill(); drawMiniLantern(84, y - 18); }
     ctx.font = (sel ? 'bold ' : '') + '22px ' + FONT_B; ctx.fillStyle = sel ? '#ffd27a' : it.lvl == null ? 'rgba(244,234,216,0.45)' : 'rgba(244,234,216,0.72)';
-    let label = it.label; while (ctx.measureText(label).width > 440 && label.length > 4) label = label.slice(0, -2);
+    let label = it.label; while (ctx.measureText(label).width > 380 && label.length > 4) label = label.slice(0, -2);
     if (label !== it.label) label = label.trimEnd() + '…';
     ctx.fillText(label, 114, y);
+    const st = itemStatus(it); if (st) drawStatus(556, y, st[0], st[1]);
   });
   ctx.restore();
   ctx.fillStyle = 'rgba(244,234,216,0.35)'; ctx.font = '18px ' + FONT_B; ctx.textAlign = 'center';
@@ -3410,8 +3427,8 @@ function drawBrowse(items, t) {
     ctx.font = 'bold 30px ' + FONT_D; ctx.fillStyle = '#f6ecd6'; ctx.fillText(title, cx0, 550);
     let meta;
     if (d.challenge) meta = 'Challenge ' + (CHALLENGES.indexOf(i) + 1) + ' of ' + CHALLENGES.length + (save.done && save.done[d.name] ? '   ·   cleared ✓' : '');
-    else if (isCh) meta = 'Chapter ' + n + (many ? '   ·   ' + CH_ROOMS[n] + ' rooms' : '') + (save.unlocked > i ? '   ·   visited' : '');
-    else meta = 'Room ' + ROOM_NUM[i] + ' of ' + CH_ROOMS[n] + (save.unlocked > i ? '   ·   cleared ✓' : '');
+    else if (isCh) { const [dn, nn] = chapterProgress(i); meta = 'Chapter ' + n + (many ? '   ·   ' + CH_ROOMS[n] + ' rooms' : '') + (dn >= nn ? '   ·   complete ✓' : dn > 0 ? '   ·   ' + dn + ' of ' + nn + ' rooms done' : ''); }
+    else meta = 'Room ' + ROOM_NUM[i] + ' of ' + CH_ROOMS[n] + (roomDone(i) ? '   ·   cleared ✓' : save.unlocked === i ? '   ·   up next' : '');
     ctx.font = '16px ' + FONT_B; ctx.fillStyle = 'rgba(255,210,122,0.75)'; ctx.fillText(meta, cx0, 578);
     ctx.font = 'italic 19px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.72)';
     if (isCh && many) {
@@ -3419,7 +3436,8 @@ function drawBrowse(items, t) {
       const rooms = []; for (let k = i; k < MAIN_COUNT && CH_NUM[k] === n; k++) rooms.push(k);
       const tw = Math.min(104, (cw - (rooms.length - 1) * 14) / rooms.length), tsc = tw / (COLS * 18);
       rooms.forEach((k, j) => { const x = cx0 + j * (tw + 14), y = 600; ctx.drawImage(levelThumb(k, 18), x, y, tw, ROWS * 18 * tsc);
-        ctx.strokeStyle = 'rgba(244,234,216,0.25)'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, tw - 1, ROWS * 18 * tsc - 1);
+        ctx.strokeStyle = roomDone(k) ? 'rgba(255,210,122,0.7)' : 'rgba(244,234,216,0.25)'; ctx.lineWidth = roomDone(k) ? 1.5 : 1; ctx.strokeRect(x + 0.5, y + 0.5, tw - 1, ROWS * 18 * tsc - 1);
+        if (roomDone(k)) { ctx.save(); ctx.translate(x + tw - 12, y + 18); ctx.scale(0.75, 0.75); drawStatus(0, 0, 'done'); ctx.restore(); }
         ctx.font = '13px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.55)'; ctx.fillText((j + 1) + '. ' + LEVELS[k].name, x, y + ROWS * 18 * tsc + 18, tw); });
     } else wrapText(d.sub, cx0, 614, cw, 26, 3);
     ctx.restore();

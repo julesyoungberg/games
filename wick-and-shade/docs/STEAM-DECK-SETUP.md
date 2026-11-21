@@ -30,7 +30,7 @@ Wick & Shade comes as one Linux app file: **`WickAndShade.AppImage`** (about 100
 | Y | Next narrator line (the narrator waits for you) | Next narrator line |
 | Start | Pause menu | Pause menu |
 
-Progress saves automatically, and **Continue** picks up where you left off. **Chapter Select** on the title screen lets you jump to any chapter at any time, and for the long chapters, to any room inside them, with a little map of each room so you can spot where you were. A lost save never costs you anything. **Challenges** are all open from the start too. To quit: **Quit** on the title screen, or the Steam button → **Exit game**.
+Progress saves automatically, and **Continue** picks up where you left off. **Chapter Select** on the title screen lets you jump to any chapter at any time, and for the long chapters, to any room inside them, with a little map of each room and a gold check on everything you have finished. A lost save never costs you anything. **Challenges** are all open from the start too. To quit: **Quit** on the title screen, or the Steam button → **Exit game**.
 
 ## Updating from an older version
 Download the new `WickAndShade.AppImage` and replace the old file in `/home/deck/Games` (same name, so the Steam shortcut keeps working). If your shortcut still points at an older file with a version number in its name, open the game's **Properties** in Steam and change **Target** to `WickAndShade.AppImage`. Your saved progress carries over, and Continue takes you to the first new chapter.
