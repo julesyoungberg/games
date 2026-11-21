@@ -1,0 +1,1967 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wick &amp; Shade</title>
+<style>
+  html,body{margin:0;height:100%;background:#07060f;overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center;cursor:none}
+  canvas{display:block;background:#07060f}
+</style>
+</head>
+<body>
+<canvas id="game" width="1280" height="800"></canvas>
+<script>
+'use strict';
+/* =========================================================================
+   WICK & SHADE — a two-player couch co-op about light, shadow and a narrator
+   who will not stop talking. One file, no dependencies.
+   ========================================================================= */
+const cv = document.getElementById('game'), ctx = cv.getContext('2d');
+const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[(Math.random() * a.length) | 0];
+function fit() { const s = Math.min(innerWidth / W, innerHeight / H); cv.style.width = (W * s) + 'px'; cv.style.height = (H * s) + 'px'; }
+addEventListener('resize', fit); fit();
+function hash(x, y, i) { let h = (x * 374761393 + y * 668265263 + i * 1442695041) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; }
+
+/* ------------------------------ save ------------------------------ */
+const SAVE_KEY = 'wick-and-shade-save-v1';
+let save = { unlocked: 0 };
+try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && typeof s.unlocked === 'number') save = Object.assign(save, s); } catch (e) {}
+function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+let run = { deaths: [0, 0], abandon: 0, throws: 0, waves: 0, start: 0 };
+
+/* ------------------------------ audio ------------------------------ */
+let AC = null, master = null;
+function initAudio() {
+  if (AC) { if (AC.state === 'suspended') AC.resume().catch(() => {}); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = 0.55; master.connect(AC.destination);
+    startMusic();
+  } catch (e) { AC = null; }
+}
+function tone(f, d, type = 'sine', v = 0.2, f2 = null, delay = 0) {
+  if (!AC || AC.state !== 'running') return;
+  const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+}
+const SFX = {
+  jump() { tone(380, 0.13, 'triangle', 0.1, 640); },
+  sjump() { tone(200, 0.16, 'sine', 0.14, 300); },
+  land() { tone(150, 0.07, 'sine', 0.07, 90); },
+  plate(on) { tone(on ? 620 : 420, 0.12, 'square', 0.04, on ? 880 : 300); },
+  door() { tone(160, 0.35, 'sawtooth', 0.025, 110); },
+  die() { tone(520, 0.45, 'sawtooth', 0.06, 70); },
+  pick() { tone(880, 0.09, 'triangle', 0.09, 1320); },
+  drop() { tone(620, 0.1, 'triangle', 0.07, 330); },
+  wave() { tone(523, 0.1, 'sine', 0.1); tone(784, 0.16, 'sine', 0.1, null, 0.08); },
+  win() { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.5, 'triangle', 0.09, null, i * 0.11)); },
+  tick() { tone(1700 + Math.random() * 500, 0.014, 'square', 0.01); },
+  menu() { tone(720, 0.05, 'triangle', 0.06); },
+  ok() { tone(520, 0.08, 'triangle', 0.08); tone(780, 0.12, 'triangle', 0.08, null, 0.06); },
+  float() { tone(300 + Math.random() * 200, 0.2, 'sine', 0.025, 600); },
+};
+function startMusic() {
+  const g = AC.createGain(); g.gain.value = 0.03;
+  const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
+  lp.connect(g); g.connect(master);
+  [55, 82.41, 110.0, 164.8].forEach((f, i) => {
+    const o = AC.createOscillator(); o.type = i % 2 ? 'triangle' : 'sine'; o.frequency.value = f;
+    const lfo = AC.createOscillator(); lfo.frequency.value = 0.04 + i * 0.025;
+    const lg = AC.createGain(); lg.gain.value = 1.2; lfo.connect(lg); lg.connect(o.frequency);
+    const og = AC.createGain(); og.gain.value = i === 3 ? 0.35 : 1; o.connect(og); og.connect(lp); o.start(); lfo.start();
+  });
+  const scale = [261.6, 293.7, 329.6, 392.0, 440.0, 523.3, 587.3, 659.3];
+  setInterval(() => {
+    if (!AC || AC.state !== 'running') return;
+    if (Math.random() < 0.5) { const f = pick(scale) * (Math.random() < 0.35 ? 0.5 : 1); tone(f, 2.2, 'sine', 0.03); }
+  }, 850);
+}
+
+/* ------------------------------ input ------------------------------ */
+const keys = new Set();
+addEventListener('keydown', e => {
+  keys.add(e.code); initAudio();
+  if (/^(Space|Arrow|Slash|Period|Enter|Tab|Backspace)/.test(e.code)) e.preventDefault();
+  if (e.code === 'F11' || (e.code === 'KeyF' && e.ctrlKey)) { e.preventDefault(); toggleFullscreen(); }
+});
+addEventListener('keyup', e => keys.delete(e.code));
+addEventListener('blur', () => keys.clear());
+['mousedown', 'touchstart', 'pointerdown'].forEach(ev => addEventListener(ev, initAudio));
+function toggleFullscreen() {
+  try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); } catch (e) {}
+}
+const K = c => keys.has(c) ? 1 : 0;
+let pads = [];
+const prevIn = {}, devState = {};
+function axis(p, i) { const v = p.axes[i] || 0; return Math.abs(v) < 0.3 ? 0 : v; }
+function Bt(p, i) { const b = p.buttons[i]; return !!b && (b.pressed || b.value > 0.5); }
+function readRaw(dev) {
+  if (dev === 'k1') return { mx: K('KeyD') - K('KeyA'), my: K('KeyS') - K('KeyW'), jump: K('Space'), act: K('KeyE') || K('KeyQ'), pause: K('Escape') || K('KeyP'), alt: K('KeyY') || K('Tab') || K('KeyN') };
+  if (dev === 'k2') return { mx: K('ArrowRight') - K('ArrowLeft'), my: K('ArrowDown') - K('ArrowUp'), jump: K('Enter') || K('Slash') || K('ShiftRight') || K('Numpad0'), act: K('Period') || K('ControlRight') || K('NumpadDecimal'), pause: K('Backspace'), alt: 0 };
+  const m = /^g(\d+)([LR]?)$/.exec(dev); if (!m) return null;
+  const p = pads[+m[1]]; if (!p || !p.connected) return null;
+  const dl = Bt(p, 14), dr = Bt(p, 15), du = Bt(p, 12), dd = Bt(p, 13);
+  if (m[2] === '') {
+    let mx = axis(p, 0), my = axis(p, 1); if (dl) mx = -1; if (dr) mx = 1; if (du) my = -1; if (dd) my = 1;
+    return { mx, my, jump: Bt(p, 0), act: Bt(p, 2) || Bt(p, 1), pause: Bt(p, 9), alt: Bt(p, 3) };
+  }
+  if (m[2] === 'L') {
+    let mx = axis(p, 0), my = axis(p, 1); if (dl) mx = -1; if (dr) mx = 1; if (du) my = -1; if (dd) my = 1;
+    return { mx, my, jump: Bt(p, 4), act: Bt(p, 6) || Bt(p, 10), pause: false, alt: 0 };
+  }
+  return { mx: axis(p, 2), my: axis(p, 3), jump: Bt(p, 5) || Bt(p, 0), act: Bt(p, 7) || Bt(p, 1) || Bt(p, 11), pause: false, alt: 0 };
+}
+function pollInput() {
+  pads = navigator.getGamepads ? Array.from(navigator.getGamepads()) : [];
+  const devs = ['k1', 'k2'];
+  pads.forEach((p, i) => { if (p && p.connected) devs.push('g' + i, 'g' + i + 'L', 'g' + i + 'R'); });
+  for (const d in devState) if (!devs.includes(d)) delete devState[d];
+  let any = false;
+  for (const d of devs) {
+    const r = readRaw(d); if (!r) continue;
+    const pv = prevIn[d] || {};
+    const dx = r.mx > 0.5 ? 1 : r.mx < -0.5 ? -1 : 0, dy = r.my > 0.5 ? 1 : r.my < -0.5 ? -1 : 0;
+    const s = Object.assign({}, r, {
+      jumpP: !!r.jump && !pv.jump, actP: !!r.act && !pv.act, pauseP: !!r.pause && !pv.pause, altP: !!r.alt && !pv.alt,
+      navX: dx && dx !== pv.dx ? dx : 0, navY: dy && dy !== pv.dy ? dy : 0,
+    });
+    s.any = s.jumpP || s.actP || s.pauseP || s.navX || s.navY || s.altP;
+    if (s.any) any = true;
+    devState[d] = s; prevIn[d] = { jump: r.jump, act: r.act, pause: r.pause, alt: r.alt, dx, dy };
+  }
+  if (any) initAudio();
+}
+function menuInput() {
+  const o = { navX: 0, navY: 0, ok: false, back: false, pause: false, alt: false, dev: null, altDev: null };
+  for (const d in devState) {
+    if (/[LR]$/.test(d)) continue;
+    const s = devState[d];
+    if (s.navX) o.navX = s.navX; if (s.navY) o.navY = s.navY;
+    if (s.jumpP) { o.ok = true; o.dev = o.dev || d; }
+    if (s.actP) o.back = true; if (s.pauseP) o.pause = true;
+    if (s.altP) { o.alt = true; o.altDev = d; }
+  }
+  return o;
+}
+let assign = [null, null];   // device ids for [Wick, Shade]
+let forced = null;           // debug/test input override
+function getInp(i) { if (forced) return forced[i] || null; return assign[i] ? devState[assign[i]] || null : null; }
+function devName(d) {
+  if (!d) return '';
+  if (d === 'k1') return 'Keyboard (WASD)'; if (d === 'k2') return 'Keyboard (Arrows)';
+  const m = /^g(\d+)([LR]?)$/.exec(d); const p = pads[+m[1]];
+  const nm = p ? (p.id || 'Controller').replace(/\(.*?\)/g, '').trim().slice(0, 28) : 'Controller';
+  return (m[2] === 'L' ? 'Left half of ' : m[2] === 'R' ? 'Right half of ' : '') + (nm || 'Controller ' + (+m[1] + 1));
+}
+const splitMode = () => assign[0] && /L$/.test(assign[0]);
+
+/* ------------------------------ narrator ------------------------------ */
+const narr = {
+  q: [], cur: null, shown: 0, hold: 0, alpha: 0, deathCd: 0,
+  say(t, opt = {}) {
+    if (opt.ifQuiet && (this.cur || this.q.length)) return false;
+    if (opt.front) this.q.unshift(t); else this.q.push(t);
+    return true;
+  },
+  clear() { this.q = []; this.cur = null; },
+  update(dt) {
+    this.deathCd -= dt;
+    if (!this.cur) {
+      this.alpha = Math.max(0, this.alpha - dt * 3);
+      if (this.q.length) { this.cur = this.q.shift(); this.shown = 0; this.hold = 0; }
+      else return;
+    }
+    this.alpha = Math.min(1, this.alpha + dt * 4);
+    if (this.shown < this.cur.length) {
+      const a = Math.floor(this.shown); this.shown += dt * 46;
+      const b = Math.floor(this.shown); if (b !== a && b % 2 === 0 && this.cur[b] && this.cur[b] !== ' ') SFX.tick();
+    } else {
+      this.hold += dt;
+      if (this.autoAdvance && this.hold > Math.max(2.2, this.cur.length * 0.042)) this.cur = null;
+    }
+  },
+  // Y (controller) / Tab or N (keyboard): finish the line if it's still typing, otherwise move to the next one
+  advance() {
+    if (!this.cur) return;
+    if (this.shown < this.cur.length) { this.shown = this.cur.length; return; }
+    this.cur = null; SFX.menu();
+  },
+};
+const LINES = {
+  death: [
+    '{name} has discovered the thorns. Thoroughly.',
+    'Ah yes. The classic "{name} falls down" strategy.',
+    "I'll file that one under research.",
+    '{name}, those are thorns. They are the pointy kind.',
+    "Don't worry. Dying in this game is mostly a formality.",
+    "That's {n} for {name}. I'm not keeping count. I am keeping count.",
+    'Respawning {name}. Please hold. Your fall is important to us.',
+    'Bold move, {name}. Bold, and downward.',
+    '{other}, please comfort {name}. They have been through a lot. Mostly thorns.',
+  ],
+  idle: [
+    "Take your time. I'll be here. Narrating. Silently.",
+    'Is anyone holding a controller? Hello? Blink twice.',
+    "I could hum something. No? Fair enough.",
+    'Fun fact: this is the part where you solve the puzzle.',
+  ],
+  lanternLost: [
+    "The lantern fell into the abyss. Good news: we have another one. It's the same one. Don't think about it.",
+    'Lantern returned to Wick. Please stop throwing the only light in the universe into holes.',
+  ],
+  crateLost: [
+    'The crate has left the level. A new crate has been issued. Please sign for it.',
+    "Crate overboard. Don't worry, I keep a spare. It's the same crate. Again.",
+  ],
+  waitDoor: [
+    'The door needs both of you. That is sort of the whole theme of the game.',
+    'One of you is at the door. The other one is... elsewhere. Thinking about their choices.',
+  ],
+  shadowFirst: 'Look at that. Shade, standing on nothing. Well, on a shadow. Which is nearly nothing.',
+  floatFirst: 'Shade floats up through shadow like a bubble. A dark, slightly sad bubble.',
+  dropFirst: 'Wick put the lantern down. It will wait for you. Lanterns are patient like that.',
+  throwFirst: "Wick threw the lantern! Wick. That is the light source. Be gentle with the light source.",
+  waveFirst: 'Shade waves. Wick, I believe that is affection. Or a warning. Shade is hard to read.',
+  skip: "Skipping, are we? Fine. I'll tell everyone you solved it brilliantly.",
+  swap: "Oh, you've swapped. That's allowed. Nobody here is defined by their lantern.",
+};
+
+/* ------------------------------ levels ------------------------------
+   #  chalk (solid)              B  ink block (solid, casts shadows)
+   =  sunglass: solid only inside the lantern's light
+   x  duskglass: solid only OUTSIDE the lantern's light
+   p  pressure plate             P  door, open while p is pressed
+   r  bridge, solid while p is pressed
+   q / Q / s  the pink set: plate, door, bridge
+   C  crate (pushable ink, casts shadows, presses plates)
+   ^  thorns                     E  exit   F  the other exit
+   W  Wick spawn   S  Shade spawn   L  lantern (else Wick is holding it)
+--------------------------------------------------------------------- */
+const LEVELS = [
+  { name: 'Level One', sub: 'It has a name. The name is "Level One."', ambient: 0.5,
+    map: [
+      '################################',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................#.......#',
+      '#......................P.......#',
+      '#..W.S.#............p..P.....E.#',
+      '#########========###############',
+      '#########........###############',
+      '#########^^^^^^^^###############',
+    ],
+    intro: [
+      'Ah. Two of you. On one couch. How lovely.',
+      'The one with the lantern is Wick. Wick carries the light, because somebody has to.',
+      'The other one is Shade. Shade is a shadow. With feelings, presumably.',
+      "Your goal: get both of you through the door. Together. That's the whole game. Mostly.",
+    ],
+    hints: [
+      [22, 'That golden sunglass is only solid near the lantern. Stay close to each other. It is romantic, if you think about it.'],
+      [55, 'That round plate wants something on it. Wick, the lantern counts. Press interact to set it down.'],
+      [95, 'Lantern on the plate, door opens, both of you walk through. I believe in you. Moderately.'],
+    ],
+    outro: "Level One: complete. I've written that down somewhere.",
+  },
+  { name: 'Shade Can Do What Now?', sub: 'A level about standing on things that are not there.', ambient: 0.55,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#...............p..............#',
+      '#.............#######..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#........BB.........#..........#',
+      '#...................P..........#',
+      '#..W.S..............P.......E..#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      'Level Two. I wanted to call it "Level Two" but I was told it needed a hook.',
+      'Here is the hook: Shade can stand on shadows. Only Shade. Only shadows cast by the lantern.',
+      'Physics was consulted. Physics was then ignored.',
+    ],
+    hints: [
+      [28, 'The black ink block casts shadows. Wick, hold the lantern near it and watch where the purple goes.'],
+      [60, 'Shade, if a shadow swallows you, you float upward through it. Try hopping onto the ink block.'],
+      [95, "Wick, stand right underneath the ink block. Make a tower of darkness. Very gothic."],
+      [140, 'Once Shade is on the plate, Wick walks through the door. Shade can walk over the wall. I am basically playing it for you now.'],
+    ],
+    onPlate: n => n === 1 ? 'Click. Somewhere, a door opens. Doors love plates. Nobody knows why.' : null,
+    outro: 'Well done. Shade, I hear you are a natural. Wick, I hear you are also there.',
+  },
+  { name: 'Personal Space', sub: 'Some glass only exists in the dark.', ambient: 0.55,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#...............p..............#',
+      '#.......####xxxx##########.....#',
+      '#....##.........#..............#',
+      '#...............#..............#',
+      '#.##............#..............#',
+      '#...............#..............#',
+      '#....##.........P..............#',
+      '#.W..S..........P............E.#',
+      '########================########',
+      '########................########',
+      '########^^^^^^^^^^^^^^^^########',
+    ],
+    intro: [
+      'This is a level about boundaries.',
+      'The gold glass only exists in the light. The purple duskglass only exists in the dark.',
+      'So one of you needs light, and one of you needs darkness. It sounds like a metaphor. It is not. It is a level.',
+    ],
+    hints: [
+      [30, "Wick, your light melts the purple glass. Maybe hang back at the far left while Shade climbs. Give them some room."],
+      [65, 'Shade, the plate on top of the pillar opens the door below. Someone has to stand on it. I wonder who.'],
+      [110, 'Order of events: Wick waits far left. Shade crosses the purple glass to the plate. Then Wick crosses the gold glass. Then everybody is happy.'],
+    ],
+    onPlate: n => n === 1 ? "There's the door. Wick, you may now proceed. Shade, you may now stand there heroically." : null,
+    outro: 'That is what they call trust. Or luck. Hard to tell from up here.',
+  },
+  { name: 'The Correct Door', sub: 'Please use the correct door.', ambient: 0.55,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..................p....F......#',
+      '#.................########.....#',
+      '#..............................#',
+      '#..........................rr..#',
+      '#..............................#',
+      '#.............................r#',
+      '#..............................#',
+      '#..........................rr..#',
+      '#.............BB...............#',
+      '#.......................rr.....#',
+      '#.E......W.S...................#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    labels: [[2, 14, 'THE CORRECT DOOR', '#ffd27a'], [24, 4, 'ALSO A DOOR', '#a8f0d0']],
+    intro: [
+      'Two doors this time. The one on the left is the correct door.',
+      'The one up on the right is... also a door. Technically.',
+      'Please use the correct door. I worked very hard on what is behind it.',
+    ],
+    hints: [
+      [40, "The correct door is right there. To your left. I can feel you looking at the other one."],
+      [85, 'Fine. IF you were going up there, Shade would need a tower of shadow, and Wick would need someone standing on that plate. Not that I am helping.'],
+    ],
+    onPlate: n => n === 1 ? "Oh. A staircase. Wonderful. I'll just reschedule everything, then." : null,
+    outro: 'Thank you. The correct choice. Very normal of you both.',
+    outroF: 'You took the other door. Of course you did.',
+    alt: { F: 'secret' },
+  },
+  { name: 'Budget Cuts', sub: 'The lights are off. Wick is now the lighting department.', ambient: 0.95,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..W.S...B...........p..^...E..#',
+      '#########rrrrrrrrr##############',
+      '#########.........##############',
+      '#########^^^^^^^^^##############',
+    ],
+    intro: [
+      'Due to budget cuts, the lights in this level have been switched off.',
+      'Wick, you are now the lighting department. Congratulations on the promotion. There is no raise.',
+    ],
+    hints: [
+      [30, 'Shade cannot jump that pit. But the little ink block at the edge would throw a lovely long shadow, if someone held the light right beside it.'],
+      [65, 'Wick, push up or down to raise or lower the lantern. It changes the angle of the shadow. Low and close makes a nice flat bridge.'],
+      [105, 'Once Shade is across, that plate does something for Wick. I will not say what. It is a bridge.'],
+    ],
+    onPlate: (n, by) => by === 'lantern' ? "You threw the lantern onto the plate. That is not how I designed this. Fine. FINE." : (n === 1 ? 'A bridge! Built entirely out of budget we did not have.' : null),
+    outro: 'Lights back on next level. Probably. Budget permitting.',
+  },
+  { name: 'Push Comes to Shove', sub: 'Introducing: a box.', ambient: 0.55,
+    map: [
+      '################################',
+      '#............#.................#',
+      '#............#.................#',
+      '#............#.................#',
+      '#............#.................#',
+      '#............#.................#',
+      '#............#.................#',
+      '#............#.................#',
+      '#............#.................#',
+      '#............#.................#',
+      '#............#.........p...E...#',
+      '#............#........##########',
+      '#............#.....rr.##########',
+      '#............#........##########',
+      '#............#..rr....##########',
+      '#............Q........##########',
+      '#.W.S..C..q..Q...C....##########',
+      '####################..##########',
+      '####################..##########',
+      '####################..##########',
+    ],
+    intro: [
+      "This is a crate. It is made of the same ink as the blocks, so it casts shadows. It is also a crate, so you can push it. Revolutionary.",
+      "Also new: pink plates. They open pink doors. Teal plates still open teal doors. Please do not ask about the paint budget.",
+    ],
+    hints: [
+      [35, "A crate is heavy enough to hold a plate down. So are you, but you have places to be."],
+      [85, "Shade cannot jump up to that ledge. But a crate in lamplight throws a long shadow, and to Shade a shadow is basically a staircase."],
+      [130, "Wick: stand right beside the second crate and hold the lantern low (push down). Shade: walk into the shadow on the far side and ride it up."],
+      [180, "If a crate falls into the pit, a new one appears where it started. I have a warehouse."],
+    ],
+    onPlate: (n, by, ch) => ch === 'q' && by === 'crate' ? 'The crate is now holding the door. The crate has never felt so important. Look at it. Thriving.' : ch === 'p' ? 'Steps for Wick! Shade, stay on that plate. Wick climbs slower than you think.' : null,
+    outro: 'One crate, two doors, zero complaints from the crate.',
+  },
+  { name: 'Waiting Rooms', sub: 'Please take a number.', ambient: 0.55,
+    map: [
+      '################################',
+      '#........#..........#..........#',
+      '#........#..........#..........#',
+      '#........#..........#..........#',
+      '#........#..........#..........#',
+      '#........#..........#........E.#',
+      '#........#..........#.......####',
+      '#........#..........#..........#',
+      '#........#..........#....xx....#',
+      '#........#..........#..........#',
+      '#........#..........#.......xx.#',
+      '#........#..........#..........#',
+      '#........#..........#....==....#',
+      '#........#..........#..........#',
+      '#........#..........#.==.......#',
+      '#........P..........Q..........#',
+      '#.W.p.S..P.p......q.Q..........#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Three rooms. Three doors. Two of you. You can see the problem.",
+      "Good news: the lantern is heavy. It counts as a person, for plate purposes. Bad news: it is also the only light.",
+    ],
+    hints: [
+      [40, "Wick, you can set the lantern down on a plate. Stand still and press act. It will hold the door, like a very bright friend."],
+      [90, "There is another teal plate just inside the second room. Someone could stand on it while Wick goes back for the lantern."],
+      [140, "The gold glass in the last room only exists in light. If the lantern sat on the pink plate, right by the door, it might just reach."],
+      [190, "The purple steps up high need darkness. Darkness is what you get when the light is far away. Funny how that works."],
+    ],
+    onPlate: (n, by, ch) => by === 'lantern' && ch === 'p' ? 'The lantern is holding the door. Wick, you are now holding the door emotionally.' : by === 'lantern' && ch === 'q' ? 'And the lantern takes the pink plate too. It is having a big day.' : null,
+    outro: 'Thank you for waiting. Your patience has been noted. Not rewarded. Noted.',
+  },
+  { name: 'Escort Mission', sub: 'Everybody loves an escort mission.', ambient: 0.6,
+    map: [
+      '################################',
+      '#..............#......#........#',
+      '#..............#......#........#',
+      '#..............P......Q........#',
+      '#.W............P......Q........#',
+      '###########################....#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#...BB.BB.BB.BB.BB....BB.BB....#',
+      '#.S............p....q........E.#',
+      '####...........#...BB.......####',
+      '####...........#............####',
+      '####...........#............####',
+      '####...........#............####',
+      '####^^^^^^^^^^^#^^^^^^^^^^^^####',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Shade, the floor down there is thorns. Under those ink blocks, though, it is shadow all the way across. As long as somebody keeps the light close.",
+      "Wick, you are on the walkway up top. Stay right above Shade. If you wander off, the shadows wander off with you.",
+    ],
+    hints: [
+      [35, "Shade, swim inside the shadows. You will float up against the blocks. Small gaps are fine, just keep moving. Wick: above Shade, not ahead."],
+      [80, "Wick's walkway has doors. They open from below. Shade, there is a teal plate on that pillar."],
+      [130, "The pink plate is on top of the low block. Shade can hop up onto it from a shadow. Shadows are springy if you believe in them."],
+    ],
+    onPlate: (n, by, ch) => ch === 'p' ? 'Door open. Wick, through you go. Shade, wait for your escort.' : ch === 'q' ? 'Second door. You are a well oiled machine. A slightly haunted machine.' : null,
+    outro: 'Escort complete. Nobody was lost. I had a speech ready in case somebody was lost. It was moving.',
+  },
+  { name: 'Lighting Department', sub: 'Shade has been promoted.', ambient: 0.75,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#.W...............q............#',
+      '#########===.xxx#########......#',
+      '#............................E.#',
+      '#..##....................#######',
+      '#........................#######',
+      '#####################....#######',
+      '#..................Q.....#######',
+      '#...........L......Q.B...#######',
+      '#...........C.S....Q.B...#######',
+      '#..#############################',
+      '#..#############################',
+      '#..#############################',
+    ],
+    intro: [
+      "Wick, you are up top. The lantern is down below, on a crate, with Shade.",
+      "Shade, you are the lighting department now. Push the crate and the light goes with it. Please light responsibly.",
+    ],
+    hints: [
+      [40, "Wick needs the gold glass lit and the purple glass dark, both at once. There is a sweet spot. Shade, push the light slowly left and watch the bridge."],
+      [95, "Wick: the pink plate on your ledge opens the pink door down below. Stand on it while Shade brings the light through."],
+      [150, "Shade: push the crate right up against the tall ink block. Then hop over it and ride its shadow up to the exit."],
+      [200, "If the crate falls down the hole, it comes back. With the lantern. I am not a monster."],
+    ],
+    onPlate: (n, by, ch) => ch === 'q' ? 'The pink door is open. Lighting department, you may proceed.' : null,
+    outro: 'Lighting department, take a bow. Wick, you may clap. Quietly. It is dark.',
+  },
+  { name: 'The Whole Department', sub: 'Everything you have learned, all at once. Sorry.', ambient: 0.6,
+    map: [
+      '################################',
+      '#.......#......................#',
+      '#.......#................E.....#',
+      '#.......#................###...#',
+      '#.......#......................#',
+      '#.......#....................xx#',
+      '#.......#......................#',
+      '#.......#.................xx...#',
+      '#.......#......................#',
+      '#.......#....................###',
+      '#.......#................q.....#',
+      '#.......#...............########',
+      '#########.............ss########',
+      '#.......P...............########',
+      '#.......P..........ss...########',
+      '#.......P...............########',
+      '#.W.S.p.P.C..p..........########',
+      '######################..########',
+      '######################..########',
+      '######################..########',
+    ],
+    intro: [
+      "This one has everything. Doors, plates, crates, shadows, the lot.",
+      "Take it one room at a time. I believe in you. Statistically.",
+    ],
+    hints: [
+      [40, "Wick, hold the first plate. Shade, the crate inside would love to sit on the other one."],
+      [100, "Remember the crate ramp? Wick right beside the crate, lantern low. Shade, ride it up to the ledge and stand on the pink plate."],
+      [160, "Those last purple steps only exist in the dark. Wick, the light has to go. Far away. Off the ledge."],
+      [215, "Wick: on the ledge, hold left and press act to throw the lantern. Off the edge. Into the void. It will be fine. Probably."],
+    ],
+    onPlate: (n, by, ch) => ch === 'q' ? 'Pink stairs for Wick. Shade, stay put.' : by === 'crate' && ch === 'p' ? 'The crate holds the door. Wick, you are released from plate duty.' : null,
+    outro: 'You left the light behind and climbed anyway. That was a bit poetic. I did not plan it. I am taking credit for it.',
+  },
+  { name: "Stacking Order", sub: "Some assembly required.", ambient: 0.55, chapter: "The Stockroom",
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............P...............#',
+      '#..............P...............#',
+      '#..............P............E..#',
+      '#............C.P........########',
+      '#..........########.....########',
+      '#.......................########',
+      '#.......................########',
+      '#WS.p..C................########',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Welcome to the stockroom. Five rooms. No windows. Excellent for morale.",
+      "Today's lesson: crates can sit on other crates. This is called stacking. It is the whole room.",
+    ],
+    hints: [
+      [40, "Wick, the lantern on the plate opens the shelf door. Shade, the floor crate needs a walk."],
+      [100, "A crate on the shelf, a crate on the floor. What if one were on top of the other? Wild idea."],
+      [160, "Wick: up on the shelf, push the top crate off onto the one Shade parks beneath it."],
+      [220, "Shade, push the whole stack to the tall ledge. Then climb it like a very short mountain."],
+    ],
+    onPlate: (n, by, ch) => by === 'lantern' ? 'The lantern is holding the door. It has never felt so useful.' : null,
+    outro: "Two crates, one stack. You have invented furniture.",
+  },
+  { name: "Elevator Music", sub: "Going up. Mind the doors. There are no doors.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#.........E..p.................#',
+      '#........######................#',
+      '#..............................#',
+      '#..............................#',
+      '#...............rr.............#',
+      '#..............................#',
+      '#.............rr...............#',
+      '#......B.......................#',
+      '#..........rr..................#',
+      '#....#.........................#',
+      '#WS..#.........................#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "This room goes up. You do not. Not yet.",
+      "There is a plate at the top. Of course there is.",
+    ],
+    hints: [
+      [40, "Those teal ledges only appear while someone holds the plate. Somebody has to be the button."],
+      [100, "The plate is upstairs, next to the exit. So whoever gets up first can hold it for the other."],
+      [160, "Shade, the ink block makes a shadow you can stand on. Use it to reach the upper floor."],
+    ],
+    onPlate: (n, by, ch) => 'Ledges out. Please keep your arms inside the room.',
+    outro: "Nobody fell. I had a whole speech ready for when somebody fell.",
+  },
+  { name: "Thin Ice", sub: "Watch your step. Then watch the other step.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#...............#..............#',
+      '#...............#..............#',
+      '#...............#..............#',
+      '#...............#..............#',
+      '#...............#..............#',
+      '#...............#..............#',
+      '#...............#..............#',
+      '#...............#..............#',
+      '#...............P..............#',
+      '#...............P..............#',
+      '#...............P..............#',
+      '#WpS............P............E.#',
+      '####========##########xxxxxx####',
+      '####........................####',
+      '####........................####',
+      '####^^^^^^^^^^^^^^^^^^^^^^^^####',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Thorns below. Glass above. Some of the glass likes light. Some of it does not.",
+      "I would tell you which is which, but you would only argue.",
+    ],
+    hints: [
+      [40, "Yellow glass is solid in the light. Purple glass is solid in the dark. The bridge is both. Hm."],
+      [100, "The door in the middle wants the plate held. The plate is right where you started."],
+      [160, "If the lantern stays at the start, the near glass is lit and the far glass is dark. Both solid. Funny, that."],
+    ],
+    onPlate: (n, by, ch) => by === 'lantern' ? 'The lantern stays. You go. Try not to look down.' : null,
+    outro: "You crossed on glass that only half exists. That is basically my job description.",
+  },
+  { name: "Shadow Puppets", sub: "The crate does all the work. Do not tell the crate.", ambient: 0.65, cont: true,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#...E.....p....................#',
+      '####################..#####....#',
+      '#..............................#',
+      '#...........................rr.#',
+      '#...S.C........................#',
+      '#..#########################...#',
+      '#..............................#',
+      '#..............................#',
+      '#...........................rr.#',
+      '#..............................#',
+      '#.W............................#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "One crate. One hole in the ceiling. One very specific shadow.",
+      "Shade, you are about to learn that a crate is a ladder if you light it right.",
+    ],
+    hints: [
+      [40, "Shade, push the crate along the shelf until it sits under the hole in the ceiling."],
+      [100, "Wick, stand beside the crate down below and raise the lantern. Its shadow goes up. So can Shade."],
+      [160, "Shade, hop on the crate and ride its shadow up through the hole. The plate up there helps Wick."],
+      [220, "Wick, with the plate held the teal ledges appear on the right. Climb them. Mind the hole on the way back."],
+    ],
+    onPlate: (n, by, ch) => 'Ledges on the right, Wick. Up you go.',
+    outro: "A crate, a lantern and a hole. Theatre has been made from less.",
+  },
+  { name: "Closing Time", sub: "Last one out turns off the light. Literally.", ambient: 0.55, cont: true,
+    map: [
+      '################################',
+      '#.........#...........#........#',
+      '#.........#...........#........#',
+      '#.........#...........#........#',
+      '#.........#...........#........#',
+      '#.........#...........#........#',
+      '#.........#...........#........#',
+      '#.........#...........#........#',
+      '#.........#...........#........#',
+      '#.........#...........#........#',
+      '#.........#...........#........#',
+      '#.........#...........#........#',
+      '#.........P...........Q........#',
+      '#.........P...........Q......E.#',
+      '#.........P...........Q#xxxx####',
+      '#.........P...........Q#....####',
+      '#WS..p....P.p...C...q.Q#^^^^####',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Last room of the stockroom. Two doors, two plates, one crate, one problem.",
+      "The problem is the lantern. It usually is.",
+    ],
+    hints: [
+      [40, "Shade, hold the first plate so Wick can get through. Wick, there is a plate just past the door."],
+      [100, "The pink door wants the crate on the pink plate. Shade, you know what to do. Push."],
+      [160, "That purple bridge only exists in the dark. Wick, it vanishes when you bring the light."],
+      [215, "Leave the lantern on the plate by the first door. Walk away from it. You will both be fine. Probably."],
+    ],
+    onPlate: (n, by, ch) => ch === 'q' ? 'Pink door open. Now about that bridge.' : by === 'lantern' ? 'The lantern holds the door. It can stay there. Forever, perhaps.' : null,
+    outro: "You left the light behind and it waited, like I said it would. The stockroom is closed. Thank you for shopping.",
+  },
+  { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
+    map: [
+      '################################',
+      '#..............................#',
+      '#.E............................#',
+      '#########......................#',
+      '#..............................#',
+      '#.........xx...................#',
+      '#..............................#',
+      '#............xx................#',
+      '#..............................#',
+      '#.........xx...................#',
+      '#..p...........................#',
+      '#############rr................#',
+      '#..............................#',
+      '#................rr............#',
+      '#...............B..............#',
+      '#...................rr.........#',
+      '#........^^^..............W.S..#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The final level. It's been a privilege watching you both jump into thorns.",
+      'The last door is at the very top. Getting there will take everything you have learned. And patience. Mostly patience.',
+    ],
+    hints: [
+      [40, 'Same trick as before, Shade: a tower of shadow from that little ink block. Wick, stand underneath it.'],
+      [80, 'Those purple steps only exist in the dark. Wick, you may need to leave the lantern somewhere far away. Letting go is part of growing up.'],
+      [125, 'Wick: lantern far away, bottom right. Shade: on the plate, so Wick can climb. Then both of you up the purple steps. You did not hear this from me.'],
+    ],
+    onPlate: n => n === 1 ? 'Steps for Wick. Shade, please do not wander off. The steps are very attached to you.' : null,
+    outro: 'And there it is. The last door.',
+    final: true,
+  },
+  { name: "The Narrator's Break Room", sub: 'You are not supposed to be in here.', ambient: 0.45, secret: true,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#.................B............#',
+      '#................BBB...........#',
+      '#.W.S........p...BBB.....E.....#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    labels: [[13, 14, 'DO NOT PRESS', '#ff8a9a'], [18, 12, 'MY MUG', '#cfc2ff'], [6, 6, 'EMPLOYEE OF THE MONTH: ME (EVERY MONTH)', '#ffd27a']],
+    intro: [
+      '...Oh. Oh no. This is my break room. You are not supposed to be in here.',
+      "Don't look at the mug. Don't press the button. Just leave through the door on the right. Please.",
+    ],
+    hints: [[40, 'You are still here. Why are you still here.']],
+    onPlate: n => [null, 'I said do not press it.', 'It does not do anything. It is a decorative button.', 'Okay, it does one thing. It makes me sad.', 'Please.', 'FINE. Confetti. Are you happy? You look happy.', 'The confetti budget is gone. You have spent it. All of it.'][Math.min(n, 6)],
+    outro: 'Let us never speak of this.',
+    next: 4,
+  },
+  { name: "Return to Sender", sub: "The crate is on the wrong side. So are you, shortly.", ambient: 0.6, challenge: true, unlockAt: 6,
+    map: [
+      '################################',
+      '#......#.......#...............#',
+      '#......#.......#...............#',
+      '#......#.......#...............#',
+      '#......#.......#...............#',
+      '#......#.......#...............#',
+      '#......#.......#...............#',
+      '#......#.......#...............#',
+      '#......#.......#...............#',
+      '#......#.......#...............#',
+      '#......#.......#...............#',
+      '#......#.......#...............#',
+      '#......P.......Q...............#',
+      '#......P.......Q.............E.#',
+      '#......P.......Q.....#xxxxx#####',
+      '#......P.......Q.....#.....#####',
+      '#WS.p..P...qqq.Q..C..#^^^^^#####',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Challenge rooms. No hand-holding. Well. Very little hand-holding.",
+    ],
+    hints: [
+      [150, "The crate needs to come back through the door it is behind. Think about who holds what."],
+    ],
+    outro: "Returned, signed for, delivered. Excellent courier work.",
+  },
+  { name: "Night Bus", sub: "Shade drives. Wick does not touch the radio.", ambient: 0.9, challenge: true, unlockAt: 10,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..L...........................#',
+      '#S.C...........................#',
+      '############################...#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#W...........................E.#',
+      '###=====#xxxxxx#======#xxxxxx###',
+      '###..........................###',
+      '###..........................###',
+      '###^^^^^^^^^^^^^^^^^^^^^^^^^^###',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Shade has the lantern. Well, the crate has the lantern. Shade has the crate.",
+      "Wick has a lot of glass to walk on, and opinions about where the light should be.",
+    ],
+    hints: [
+      [150, "Yellow glass wants the light close. Purple glass wants it far. Wick, wait on the chalk while Shade moves the bus."],
+    ],
+    outro: "Everyone arrived. Nobody was sick. Five stars.",
+  },
+];
+// Story chapters can span several rooms: a level with cont:true continues the chapter before it.
+// Challenge levels (challenge:true) live after the story and have their own menu.
+const MAIN_COUNT = LEVELS.findIndex(d => d.final) + 1;
+const SECRET_IDX = LEVELS.findIndex(d => d.secret);
+const CH_NUM = [], ROOM_NUM = [], CH_START = [], CH_ROOMS = {};
+(() => { let cn = 0, rn = 0; LEVELS.forEach((d, i) => {
+  if (d.secret || d.challenge) return;
+  if (!d.cont) { cn++; rn = 1; CH_START.push(i); } else rn++;
+  CH_NUM[i] = cn; ROOM_NUM[i] = rn; CH_ROOMS[cn] = rn;
+}); })();
+const CHALLENGES = LEVELS.map((d, i) => d.challenge ? i : -1).filter(i => i >= 0);
+const challengeOpen = i => save.unlocked >= (LEVELS[i].unlockAt || 0);
+const NATIVE = /Electron/.test(navigator.userAgent);
+function quitGame() { try { window.close(); } catch (e) {} }
+
+/* ------------------------------ level state ------------------------------ */
+let lv = null, players = [], lantern = null;
+let gstate = 'title', pendingLevel = 0;
+const levelCanvas = document.createElement('canvas'), inkCanvas = document.createElement('canvas');
+const dcv = document.createElement('canvas'), scv = document.createElement('canvas'), bgCanvas = document.createElement('canvas');
+[levelCanvas, inkCanvas, scv, bgCanvas, dcv].forEach(c => { c.width = W; c.height = H; });
+const lctx = levelCanvas.getContext('2d'), ictx = inkCanvas.getContext('2d'), dctx = dcv.getContext('2d'), sctx = scv.getContext('2d');
+
+function mkPlayer(kind) {
+  return { kind, name: kind === 'wick' ? 'Wick' : 'Shade', x: 0, y: 0, w: 24, h: 34, vx: 0, vy: 0, face: 1,
+    onGround: false, coyote: 0, jbuf: 0, jumpHeld: false, dead: 0, sx: 0, sy: 0, embedded: false, anim: 0,
+    blink: 2, raise: 0, onShadow: false, ign: null, wave: 0, waveSym: '!', landT: 0, airT: 0 };
+}
+
+function loadLevel(idx, opts = {}) {
+  const def = LEVELS[idx];
+  const grid = def.map.map(r => r.split(''));
+  lv = { idx, def, grid, time: 0, plates: [], exits: [], occ: [], light: null, lit: new Uint8Array(COLS * ROWS),
+    pressed: { p: false, q: false }, doorAnim: { p: 0, q: 0 }, crates: [], saidPlate: new Set(), complete: false, completeT: 0, fadeIn: 1, hintsFired: new Set(),
+    plateCount: 0, exitWait: 0, exitWaitSaid: false, idle: 0, particles: [], ambient: def.ambient ?? 0.6, exitKind: 'E',
+    shadowSaid: false };
+  players = [mkPlayer('wick'), mkPlayer('shade')];
+  let lanSpawn = null;
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    const c = grid[y][x];
+    if (c === 'W' || c === 'S') { const p = players[c === 'W' ? 0 : 1]; p.sx = p.x = x * T + (T - p.w) / 2; p.sy = p.y = (y + 1) * T - p.h; grid[y][x] = '.'; }
+    else if (c === 'L') { lanSpawn = [x, y]; grid[y][x] = '.'; }
+    else if (c === 'E' || c === 'F') { lv.exits.push({ tx: x, ty: y, kind: c }); grid[y][x] = '.'; }
+    else if (c === 'p' || c === 'q') { lv.plates.push({ tx: x, ty: y, ch: c, down: false }); grid[y][x] = '.'; }
+    else if (c === 'C') { lv.crates.push({ crate: true, x: x * T, y: y * T, w: T, h: T, vx: 0, vy: 0, sx: x * T, sy: y * T, onGround: false, ign: null }); grid[y][x] = '.'; }
+  }
+  players[1].face = 1;
+  for (let y = 0; y < ROWS; y++) {
+    let x = 0;
+    while (x < COLS) {
+      if (grid[y][x] === 'B') { let x2 = x; while (x2 < COLS && grid[y][x2] === 'B') x2++; lv.occ.push({ x: x * T, y: y * T, w: (x2 - x) * T, h: T }); x = x2; }
+      else x++;
+    }
+  }
+  lv.occAll = lv.crates.length ? lv.occ.concat(lv.crates) : lv.occ;
+  lantern = { x: 0, y: 0, w: 14, h: 18, vx: 0, vy: 0, held: !lanSpawn, onGround: false, ign: null, spin: 0 };
+  if (lanSpawn) { lantern.x = lanSpawn[0] * T + 13; lantern.y = (lanSpawn[1] + 1) * T - 18; }
+  else placeHeldLantern(players[0]);
+  computeLight();
+  buildStatic();
+  if (!opts.quietIntro) (def.intro || []).forEach(t => narr.say(t));
+  if (!def.secret && !def.challenge) { save.unlocked = Math.max(save.unlocked, idx); writeSave(); }
+}
+
+/* ------------------------------ tiles ------------------------------ */
+function tileAt(tx, ty) { if (tx < 0 || tx >= COLS || ty < 0) return '#'; if (ty >= ROWS) return '.'; return lv.grid[ty][tx]; }
+function isLit(tx, ty) { return tx >= 0 && tx < COLS && ty >= 0 && ty < ROWS && lv.lit[ty * COLS + tx] === 1; }
+function tileSolid(c, tx, ty) {
+  switch (c) {
+    case '#': case 'B': return true;
+    case '=': return isLit(tx, ty);
+    case 'x': return !isLit(tx, ty);
+    case 'P': return !lv.pressed.p;
+    case 'r': return lv.pressed.p;
+    case 'Q': return !lv.pressed.q;
+    case 's': return lv.pressed.q;
+    default: return false;
+  }
+}
+const isDynamic = c => c === '=' || c === 'x' || c === 'P' || c === 'r' || c === 'Q' || c === 's';
+function forEachTile(e, fn) {
+  const x0 = Math.floor(e.x / T), x1 = Math.floor((e.x + e.w - 0.001) / T), y0 = Math.floor(e.y / T), y1 = Math.floor((e.y + e.h - 0.001) / T);
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) fn(tx, ty);
+}
+function solidFor(e, tx, ty) {
+  const c = tileAt(tx, ty);
+  if (!tileSolid(c, tx, ty)) return false;
+  if (isDynamic(c) && e.ign && e.ign.has(ty * COLS + tx)) return false;
+  return true;
+}
+function computeIgnore(e) {
+  // dynamic tiles that switched on while overlapping someone are ignored until they step out
+  const s = new Set();
+  forEachTile(e, (tx, ty) => { const c = tileAt(tx, ty); if (isDynamic(c) && tileSolid(c, tx, ty)) s.add(ty * COLS + tx); });
+  e.ign = s;
+  let ic = null;
+  for (const c of lv.crates) if (c !== e && overl(e.x, e.y, e.w, e.h, c.x, c.y, c.w, c.h)) (ic = ic || new Set()).add(c);
+  e.ignC = ic;
+}
+const crateFor = (e, c) => c !== e && !(e.ignC && e.ignC.has(c));
+function cratePush(e, c, dx) {
+  // a player shoves a crate; anyone standing on it rides along
+  const need = dx > 0 ? e.x + e.w - c.x : e.x - (c.x + c.w);
+  const riders = players.filter(p => p !== e && p.dead <= 0 && Math.abs(p.y + p.h - c.y) < 1.5 && p.x + p.w > c.x && p.x < c.x + c.w);
+  const lr = !lantern.held && Math.abs(lantern.y + lantern.h - c.y) < 1.5 && lantern.x + lantern.w > c.x && lantern.x < c.x + c.w;
+  const ox = c.x; moveX(c, need);
+  const moved = c.x - ox;
+  if (moved) { for (const r of riders) moveX(r, moved); if (lr) moveX(lantern, moved); c.slide = 0.15; carryStack(c, moved); }
+  e.pushT = 0.12;
+}
+function carryStack(c, moved) {
+  // crates stacked on this crate slide along with it (and whatever is on them)
+  for (const t of lv.crates) {
+    if (t === c || Math.abs(t.y + t.h - c.y) > 1.5 || t.x + t.w <= c.x - moved || t.x >= c.x - moved + c.w) continue;
+    const riders = players.filter(p => p.dead <= 0 && Math.abs(p.y + p.h - t.y) < 1.5 && p.x + p.w > t.x && p.x < t.x + t.w);
+    const ox = t.x; t.ignC = new Set([c]); moveX(t, moved); t.ignC = null;
+    const m = t.x - ox; if (m) { for (const r of riders) moveX(r, m); t.slide = 0.15; carryStack(t, m); }
+  }
+}
+function moveX(e, dx) {
+  if (!dx) return false;
+  e.x += dx; let hit = false;
+  forEachTile(e, (tx, ty) => {
+    if (solidFor(e, tx, ty)) { if (dx > 0) e.x = Math.min(e.x, tx * T - e.w); else e.x = Math.max(e.x, (tx + 1) * T); hit = true; }
+  });
+  for (const c of lv.crates) {
+    if (!crateFor(e, c) || !overl(e.x, e.y, e.w, e.h, c.x, c.y, c.w, c.h)) continue;
+    if (e.kind && e.y + e.h > c.y + 6 && e.y < c.y + c.h - 2) cratePush(e, c, dx);
+    if (!overl(e.x, e.y, e.w, e.h, c.x, c.y, c.w, c.h)) continue;
+    if (dx > 0) e.x = Math.min(e.x, c.x - e.w); else e.x = Math.max(e.x, c.x + c.w); hit = true;
+  }
+  if (hit) e.vx = 0;
+  return hit;
+}
+function moveY(e, dy) {
+  if (!dy) return false;
+  e.y += dy; let hit = false;
+  forEachTile(e, (tx, ty) => {
+    if (solidFor(e, tx, ty)) { if (dy > 0) { e.y = Math.min(e.y, ty * T - e.h); e.onGround = true; } else e.y = Math.max(e.y, (ty + 1) * T); hit = true; }
+  });
+  for (const c of lv.crates) {
+    if (!crateFor(e, c) || !overl(e.x, e.y, e.w, e.h, c.x, c.y, c.w, c.h)) continue;
+    if (dy > 0) { e.y = Math.min(e.y, c.y - e.h); e.onGround = true; } else e.y = Math.max(e.y, c.y + c.h); hit = true;
+  }
+  if (hit) e.vy = 0;
+  return hit;
+}
+function pointSolid(x, y) { const tx = Math.floor(x / T), ty = Math.floor(y / T); return tileSolid(tileAt(tx, ty), tx, ty); }
+function pointSolidC(x, y) { if (pointSolid(x, y)) return true; for (const c of lv.crates) if (x > c.x && x < c.x + c.w && y > c.y && y < c.y + c.h) return true; return false; }
+function groundBelow(e) {
+  const y = e.y + e.h + 1, ty = Math.floor(y / T);
+  for (let tx = Math.floor((e.x + 1) / T); tx <= Math.floor((e.x + e.w - 1) / T); tx++) if (solidFor(e, tx, ty)) return true;
+  for (const c of lv.crates) if (crateFor(e, c) && overl(e.x + 1, y - 1, e.w - 2, 2, c.x, c.y, c.w, c.h)) return true;
+  return false;
+}
+
+/* ------------------------------ light & shadow ------------------------------ */
+function computeLight() {
+  if (!lantern) { lv.light = null; return; }
+  lv.light = { x: lantern.x + 7, y: lantern.y + 6 };
+  const L = lv.light, r2 = RL * RL;
+  for (let ty = 0; ty < ROWS; ty++) for (let tx = 0; tx < COLS; tx++) {
+    const dx = (tx + 0.5) * T - L.x, dy = (ty + 0.5) * T - L.y;
+    lv.lit[ty * COLS + tx] = dx * dx + dy * dy < r2 ? 1 : 0;
+  }
+}
+function segRect(lx, ly, dx, dy, r) {
+  let t0 = 0, t1 = 1;
+  if (Math.abs(dx) < 1e-9) { if (lx <= r.x || lx >= r.x + r.w) return false; }
+  else { let a = (r.x - lx) / dx, b = (r.x + r.w - lx) / dx; if (a > b) { const t = a; a = b; b = t; } if (a > t0) t0 = a; if (b < t1) t1 = b; if (t0 >= t1) return false; }
+  if (Math.abs(dy) < 1e-9) { if (ly <= r.y || ly >= r.y + r.h) return false; }
+  else { let a = (r.y - ly) / dy, b = (r.y + r.h - ly) / dy; if (a > b) { const t = a; a = b; b = t; } if (a > t0) t0 = a; if (b < t1) t1 = b; }
+  return t1 - t0 > 1e-4;
+}
+// a lantern resting on top of a crate only shadows the floor under the crate itself, so that crate is skipped
+const restsOn = (L, r) => r.crate && L.x > r.x - 2 && L.x < r.x + r.w + 2 && L.y < r.y && r.y - L.y < 30;
+function isShadow(px, py) {
+  const L = lv.light; if (!L) return false;
+  const dx = px - L.x, dy = py - L.y;
+  if (dx * dx + dy * dy > RL * RL) return false;
+  for (const r of lv.occAll) {
+    if (L.x > r.x && L.x < r.x + r.w && L.y > r.y && L.y < r.y + r.h) continue;
+    if (restsOn(L, r)) continue;
+    if (px > r.x && px < r.x + r.w && py > r.y && py < r.y + r.h) return false;
+    if (segRect(L.x, L.y, dx, dy, r)) return true;
+  }
+  return false;
+}
+function footShadow(p, yb) {
+  return isShadow(p.x + 3, yb - 0.5) || isShadow(p.x + p.w / 2, yb - 0.5) || isShadow(p.x + p.w - 3, yb - 0.5);
+}
+
+/* ------------------------------ lantern ------------------------------ */
+function placeHeldLantern(wk) {
+  const cx = wk.x + wk.w / 2;
+  const xs = [cx + wk.face * 13, cx];
+  for (const fx of xs) {
+    for (let r = wk.raise; r >= -14; r -= 2) {
+      const fy = wk.y + 6 - r;
+      if (!pointSolidC(fx - 6, fy - 6) && !pointSolidC(fx + 6, fy - 6) && !pointSolidC(fx - 6, fy + 11) && !pointSolidC(fx + 6, fy + 11)) {
+        lantern.x = fx - 7; lantern.y = fy - 6; return;
+      }
+    }
+  }
+  lantern.x = cx - 7; lantern.y = wk.y + 2;
+}
+function returnLantern(say = true) {
+  lantern.held = true; lantern.vx = lantern.vy = 0;
+  placeHeldLantern(players[0]);
+  if (say) narr.say(pick(LINES.lanternLost), { ifQuiet: true });
+}
+function updateLantern(dt) {
+  const wk = players[0];
+  if (lantern.held) { placeHeldLantern(wk); return; }
+  lantern.spin *= 0.95;
+  const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
+  lantern.vy = Math.min(lantern.vy + 1900 * dt, 900);
+  computeIgnore(lantern);
+  lantern.onGround = false;
+  for (let i = 0; i < n; i++) { moveX(lantern, lantern.vx * sdt); moveY(lantern, lantern.vy * sdt); }
+  if (lantern.onGround) lantern.vx *= Math.pow(0.0005, dt);
+  if (lantern.y > H + 60) { returnLantern(); return; }
+  let thorn = false;
+  forEachTile(lantern, (tx, ty) => { if (tileAt(tx, ty) === '^') thorn = true; });
+  if (thorn) { burst(lantern.x + 7, lantern.y + 9, '#ffcf70', 14); returnLantern(); }
+}
+
+/* ------------------------------ crates ------------------------------ */
+function updateCrates(dt) {
+  for (const c of lv.crates) {
+    c.slide = Math.max(0, (c.slide || 0) - dt);
+    const wasG = c.onGround, vy0 = c.vy;
+    c.vy = Math.min(c.vy + 1900 * dt, 900);
+    computeIgnore(c); c.onGround = false;
+    const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
+    for (let i = 0; i < n; i++) moveY(c, c.vy * sdt);
+    if (c.onGround && !wasG && vy0 > 300) { SFX.land(); for (let k = 0; k < 8; k++) lv.particles.push({ x: c.x + rand(0, T), y: c.y + T, vx: rand(-80, 80), vy: rand(-60, -10), life: 0.4, max: 0.4, c: '#7b56c9', s: 2 }); }
+    if (c.y > H + 60) {
+      // anything riding the crate (the lantern, usually) comes back with it
+      if (!lantern.held && lantern.x + lantern.w > c.x - 4 && lantern.x < c.x + c.w + 4 && Math.abs(lantern.y + lantern.h - c.y) < 40) { lantern.x = c.sx + 13; lantern.y = c.sy - lantern.h; lantern.vx = lantern.vy = 0; }
+      c.x = c.sx; c.y = c.sy; c.vy = 0; burst(c.x + T / 2, c.y + T / 2, '#b89cff', 16); narr.say(pick(LINES.crateLost), { ifQuiet: true }); }
+  }
+  lv.occAll = lv.crates.length ? lv.occ.concat(lv.crates) : lv.occ;
+}
+function drawCrates(t) {
+  for (const c of lv.crates) {
+    const x = Math.round(c.x), y = Math.round(c.y);
+    ctx.fillStyle = '#0c0912'; ctx.fillRect(x, y, T, T);
+    ctx.strokeStyle = '#7b56c9'; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 1, T - 2, T - 2);
+    ctx.beginPath(); ctx.moveTo(x + 6, y + 6); ctx.lineTo(x + T - 6, y + T - 6); ctx.moveTo(x + T - 6, y + 6); ctx.lineTo(x + 6, y + T - 6);
+    ctx.strokeStyle = 'rgba(123,86,201,0.55)'; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(x + 7, y + 5, 6, 2);
+    if (c.slide > 0) { ctx.fillStyle = 'rgba(184,140,255,0.5)'; ctx.fillRect(x + 4 + hash(x, y, 1) * 30, y + T - 2, 3, 2); }
+  }
+}
+
+/* ------------------------------ players ------------------------------ */
+function killPlayer(p, i) {
+  if (p.dead > 0 || lv.complete) return;
+  p.dead = 0.9; run.deaths[i]++;
+  SFX.die();
+  burst(p.x + p.w / 2, p.y + p.h / 2, p.kind === 'wick' ? '#f2e6cc' : '#8a5cff', 26);
+  if (narr.deathCd <= 0) {
+    const other = players[1 - i].name;
+    const t = pick(LINES.death).replace(/\{name\}/g, p.name).replace(/\{other\}/g, other).replace(/\{n\}/g, run.deaths[i]);
+    if (narr.say(t, { ifQuiet: true })) narr.deathCd = 7;
+  }
+}
+function respawn(p) {
+  p.x = p.sx; p.y = p.sy; p.vx = p.vy = 0; p.embedded = false; p.dead = 0;
+  burst(p.x + p.w / 2, p.y + p.h / 2, p.kind === 'wick' ? '#ffd27a' : '#b89cff', 12);
+}
+function updatePlayer(p, inp, dt, i) {
+  if (p.dead > 0) { p.dead -= dt; if (p.dead <= 0) respawn(p); return; }
+  const shade = p.kind === 'shade';
+  const mx = inp ? inp.mx : 0, my = inp ? inp.my : 0;
+  p.anim += dt; p.blink -= dt; if (p.blink < -0.12) p.blink = rand(1.5, 4.5);
+  p.landT = Math.max(0, p.landT - dt * 4); p.wave = Math.max(0, p.wave - dt);
+  // horizontal
+  p.pushT = Math.max(0, (p.pushT || 0) - dt);
+  const maxS = p.pushT > 0 ? 125 : shade && p.embedded ? 190 : 235;
+  const acc = p.onGround ? 2800 : 1700;
+  if (mx) { p.vx += mx * acc * dt; p.face = mx > 0 ? 1 : -1; }
+  else { const f = (p.onGround ? 3000 : 700) * dt; p.vx = Math.abs(p.vx) <= f ? 0 : p.vx - Math.sign(p.vx) * f; }
+  p.vx = clamp(p.vx, -maxS, maxS);
+  // jump
+  if (inp && inp.jumpP) p.jbuf = 0.13;
+  p.jbuf -= dt;
+  p.coyote = p.onGround ? 0.1 : p.coyote - dt;
+  if (p.jbuf > 0 && p.coyote > 0 && !p.embedded) {
+    p.vy = -720; p.jbuf = 0; p.coyote = 0; p.onGround = false; p.jumpHeld = true;
+    shade ? SFX.sjump() : SFX.jump();
+  }
+  if (p.jumpHeld && (!inp || !inp.jump) && p.vy < 0) { p.vy *= 0.45; p.jumpHeld = false; }
+  if (p.vy >= 0) p.jumpHeld = false;
+  // gravity / buoyancy
+  if (shade && p.embedded) { p.vy += (-250 - p.vy) * Math.min(1, 7 * dt); if (Math.random() < dt * 12) bubble(p); }
+  else p.vy = Math.min(p.vy + 1900 * dt, 950);
+  // wick: lantern + raise
+  if (!shade) {
+    const target = my < -0.5 ? 46 : my > 0.5 ? -12 : 0;
+    p.raise = lerp(p.raise, target, Math.min(1, dt * 9));
+    if (inp && inp.actP) wickInteract(p, inp);
+  } else if (inp && inp.actP) {
+    p.wave = 1.2; p.waveSym = pick(['!', '♥', '?', '♪', '!!']); SFX.wave(); run.waves++;
+    ring(p.x + p.w / 2, p.y + 6, '#b89cff');
+    if (!flags.wave) { flags.wave = true; narr.say(LINES.waveFirst, { ifQuiet: true }); }
+  }
+  // integrate
+  const wasGround = p.onGround, vyBefore = p.vy;
+  p.onGround = false; p.onShadow = false;
+  computeIgnore(p);
+  const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
+  for (let s = 0; s < n; s++) {
+    const ox = p.x, oy = p.y;
+    moveX(p, p.vx * sdt);
+    moveY(p, p.vy * sdt);
+    if (shade) shadeContact(p, Math.abs(p.x - ox), Math.abs(p.y - oy));
+  }
+  if (!p.onGround && groundBelow(p) && p.vy >= 0) p.onGround = true;
+  if (p.onGround && !wasGround && vyBefore > 300) { p.landT = 1; SFX.land(); dust(p); }
+  if (!p.onGround) p.airT += dt; else p.airT = 0;
+  // hazards
+  if (p.y > H + 40) { killPlayer(p, i); return; }
+  const hx0 = p.x + 4, hx1 = p.x + p.w - 4, hy0 = p.y + 6, hy1 = p.y + p.h;
+  forEachTile(p, (tx, ty) => {
+    if (tileAt(tx, ty) === '^') {
+      const rx = tx * T + 3, ry = ty * T + 18;
+      if (hx1 > rx && hx0 < rx + T - 6 && hy1 > ry && hy0 < ty * T + T) killPlayer(p, i);
+    }
+  });
+}
+function shadeContact(p, adx = 0, ady = 0) {
+  const wasEmb = p.embedded;
+  p.embedded = isShadow(p.x + p.w / 2, p.y + p.h / 2);
+  if (p.embedded && !wasEmb) { SFX.float(); if (!flags.float) { flags.float = true; narr.say(LINES.floatFirst, { ifQuiet: true }); } }
+  if (p.embedded || p.vy < 0) return;
+  const yb = p.y + p.h;
+  if (!footShadow(p, yb)) return;
+  // shadow surfaces up to ~70 degrees are walkable; steeper ones act like walls (Shade sinks in and floats up instead)
+  const maxLift = Math.min(24, 3 + ady + 3 * adx);
+  for (let d = 0.5; d <= maxLift; d += 0.5) {
+    if (!footShadow(p, yb - d)) {
+      // don't lift into a ceiling
+      const oy = p.y; p.y -= d;
+      let blocked = false; forEachTile(p, (tx, ty) => { if (solidFor(p, tx, ty)) blocked = true; });
+      if (blocked) { p.y = oy; return; }
+      p.vy = 0; p.onGround = true; p.onShadow = true;
+      if (!flags.shadow) { flags.shadow = true; narr.say(LINES.shadowFirst, { ifQuiet: false }); }
+      return;
+    }
+  }
+}
+function wickInteract(p, inp) {
+  if (lantern.held) {
+    lantern.held = false;
+    if (Math.abs(inp.mx) > 0.3) {
+      lantern.vx = p.face * 430 + p.vx * 0.3; lantern.vy = -420; lantern.spin = p.face * 12; run.throws++;
+      SFX.drop(); if (!flags.thrown) { flags.thrown = true; narr.say(LINES.throwFirst, { ifQuiet: true }); }
+    } else {
+      lantern.vx = 0; lantern.vy = 0; SFX.drop();
+      if (!flags.drop) { flags.drop = true; narr.say(LINES.dropFirst, { ifQuiet: true }); }
+    }
+    // never release inside a wall
+    let bad = false; forEachTile(lantern, (tx, ty) => { if (tileSolid(tileAt(tx, ty), tx, ty)) bad = true; });
+    if (bad) { lantern.x = p.x + p.w / 2 - 7; lantern.y = p.y + 4; }
+    run.abandon++;
+  } else {
+    const dx = (lantern.x + 7) - (p.x + p.w / 2), dy = (lantern.y + 9) - (p.y + p.h / 2);
+    if (dx * dx + dy * dy < 52 * 52) { lantern.held = true; SFX.pick(); placeHeldLantern(p); }
+  }
+}
+let flags = {};
+
+/* ------------------------------ plates, exits ------------------------------ */
+function overl(ax, ay, aw, ah, bx, by, bw, bh) { return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by; }
+function updatePlates() {
+  const any = { p: false, q: false }; let by = null;
+  for (const pl of lv.plates) {
+    const rx = pl.tx * T + 3, ry = pl.ty * T + 28, rw = T - 6, rh = 12;
+    let d = false, who = null;
+    players.forEach(p => { if (p.dead <= 0 && overl(p.x, p.y, p.w, p.h + 1, rx, ry, rw, rh)) { d = true; who = p.kind; } });
+    if (!lantern.held && overl(lantern.x, lantern.y, lantern.w, lantern.h + 1, rx, ry, rw, rh)) { d = true; who = who || 'lantern'; }
+    for (const c of lv.crates) if (overl(c.x, c.y, c.w, c.h + 1, rx, ry, rw, rh)) { d = true; who = who || 'crate'; }
+    if (d && !pl.down) { SFX.plate(true); by = who; }
+    if (!d && pl.down) SFX.plate(false);
+    pl.down = d; if (d) any[pl.ch] = true;
+  }
+  for (const ch of ['p', 'q']) {
+    if (any[ch] !== lv.pressed[ch]) {
+      lv.pressed[ch] = any[ch];
+      SFX.door();
+      if (any[ch]) {
+        lv.plateCount++;
+        const line = lv.def.onPlate ? lv.def.onPlate(lv.plateCount, by, ch) : null;
+        if (line && !lv.saidPlate.has(line)) { lv.saidPlate.add(line); narr.say(line, { front: true }); }
+        if (lv.def.secret && lv.plateCount >= 5) confetti();
+      }
+    }
+    lv.doorAnim[ch] = clamp(lv.doorAnim[ch] + (lv.pressed[ch] ? 1 : -1) * 0.12, 0, 1);
+  }
+}
+function exitRect(ex) { return { x: ex.tx * T - 2, y: (ex.ty - 1) * T, w: T + 4, h: 2 * T }; }
+function inRect(p, r) { const cx = p.x + p.w / 2, cy = p.y + p.h / 2; return cx > r.x && cx < r.x + r.w && cy > r.y && cy < r.y + r.h; }
+function updateExits(dt) {
+  if (lv.complete) return;
+  let oneIn = false;
+  for (const ex of lv.exits) {
+    const r = exitRect(ex);
+    const ins = players.map(p => p.dead <= 0 && inRect(p, r));
+    if (ins[0] && ins[1]) {
+      lv.complete = true; lv.exitKind = ex.kind; lv.completeT = 0; SFX.win();
+      const line = ex.kind === 'F' ? lv.def.outroF : lv.def.outro;
+            if (line) narr.say(line);
+      for (let k = 0; k < 40; k++) lv.particles.push({ x: r.x + T / 2, y: r.y + T, vx: rand(-140, 140), vy: rand(-260, -40), life: rand(0.6, 1.4), max: 1.4, c: pick(['#ffd27a', '#b89cff', '#fff']), s: rand(2, 4) });
+      return;
+    }
+    if (ins[0] || ins[1]) oneIn = true;
+  }
+  lv.exitWait = oneIn ? lv.exitWait + dt : 0;
+  if (lv.exitWait > 4 && !lv.exitWaitSaid) { lv.exitWaitSaid = true; narr.say(pick(LINES.waitDoor), { ifQuiet: true }); }
+}
+function nextLevel() {
+  const d = lv.def;
+  if (d.challenge) { save.done = save.done || {}; save.done[d.name] = 1; writeSave(); narr.clear(); gstate = 'title'; menuMode = 'challenges'; menuSel = 0; return; }
+  if (lv.exitKind === 'F' && d.alt && d.alt.F != null) return startLevel(d.alt.F === 'secret' ? SECRET_IDX : d.alt.F);
+  if (d.final) { startCredits(); return; }
+  startLevel(d.next != null ? d.next : lv.idx + 1);
+}
+function startLevel(idx, opts) { loadLevel(idx, opts); gstate = 'play'; flagsLevelReset(); }
+function flagsLevelReset() { }
+
+/* ------------------------------ particles ------------------------------ */
+function burst(x, y, c, n) { if (!lv) return; for (let i = 0; i < n; i++) { const a = rand(0, TAU), s = rand(40, 260); lv.particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 60, life: rand(0.4, 0.9), max: 0.9, c, s: rand(2, 4), g: 500 }); } }
+function dust(p) { for (let i = 0; i < 6; i++) lv.particles.push({ x: p.x + p.w / 2 + rand(-10, 10), y: p.y + p.h, vx: rand(-60, 60), vy: rand(-60, -10), life: 0.35, max: 0.35, c: p.kind === 'wick' ? '#d9cdb6' : '#7a5cc0', s: 2 }); }
+function bubble(p) { lv.particles.push({ x: p.x + rand(2, p.w - 2), y: p.y + p.h, vx: rand(-10, 10), vy: rand(-90, -40), life: 0.6, max: 0.6, c: '#c4adff', s: rand(1.5, 3), ring: true }); }
+function ring(x, y, c) { lv.particles.push({ x, y, vx: 0, vy: 0, life: 0.7, max: 0.7, c, s: 0, wave: true }); }
+function confetti() { for (let i = 0; i < 120; i++) lv.particles.push({ x: rand(100, W - 100), y: rand(-40, 0), vx: rand(-60, 60), vy: rand(40, 200), life: rand(2, 4), max: 4, c: pick(['#ff8a9a', '#ffd27a', '#a8f0d0', '#b89cff', '#8ad8ff']), s: rand(3, 6), g: 60, conf: true }); }
+function updateParticles(dt) {
+  for (const q of lv.particles) { q.life -= dt; q.vy += (q.g || 0) * dt; q.x += q.vx * dt; q.y += q.vy * dt; }
+  lv.particles = lv.particles.filter(q => q.life > 0);
+}
+
+/* ------------------------------ update ------------------------------ */
+function updatePlay(dt) {
+  const mi = menuInput();
+  if (mi.pause && !lv.complete) { gstate = 'pause'; menuSel = 0; SFX.menu(); return; }
+  lv.time += dt; lv.fadeIn = Math.max(0, lv.fadeIn - dt * 1.4);
+  const inps = [getInp(0), getInp(1)];
+  const active = inps.some(s => s && (s.mx || s.my || s.jump || s.act));
+  lv.idle = active ? 0 : lv.idle + dt;
+  if (lv.idle > 32) { lv.idle = -40; narr.say(pick(LINES.idle), { ifQuiet: true }); }
+  (lv.def.hints || []).forEach(([t, txt], k) => {
+    if (lv.time > t && !lv.hintsFired.has(k) && !lv.complete) { lv.hintsFired.add(k); narr.say(txt); }
+  });
+  updatePlates();
+  updateCrates(dt);
+  if (!lv.complete) updatePlayer(players[0], inps[0], dt, 0);
+  updateLantern(dt);
+  computeLight();
+  if (!lv.complete) updatePlayer(players[1], inps[1], dt, 1);
+  updateExits(dt);
+  updateParticles(dt);
+  if (lv.complete) { lv.completeT += dt; if (lv.completeT > 2.2) nextLevel(); }
+}
+
+/* ------------------------------ static drawing ------------------------------ */
+function buildBackground() {
+  const g = bgCanvas.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#120e26'); gr.addColorStop(0.6, '#221a3d'); gr.addColorStop(1, '#2d2149');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 160; i++) { g.fillStyle = `rgba(255,248,230,${rand(0.15, 0.7)})`; const s = rand(0.6, 1.8); g.fillRect(rand(0, W), rand(0, H * 0.7), s, s); }
+  g.fillStyle = 'rgba(255,240,210,0.08)'; g.beginPath(); g.arc(1040, 150, 70, 0, TAU); g.fill();
+  g.fillStyle = 'rgba(255,240,210,0.12)'; g.beginPath(); g.arc(1040, 150, 46, 0, TAU); g.fill();
+  const hills = [['#1f1838', 520, 60, 0.004], ['#191330', 600, 45, 0.007], ['#140f27', 680, 30, 0.011]];
+  for (const [c, base, amp, f] of hills) {
+    g.fillStyle = c; g.beginPath(); g.moveTo(0, H);
+    for (let x = 0; x <= W; x += 8) g.lineTo(x, base + Math.sin(x * f + base) * amp + Math.sin(x * f * 2.7) * amp * 0.3);
+    g.lineTo(W, H); g.fill();
+  }
+}
+function isChalk(tx, ty) { const c = tileAt(tx, ty); return c === '#'; }
+function buildStatic() {
+  lctx.clearRect(0, 0, W, H); ictx.clearRect(0, 0, W, H);
+  lctx.drawImage(bgCanvas, 0, 0);
+  for (let ty = 0; ty < ROWS; ty++) for (let tx = 0; tx < COLS; tx++) {
+    const c = lv.grid[ty][tx], px = tx * T, py = ty * T;
+    if (c === '#') {
+      lctx.fillStyle = '#b5a888'; lctx.fillRect(px, py, T, T);
+      for (let k = 0; k < 5; k++) { lctx.fillStyle = `rgba(90,70,50,${0.08 + hash(tx, ty, k) * 0.1})`; lctx.fillRect(px + hash(tx, ty, k + 9) * 36, py + hash(tx, ty, k + 19) * 36, 3, 2); }
+      if (!isChalk(tx, ty - 1)) { lctx.fillStyle = '#efe5c8'; lctx.fillRect(px, py, T, 5); lctx.fillStyle = '#d6c9a6'; lctx.fillRect(px, py + 5, T, 3); }
+      lctx.fillStyle = '#7d6f55';
+      if (!isChalk(tx - 1, ty)) lctx.fillRect(px, py, 2, T);
+      if (!isChalk(tx + 1, ty)) lctx.fillRect(px + T - 2, py, 2, T);
+      if (!isChalk(tx, ty + 1)) lctx.fillRect(px, py + T - 3, T, 3);
+    } else if (c === '^') {
+      lctx.fillStyle = '#5a1430'; lctx.fillRect(px, py + T - 6, T, 6);
+      for (let k = 0; k < 4; k++) {
+        const bx = px + k * 10;
+        lctx.fillStyle = k % 2 ? '#e2546f' : '#c23a58';
+        lctx.beginPath(); lctx.moveTo(bx, py + T - 4); lctx.lineTo(bx + 5, py + 14 + hash(tx, ty, k) * 6); lctx.lineTo(bx + 10, py + T - 4); lctx.fill();
+      }
+    } else if (c === 'B') {
+      ictx.fillStyle = '#0c0912'; ictx.fillRect(px, py, T, T);
+      ictx.fillStyle = '#7b56c9';
+      const isB = (x, y) => tileAt(x, y) === 'B';
+      if (!isB(tx, ty - 1)) ictx.fillRect(px, py, T, 2);
+      if (!isB(tx - 1, ty)) ictx.fillRect(px, py, 2, T);
+      if (!isB(tx + 1, ty)) ictx.fillRect(px + T - 2, py, 2, T);
+      if (!isB(tx, ty + 1)) { ictx.fillRect(px, py + T - 2, T, 2); ictx.fillStyle = '#0c0912'; ictx.beginPath(); ictx.arc(px + 12 + hash(tx, ty, 3) * 16, py + T, 4, 0, Math.PI); ictx.fill(); }
+      ictx.fillStyle = 'rgba(255,255,255,0.18)'; ictx.fillRect(px + 7, py + 7, 6, 2);
+    }
+  }
+}
+const hatch = document.createElement('canvas'); hatch.width = hatch.height = 20;
+(() => { const g = hatch.getContext('2d'); g.fillStyle = '#2b1155'; g.fillRect(0, 0, 20, 20); g.strokeStyle = '#7a4ee0'; g.lineWidth = 3; g.beginPath(); for (let i = -20; i <= 40; i += 10) { g.moveTo(i, 0); g.lineTo(i + 20, 20); } g.stroke(); })();
+let hatchPat = null;
+
+/* ------------------------------ frame drawing ------------------------------ */
+function rr(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+// per channel: [main, faint outline, dark, bridge fill, bridge highlight]
+const CH_COL = { p: ['#43d6c3', 'rgba(67,214,195,0.35)', '#1d3b3b', 'rgba(67,214,195,0.85)', '#c8fff6'], q: ['#ff7aa8', 'rgba(255,122,168,0.35)', '#47202f', 'rgba(255,122,168,0.85)', '#ffe0ec'] };
+function drawDynamicTiles(t) {
+  for (let ty = 0; ty < ROWS; ty++) for (let tx = 0; tx < COLS; tx++) {
+    const c = lv.grid[ty][tx], px = tx * T, py = ty * T;
+    if (c === '=') {
+      if (isLit(tx, ty)) {
+        ctx.fillStyle = 'rgba(255,206,120,0.82)'; ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
+        ctx.fillStyle = 'rgba(255,248,220,0.9)'; ctx.fillRect(px + 1, py + 1, T - 2, 4);
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.beginPath(); ctx.moveTo(px + 8, py + 30); ctx.lineTo(px + 20, py + 12); ctx.stroke();
+      } else {
+        ctx.strokeStyle = 'rgba(255,206,120,0.3)'; ctx.setLineDash([4, 5]); ctx.strokeRect(px + 2, py + 2, T - 4, T - 4); ctx.setLineDash([]);
+      }
+    } else if (c === 'x') {
+      if (!isLit(tx, ty)) {
+        ctx.fillStyle = '#5a2f96'; ctx.fillRect(px + 1, py + 1, T - 2, T - 2);
+        ctx.fillStyle = '#9a6cf0'; ctx.fillRect(px + 1, py + 1, T - 2, 4);
+        ctx.strokeStyle = 'rgba(20,0,40,0.5)'; ctx.beginPath(); ctx.moveTo(px + 6, py + 12); ctx.lineTo(px + 18, py + 22); ctx.lineTo(px + 30, py + 16); ctx.stroke();
+      } else {
+        ctx.strokeStyle = 'rgba(170,120,255,0.35)'; ctx.setLineDash([3, 6]); ctx.strokeRect(px + 2, py + 2, T - 4, T - 4); ctx.setLineDash([]);
+        if (Math.random() < 0.02) lv.particles.push({ x: px + rand(4, 36), y: py + rand(4, 36), vx: 0, vy: -20, life: 0.6, max: 0.6, c: '#b89cff', s: 2 });
+      }
+    } else if (c === 'P' || c === 'Q') {
+      const ch = c.toLowerCase(), col = CH_COL[ch], a = lv.doorAnim[ch];
+      const above = tileAt(tx, ty - 1) === c, below = tileAt(tx, ty + 1) === c;
+      if (a < 1) {
+        const h = T * (1 - a);
+        ctx.fillStyle = col[2]; ctx.fillRect(px + 4, py, T - 8, below ? T : h);
+        ctx.fillStyle = col[0];
+        for (let k = 0; k < 3; k++) ctx.fillRect(px + 8 + k * 10, py, 3, below ? T : h);
+        if (!below) ctx.fillRect(px + 4, py + h - 4, T - 8, 4);
+      }
+      ctx.strokeStyle = col[1]; ctx.strokeRect(px + 4.5, py + (above ? 0 : 0.5), T - 9, T - (below ? 0 : 1));
+    } else if (c === 'r' || c === 's') {
+      const ch = c === 'r' ? 'p' : 'q', col = CH_COL[ch];
+      if (lv.pressed[ch]) {
+        ctx.fillStyle = col[3]; ctx.fillRect(px + 1, py + 2, T - 2, T - 6);
+        ctx.fillStyle = col[4]; ctx.fillRect(px + 1, py + 2, T - 2, 4);
+      } else {
+        ctx.strokeStyle = col[1]; ctx.setLineDash([2, 6]); ctx.strokeRect(px + 2, py + 3, T - 4, T - 8); ctx.setLineDash([]);
+      }
+    }
+  }
+  for (const pl of lv.plates) {
+    const px = pl.tx * T, py = pl.ty * T;
+    const col = CH_COL[pl.ch];
+    ctx.fillStyle = col[2]; ctx.fillRect(px + 2, py + T - 5, T - 4, 5);
+    ctx.fillStyle = col[0]; ctx.globalAlpha = pl.down ? 0.6 : 1; ctx.fillRect(px + 5, py + T - (pl.down ? 7 : 11), T - 10, pl.down ? 3 : 6); ctx.globalAlpha = 1;
+  }
+}
+function drawExits(t) {
+  for (const ex of lv.exits) {
+    const r = exitRect(ex), x = ex.tx * T, y = (ex.ty - 1) * T;
+    const col = ex.kind === 'F' ? [168, 240, 208] : [255, 210, 122];
+    const ins = players.filter(p => p.dead <= 0 && inRect(p, r)).length;
+    ctx.fillStyle = '#3b2a1c'; rr(ctx, x - 4, y - 6, T + 8, 2 * T + 6, 14); ctx.fill();
+    const g = ctx.createLinearGradient(0, y, 0, y + 2 * T);
+    g.addColorStop(0, `rgba(${col},${0.55 + 0.1 * Math.sin(t * 3) + ins * 0.15})`); g.addColorStop(1, `rgba(${col},0.15)`);
+    ctx.fillStyle = g; rr(ctx, x + 2, y, T - 4, 2 * T, 10); ctx.fill();
+    for (let k = 0; k < 2; k++) { ctx.fillStyle = k < ins ? '#fff' : 'rgba(255,255,255,0.25)'; ctx.beginPath(); ctx.arc(x + 14 + k * 12, y - 14, 4, 0, TAU); ctx.fill(); }
+  }
+}
+function drawLabels() {
+  ctx.textAlign = 'center'; ctx.font = 'bold 13px Georgia, serif';
+  for (const [tx, ty, text, c] of lv.def.labels || []) {
+    const x = (tx + 0.5) * T, y = (ty + 0.5) * T;
+    const w = ctx.measureText(text).width + 16;
+    ctx.fillStyle = 'rgba(10,8,20,0.75)'; rr(ctx, x - w / 2, y - 12, w, 22, 6); ctx.fill();
+    ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = c; ctx.fillText(text, x, y + 4);
+  }
+}
+function drawWick(p, t) {
+  if (p.dead > 0) return;
+  const moving = p.onGround && Math.abs(p.vx) > 20;
+  const bob = moving ? Math.sin(p.anim * 16) * 1.2 : 0;
+  const sq = p.landT * 0.18, st = !p.onGround && p.vy < -100 ? 0.06 : 0;
+  ctx.save(); ctx.translate(p.x + p.w / 2, p.y + p.h); ctx.scale(1 + sq - st, 1 - sq + st);
+  ctx.fillStyle = '#3a2a1a';
+  const l1 = moving ? Math.sin(p.anim * 16) * 3 : 0;
+  ctx.fillRect(-7 + l1, -6, 5, 6); ctx.fillRect(2 - l1, -6, 5, 6);
+  ctx.fillStyle = '#f2e6cc'; ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 2;
+  rr(ctx, -12, -34 + bob, 24, 30, 9); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, -34 + bob); ctx.quadraticCurveTo(3, -39 + bob, 1, -42 + bob); ctx.stroke();
+  ctx.fillStyle = '#e0663a'; ctx.fillRect(-12, -17 + bob, 24, 5);
+  const sw = Math.sin(t * 9) * 2;
+  ctx.beginPath(); ctx.moveTo(-p.face * 10, -16 + bob); ctx.lineTo(-p.face * (19 + Math.abs(p.vx) * 0.02), -12 + sw + bob); ctx.lineTo(-p.face * 9, -11 + bob); ctx.fill();
+  ctx.fillStyle = '#2a1d12';
+  const eh = p.blink < 0 ? 1 : 5;
+  ctx.fillRect(p.face * 3 - 6, -27 + bob, 3, eh); ctx.fillRect(p.face * 3 + 3, -27 + bob, 3, eh);
+  ctx.fillStyle = 'rgba(224,102,58,0.35)'; ctx.fillRect(p.face * 3 - 9, -21 + bob, 4, 2); ctx.fillRect(p.face * 3 + 6, -21 + bob, 4, 2);
+  ctx.restore();
+}
+function drawShade(p, t) {
+  if (p.dead > 0) return;
+  ctx.save(); ctx.translate(p.x + p.w / 2, p.y + p.h);
+  const sq = p.landT * 0.2; ctx.scale(1 + sq, 1 - sq);
+  ctx.shadowColor = '#8a5cff'; ctx.shadowBlur = p.embedded ? 26 : 16;
+  ctx.beginPath(); ctx.moveTo(-12, -6); ctx.lineTo(-12, -22); ctx.arc(0, -22, 12, Math.PI, 0); ctx.lineTo(12, -4);
+  for (let k = 0; k <= 6; k++) ctx.lineTo(12 - k * 4, -2 + Math.sin(t * 9 + k * 1.4) * 2.5);
+  ctx.closePath();
+  ctx.fillStyle = p.embedded ? 'rgba(30,14,60,0.85)' : '#170c2a'; ctx.fill();
+  ctx.shadowBlur = 0; ctx.strokeStyle = '#a689ff'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#fff';
+  const eh = p.blink < 0 ? 1 : 6;
+  ctx.beginPath(); ctx.ellipse(p.face * 3 - 5, -22, 2.6, eh / 2, 0, 0, TAU); ctx.ellipse(p.face * 3 + 5, -22, 2.6, eh / 2, 0, 0, TAU); ctx.fill();
+  ctx.restore();
+  if (p.wave > 0) {
+    const a = Math.min(1, p.wave * 2), x = p.x + p.w / 2, y = p.y - 22 - (1.2 - p.wave) * 8;
+    ctx.globalAlpha = a; ctx.fillStyle = '#efe7ff'; rr(ctx, x - 16, y - 14, 32, 22, 8); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x - 4, y + 8); ctx.lineTo(x, y + 14); ctx.lineTo(x + 4, y + 8); ctx.fill();
+    ctx.fillStyle = '#5a2f96'; ctx.font = 'bold 16px Georgia'; ctx.textAlign = 'center'; ctx.fillText(p.waveSym, x, y + 3);
+    ctx.globalAlpha = 1;
+  }
+}
+function drawLanternBody(t) {
+  const x = lantern.x, y = lantern.y;
+  ctx.save();
+  if (!lantern.held && lantern.spin) { ctx.translate(x + 7, y + 9); ctx.rotate(Math.sin(t * 20) * 0.2 * Math.min(1, Math.abs(lantern.spin))); ctx.translate(-x - 7, -y - 9); }
+  ctx.strokeStyle = '#8a6326'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x + 7, y - 1, 4, Math.PI, 0); ctx.stroke();
+  ctx.fillStyle = '#6b4a1f'; ctx.fillRect(x + 2, y, 10, 3); ctx.fillRect(x + 1, y + 15, 12, 3);
+  ctx.fillStyle = '#ffe4a0'; ctx.fillRect(x + 2, y + 3, 10, 12);
+  ctx.fillStyle = '#fff8e0'; const fl = Math.sin(t * 23) * 0.8;
+  ctx.beginPath(); ctx.ellipse(x + 7, y + 9, 2.4 + fl * 0.3, 4 + fl, 0, 0, TAU); ctx.fill();
+  ctx.strokeStyle = '#8a6326'; ctx.lineWidth = 1; ctx.strokeRect(x + 2.5, y + 3.5, 9, 11);
+  ctx.restore();
+}
+function hole(x, y, r, a) {
+  const g = dctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, `rgba(0,0,0,${a})`); g.addColorStop(0.7, `rgba(0,0,0,${a * 0.85})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+  dctx.fillStyle = g; dctx.beginPath(); dctx.arc(x, y, r, 0, TAU); dctx.fill();
+}
+// Pre-rendered light sprites: blitting these is far cheaper than drawing big gradients every frame
+const LS = Math.ceil(RL * 1.07);
+const lightHole = document.createElement('canvas'), warmGlow = document.createElement('canvas');
+lightHole.width = lightHole.height = warmGlow.width = warmGlow.height = LS * 2;
+(() => {
+  let g = lightHole.getContext('2d'), gr = g.createRadialGradient(LS, LS, 0, LS, LS, LS);
+  gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(0.7, 'rgba(0,0,0,0.85)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, LS * 2, LS * 2);
+  g = warmGlow.getContext('2d'); gr = g.createRadialGradient(LS, LS, 0, LS, LS, RL);
+  gr.addColorStop(0, 'rgba(255,170,90,0.16)'); gr.addColorStop(0.5, 'rgba(255,150,80,0.05)'); gr.addColorStop(1, 'rgba(255,150,80,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, LS * 2, LS * 2);
+})();
+function drawDarkness(t) {
+  dctx.globalCompositeOperation = 'source-over'; dctx.clearRect(0, 0, W, H);
+  dctx.fillStyle = `rgba(5,3,16,${lv.ambient})`; dctx.fillRect(0, 0, W, H);
+  dctx.globalCompositeOperation = 'destination-out';
+  const L = lv.light;
+  if (L) dctx.drawImage(lightHole, Math.round(L.x - LS), Math.round(L.y - LS));
+  const [wk, sh] = players;
+  if (sh.dead <= 0) hole(sh.x + sh.w / 2, sh.y + sh.h / 2, 80, 0.6);
+  if (wk.dead <= 0) hole(wk.x + wk.w / 2, wk.y + wk.h / 2, 50, 0.4);
+  for (const ex of lv.exits) hole((ex.tx + 0.5) * T, ex.ty * T, 80, 0.7);
+  for (const pl of lv.plates) hole((pl.tx + 0.5) * T, (pl.ty + 1) * T, 36, 0.5);
+  dctx.globalCompositeOperation = 'source-over';
+  if (L) dctx.drawImage(warmGlow, Math.round(L.x - LS), Math.round(L.y - LS));
+  ctx.drawImage(dcv, 0, 0);
+}
+function hull(pts) {
+  pts.sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const p of pts) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+function drawShadows(t) {
+  // One path of convex shadow volumes (same winding, so overlaps don't double up), filled straight onto the screen.
+  const L = lv.light; if (!L || !lv.occAll.length) return;
+  ctx.save(); ctx.beginPath(); ctx.arc(L.x, L.y, RL, 0, TAU); ctx.clip();
+  ctx.beginPath();
+  for (const r of lv.occAll) {
+    if (L.x > r.x && L.x < r.x + r.w && L.y > r.y && L.y < r.y + r.h) continue;
+    if (restsOn(L, r)) continue;
+    const cs = [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]];
+    const pts = cs.slice();
+    for (const [x, y] of cs) { const dx = x - L.x, dy = y - L.y, l = Math.hypot(dx, dy) || 1, k = (RL * 2.5) / l; pts.push([L.x + dx * (1 + k), L.y + dy * (1 + k)]); }
+    const h = hull(pts);
+    ctx.moveTo(h[0][0], h[0][1]); for (let i = 1; i < h.length; i++) ctx.lineTo(h[i][0], h[i][1]); ctx.closePath();
+  }
+  if (!hatchPat) hatchPat = ctx.createPattern(hatch, 'repeat');
+  try { hatchPat.setTransform(new DOMMatrix().translate((t * 12) % 20, 0)); } catch (e) {}
+  ctx.globalAlpha = 0.8; ctx.fillStyle = hatchPat; ctx.fill('nonzero');
+  ctx.globalAlpha = 0.6; ctx.strokeStyle = '#b48cff'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.restore();
+}
+function drawParticles() {
+  for (const q of lv.particles) {
+    const a = clamp(q.life / q.max, 0, 1);
+    if (q.wave) { ctx.strokeStyle = q.c; ctx.globalAlpha = a; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q.x, q.y, (1 - a) * 60 + 6, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; continue; }
+    ctx.globalAlpha = a; ctx.fillStyle = q.c;
+    if (q.ring) { ctx.strokeStyle = q.c; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(q.x, q.y, q.s, 0, TAU); ctx.stroke(); }
+    else if (q.conf) { ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(q.life * 6); ctx.fillRect(-q.s / 2, -q.s / 4, q.s, q.s / 2); ctx.restore(); }
+    else ctx.fillRect(q.x - q.s / 2, q.y - q.s / 2, q.s, q.s);
+  }
+  ctx.globalAlpha = 1;
+}
+function wrap(text, maxW) {
+  const words = text.split(' '), lines = []; let cur = '';
+  for (const w of words) { const t = cur ? cur + ' ' + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; }
+  if (cur) lines.push(cur); return lines;
+}
+function drawNarrator() {
+  if (!narr.cur && narr.alpha <= 0) return;
+  const text = narr.cur || '';
+  ctx.font = 'italic 23px Georgia, "Times New Roman", serif';
+  const lines = wrap(text, 900);
+  const shown = Math.floor(narr.shown);
+  const h = 58 + lines.length * 30, w = 960, x = (W - w) / 2, y = 14;
+  ctx.globalAlpha = narr.alpha;
+  ctx.fillStyle = 'rgba(12,9,24,0.82)'; rr(ctx, x, y, w, h, 14); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,220,160,0.35)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = '#d9b77a'; ctx.font = 'bold 12px Georgia, serif'; ctx.textAlign = 'left';
+  ctx.fillText('T H E   N A R R A T O R', x + 24, y + 22);
+  ctx.font = 'italic 23px Georgia, "Times New Roman", serif'; ctx.fillStyle = '#f4ead8';
+  let used = 0;
+  lines.forEach((ln, k) => {
+    const take = clamp(shown - used, 0, ln.length);
+    ctx.fillText(ln.slice(0, take), x + 24, y + 50 + k * 30);
+    used += ln.length + 1;
+  });
+  if (narr.cur && narr.shown >= narr.cur.length) {
+    const pulse = 0.55 + 0.45 * Math.sin(gtime * 5);
+    ctx.font = 'bold 14px Georgia, serif'; ctx.textAlign = 'right';
+    ctx.fillStyle = `rgba(255,210,122,${pulse})`;
+    const more = narr.q.length ? `  (${narr.q.length} more)` : '';
+    ctx.fillText('Y / Tab ▸ ' + (narr.q.length ? 'next' : 'close') + more, x + w - 20, y + h - 12);
+    ctx.textAlign = 'left';
+  }
+  ctx.globalAlpha = 1;
+}
+function controlsText() {
+  if (splitMode()) return ['Wick: left stick · LB jump · LT lantern (drop / throw / pick up) · stick up to raise it', 'Shade: right stick · RB jump · RT wave · Y: next narrator line'];
+  return ['Wick: move · A jump · X lantern (drop, throw while moving, pick up) · hold up to raise it', 'Shade: move · A jump · X wave · Y: next narrator line · Start: menu'];
+}
+function drawHUD(t) {
+  const [wk, sh] = players;
+  if (lv.time < 6) {
+    const a = clamp(6 - lv.time, 0, 1);
+    ctx.globalAlpha = a; ctx.font = 'bold 14px Georgia'; ctx.textAlign = 'center';
+    if (wk.dead <= 0) { ctx.fillStyle = '#ffd27a'; ctx.fillText('WICK', wk.x + wk.w / 2, wk.y - 18); }
+    if (sh.dead <= 0) { ctx.fillStyle = '#c4adff'; ctx.fillText('SHADE', sh.x + sh.w / 2, sh.y - 18); }
+    ctx.globalAlpha = 1;
+  }
+  if (lv.time < 9) {
+    const a = clamp((9 - lv.time) / 1.5, 0, 1) * clamp((lv.time - 0.2) * 2, 0, 1);
+    ctx.globalAlpha = a; ctx.textAlign = 'center';
+    ctx.fillStyle = '#d9b77a'; ctx.font = 'bold 15px Georgia';
+    const ci = CHALLENGES.indexOf(lv.idx), cn = CH_NUM[lv.idx], rooms = CH_ROOMS[cn] || 1;
+    const ch = lv.def.secret ? 'CHAPTER ???' : ci >= 0 ? 'CHALLENGE ' + (ci + 1) : rooms > 1 ? 'CHAPTER ' + cn + '  ·  ROOM ' + ROOM_NUM[lv.idx] + ' OF ' + rooms : 'CHAPTER ' + cn;
+    ctx.fillText(ch.split('').join(' '), W / 2, H / 2 - 50);
+    ctx.fillStyle = '#fff4dc'; ctx.font = 'italic 46px Georgia, serif'; ctx.fillText(lv.def.name, W / 2, H / 2);
+    ctx.fillStyle = 'rgba(244,234,216,0.75)'; ctx.font = 'italic 19px Georgia, serif'; ctx.fillText(lv.def.sub || '', W / 2, H / 2 + 34);
+    ctx.globalAlpha = 1;
+  }
+  if (lv.idx <= 1 && !lv.def.secret) {
+    ctx.font = '14px Georgia'; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(244,234,216,0.55)';
+    const ct = controlsText(); ctx.fillText(ct[0], 18, H - 30); ctx.fillText(ct[1], 18, H - 12);
+  }
+  const missing = [0, 1].filter(i => !forced && assign[i] && !devState[assign[i]]);
+  if (missing.length) {
+    ctx.fillStyle = 'rgba(160,30,60,0.85)'; rr(ctx, W / 2 - 220, H - 60, 440, 40, 10); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 16px Georgia'; ctx.textAlign = 'center';
+    ctx.fillText(missing.map(i => players[i].name).join(' & ') + "'s controller disconnected", W / 2, H - 35);
+  }
+}
+function renderPlay(t) {
+  ctx.drawImage(levelCanvas, 0, 0);
+  drawDynamicTiles(t);
+  drawExits(t);
+  drawLabels();
+  drawWick(players[0], t);
+  drawDarkness(t);
+  drawShadows(t);
+  ctx.drawImage(inkCanvas, 0, 0);
+  drawCrates(t);
+  drawShade(players[1], t);
+  if (lv.ambient > 0.8) drawWick(players[0], t); // in the dark, still show Wick faintly lit by lantern
+  drawLanternBody(t);
+  if (lv.light) {
+    ctx.globalCompositeOperation = 'lighter';
+    const L = lv.light, g = ctx.createRadialGradient(L.x, L.y, 0, L.x, L.y, 46);
+    g.addColorStop(0, 'rgba(255,220,140,0.55)'); g.addColorStop(1, 'rgba(255,180,90,0)');
+    ctx.fillStyle = g; ctx.fillRect(L.x - 46, L.y - 46, 92, 92);
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  drawParticles();
+  drawHUD(t);
+  drawNarrator();
+  const fade = Math.max(lv.fadeIn, lv.complete ? clamp((lv.completeT - 1.2) / 1, 0, 1) : 0);
+  if (fade > 0) { ctx.fillStyle = `rgba(7,6,15,${fade})`; ctx.fillRect(0, 0, W, H); }
+}
+
+/* ------------------------------ menus ------------------------------ */
+let menuSel = 0, menuMode = 'main', joinT = 0, titleT = 0, lastJoinAt = -1;
+function titleItems() {
+  const it = [];
+  if (save.unlocked > 0) { const ci = Math.min(save.unlocked, MAIN_COUNT - 1); it.push({ label: 'Continue  ·  Chapter ' + CH_NUM[ci] + (CH_ROOMS[CH_NUM[ci]] > 1 ? ', room ' + ROOM_NUM[ci] : ''), act: () => goJoin(ci) }); }
+  it.push({ label: 'New Game', act: () => { run = { deaths: [0, 0], abandon: 0, throws: 0, waves: 0, start: performance.now() }; flags = {}; goJoin(0); } });
+  if (save.unlocked > 0) it.push({ label: 'Chapter Select', act: () => { menuMode = 'chapters'; menuSel = 0; } });
+  if (CHALLENGES.some(challengeOpen)) it.push({ label: 'Challenges', act: () => { menuMode = 'challenges'; menuSel = 0; } });
+  if (NATIVE) it.push({ label: 'Quit', act: quitGame }); else it.push({ label: 'Fullscreen', act: toggleFullscreen });
+  return it;
+}
+function chapterItems() {
+  const it = [];
+  for (const i of CH_START) if (i <= save.unlocked && i < MAIN_COUNT) it.push({ label: CH_NUM[i] + '.  ' + (LEVELS[i].chapter || LEVELS[i].name), act: () => goJoin(i) });
+  it.push({ label: 'Back', act: () => { menuMode = 'main'; menuSel = 0; } });
+  return it;
+}
+function challengeItems() {
+  const it = [];
+  CHALLENGES.forEach((i, k) => { if (challengeOpen(i)) it.push({ label: (k + 1) + '.  ' + LEVELS[i].name + (save.done && save.done[LEVELS[i].name] ? '  \u2713' : ''), act: () => goJoin(i) }); });
+  const locked = CHALLENGES.filter(i => !challengeOpen(i)).length;
+  if (locked) it.push({ label: locked + ' more unlock as you play the story', act: () => {} });
+  it.push({ label: 'Back', act: () => { menuMode = 'main'; menuSel = 0; } });
+  return it;
+}
+const menuItemsFor = () => menuMode === 'chapters' ? chapterItems() : menuMode === 'challenges' ? challengeItems() : titleItems();
+function goJoin(idx) {
+  pendingLevel = idx; SFX.ok();
+  if (assign[0] && assign[1] && devState[assign[0]] && devState[assign[1]]) { narr.clear(); startLevel(idx); return; }
+  assign = [null, null]; joinT = 0; gstate = 'join';
+}
+function runMenu(items, mi) {
+  if (mi.navY) { menuSel = (menuSel + mi.navY + items.length) % items.length; SFX.menu(); }
+  if (mi.ok) items[menuSel].act();
+}
+function updateTitle(dt) {
+  titleT += dt;
+  const mi = menuInput();
+  const items = menuItemsFor();
+  if (menuSel >= items.length) menuSel = 0;
+  if (mi.back && menuMode !== 'main') { menuMode = 'main'; menuSel = 0; SFX.menu(); return; }
+  runMenu(items, mi);
+}
+function drawMenuList(items, cx, y0) {
+  ctx.textAlign = 'center';
+  const two = items.length > 7, per = Math.ceil(items.length / 2);
+  items.forEach((it, i) => {
+    const gap = per > 8 ? 34 : 44, sel = i === menuSel, y = two ? y0 - 40 + (i % per) * gap : y0 + i * 46;
+    if (two) cx = W / 2 + (i < per ? -270 : 270);
+    ctx.font = (sel ? 'bold ' : '') + (two ? (per > 8 ? '19px' : '22px') : '26px') + ' Georgia, serif';
+    ctx.fillStyle = sel ? '#ffd27a' : 'rgba(244,234,216,0.7)';
+    ctx.fillText(it.label, cx, y);
+    if (sel) { const w = ctx.measureText(it.label).width; drawMiniLantern(cx - w / 2 - 26, y - 18); }
+  });
+}
+function drawMiniLantern(x, y) {
+  ctx.fillStyle = '#6b4a1f'; ctx.fillRect(x, y, 12, 3); ctx.fillRect(x, y + 15, 12, 3);
+  ctx.fillStyle = '#ffe4a0'; ctx.fillRect(x + 1, y + 3, 10, 12);
+  ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(x + 6, y + 9, 0, x + 6, y + 9, 30);
+  g.addColorStop(0, 'rgba(255,200,120,0.5)'); g.addColorStop(1, 'rgba(255,200,120,0)'); ctx.fillStyle = g; ctx.fillRect(x - 30, y - 20, 70, 60);
+  ctx.globalCompositeOperation = 'source-over';
+}
+function renderTitle(t) {
+  ctx.drawImage(bgCanvas, 0, 0);
+  const lx = W / 2 + Math.sin(t * 0.6) * 260, ly = 330 + Math.sin(t * 1.1) * 30;
+  ctx.globalCompositeOperation = 'lighter';
+  const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, 360);
+  g.addColorStop(0, 'rgba(255,180,100,0.22)'); g.addColorStop(1, 'rgba(255,180,100,0)'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
+  // title letters cast shadows away from the drifting light
+  ctx.textAlign = 'center'; ctx.font = 'italic bold 96px Georgia, serif';
+  for (let k = 12; k > 0; k--) { ctx.fillStyle = `rgba(80,40,160,${0.05})`; ctx.fillText('Wick & Shade', W / 2 + (W / 2 - lx) * 0.012 * k, 240 + (240 - ly) * 0.012 * k); }
+  ctx.fillStyle = '#f6ecd6'; ctx.fillText('Wick & Shade', W / 2, 240);
+  ctx.font = 'italic 22px Georgia, serif'; ctx.fillStyle = 'rgba(244,234,216,0.75)';
+  ctx.fillText('a couch co-op about light, shadow, and a narrator who will not stop talking', W / 2, 288);
+  drawMiniLantern(lx - 6, ly - 9);
+  const items = menuItemsFor();
+  drawMenuList(items, W / 2, 420);
+  ctx.font = '15px Georgia'; ctx.fillStyle = 'rgba(244,234,216,0.5)';
+  ctx.fillText('A / Space to choose  ·  D-pad / stick / arrows to move  ·  B / E to go back', W / 2, H - 30);
+  if (Object.keys(devState).filter(d => /^g\d+$/.test(d)).length === 0) {
+    ctx.fillStyle = 'rgba(255,210,122,0.6)'; ctx.fillText('No controllers seen yet: press any button on one to wake it up.', W / 2, H - 54);
+  }
+}
+function updateJoin(dt) {
+  joinT += dt;
+  const mi = menuInput();
+  if (mi.back && !assign[0]) { gstate = 'title'; menuMode = 'main'; SFX.menu(); return; }
+  if (mi.alt && mi.altDev) {
+    if (mi.altDev === 'k1') assign = ['k1', 'k2'];
+    else assign = [mi.altDev + 'L', mi.altDev + 'R'];
+    SFX.ok(); joinT = 0;
+  } else if (mi.ok && mi.dev && !assign.includes(mi.dev) && !(assign[0] && /[LR]$/.test(assign[0])) && gtime - lastJoinAt > 0.3) {
+    // a press within 0.3s of the last join is almost always the same physical controller showing up twice
+    const slot = assign[0] ? 1 : 0; assign[slot] = mi.dev; SFX.ok(); joinT = 0; lastJoinAt = gtime;
+  } else if (mi.back && assign[0]) { assign = [null, null]; SFX.menu(); }
+  if (assign[0] && assign[1] && joinT > 1.1) { narr.clear(); startLevel(pendingLevel); }
+}
+function renderJoin(t) {
+  ctx.drawImage(bgCanvas, 0, 0);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#f6ecd6'; ctx.font = 'italic 44px Georgia, serif';
+  ctx.fillText('Who is who?', W / 2, 140);
+  ctx.font = 'italic 20px Georgia, serif'; ctx.fillStyle = 'rgba(244,234,216,0.75)';
+  ctx.fillText('Press A on a controller (or Space / Enter on a keyboard) to join. First in is Wick.', W / 2, 180);
+  const cards = [['WICK', 'Carries the lantern. Lights the gold glass.', '#ffd27a'], ['SHADE', 'Stands on shadows. Floats up through them.', '#c4adff']];
+  cards.forEach(([nm, desc, c], i) => {
+    const x = W / 2 - 330 + i * 360, y = 230;
+    ctx.fillStyle = 'rgba(12,9,24,0.7)'; rr(ctx, x, y, 300, 300, 18); ctx.fill();
+    ctx.strokeStyle = assign[i] ? c : 'rgba(255,255,255,0.15)'; ctx.lineWidth = 2; ctx.stroke();
+    const fake = mkPlayer(i ? 'shade' : 'wick'); fake.x = x + 138; fake.y = y + 120; fake.onGround = true; fake.anim = t; fake.blink = Math.sin(t * 2 + i) > 0.97 ? -1 : 1;
+    ctx.save(); ctx.translate(x + 150, y + 137); ctx.scale(2.2, 2.2); ctx.translate(-(x + 150), -(y + 137));
+    i ? drawShade(fake, t) : drawWick(fake, t);
+    ctx.restore();
+    if (!i) drawMiniLantern(x + 196, y + 90 + Math.sin(t * 2) * 3);
+    ctx.fillStyle = c; ctx.font = 'bold 26px Georgia'; ctx.fillText(nm, x + 150, y + 210);
+    ctx.fillStyle = 'rgba(244,234,216,0.8)'; ctx.font = 'italic 16px Georgia'; ctx.fillText(desc, x + 150, y + 238);
+    ctx.font = 'bold 16px Georgia'; ctx.fillStyle = assign[i] ? '#a8f0d0' : 'rgba(244,234,216,0.5)';
+    ctx.fillText(assign[i] ? devName(assign[i]) : (Math.sin(t * 4) > 0 ? 'press A to join' : ''), x + 150, y + 274);
+  });
+  ctx.font = '17px Georgia'; ctx.fillStyle = 'rgba(244,234,216,0.65)';
+  ctx.fillText('Only one controller? Press Y on it to split it in half: left side plays Wick, right side plays Shade.', W / 2, 600);
+  ctx.fillText('One keyboard for two? Press Y: Wick uses WASD + Space + E, Shade uses the arrows + Enter + period.', W / 2, 628);
+  const nPads = Object.keys(devState).filter(d => /^g\d+$/.test(d)).length;
+  ctx.fillText(`Controllers connected: ${nPads}   ·   B / E: back`, W / 2, 668);
+  if (assign[0] && assign[1]) { ctx.fillStyle = '#ffd27a'; ctx.font = 'italic 26px Georgia'; ctx.fillText('Here we go…', W / 2, 730); }
+}
+function pauseItems() {
+  return [
+    { label: 'Resume', act: () => { gstate = 'play'; } },
+    { label: (CH_ROOMS[CH_NUM[lv.idx]] || 1) > 1 ? 'Restart room' : 'Restart chapter', act: () => { startLevel(lv.idx, { quietIntro: true }); } },
+    { label: lv && lv.def.challenge ? 'Back to challenges' : 'Skip chapter', act: () => { narr.clear(); if (lv.def.challenge) { gstate = 'title'; menuMode = 'challenges'; menuSel = 0; return; } narr.say(LINES.skip); lv.exitKind = 'E'; nextLevel(); } },
+    { label: 'Swap Wick and Shade', act: () => { assign = [assign[1], assign[0]]; if (splitMode() === false && assign[0] && /R$/.test(assign[0])) { /* keep halves sane */ } narr.say(LINES.swap, { front: true }); gstate = 'play'; } },
+    ...(NATIVE ? [] : [{ label: 'Fullscreen', act: toggleFullscreen }]),
+    { label: 'Quit to title', act: () => { gstate = 'title'; menuMode = 'main'; menuSel = 0; narr.clear(); } },
+  ];
+}
+function updatePause(dt) {
+  const mi = menuInput();
+  if (mi.pause || mi.back) { gstate = 'play'; SFX.menu(); return; }
+  runMenu(pauseItems(), mi);
+}
+function renderPause(t) {
+  renderPlay(t);
+  ctx.fillStyle = 'rgba(7,6,15,0.78)'; ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#f6ecd6'; ctx.font = 'italic 48px Georgia, serif'; ctx.fillText('Paused', W / 2, 180);
+  ctx.font = 'italic 18px Georgia'; ctx.fillStyle = 'rgba(244,234,216,0.6)';
+  ctx.fillText('The narrator is also paused. Enjoy the silence.', W / 2, 214);
+  drawMenuList(pauseItems(), W / 2, 290);
+  ctx.font = '15px Georgia'; ctx.fillStyle = 'rgba(244,234,216,0.6)';
+  const ct = controlsText(); ctx.fillText(ct[0], W / 2, H - 70); ctx.fillText(ct[1], W / 2, H - 46);
+  ctx.fillText(`Wick: ${devName(assign[0])}   ·   Shade: ${devName(assign[1])}`, W / 2, H - 20);
+}
+
+/* ------------------------------ credits ------------------------------ */
+let credits = null;
+function startCredits() {
+  gstate = 'credits';
+  const mins = run.start ? Math.round((performance.now() - run.start) / 60000) : null;
+  credits = { t: 0, lines: [
+    'And so Wick and Shade walked through the last door. Together.',
+    'Behind it was a couch. On the couch were two people, playing a game.',
+    'Which is very meta. I am aware. I was told to be aware.',
+    `For the record: Wick fell ${run.deaths[0]} time${run.deaths[0] === 1 ? '' : 's'}. Shade fell ${run.deaths[1]} time${run.deaths[1] === 1 ? '' : 's'}.`,
+    `The lantern was put down or thrown ${run.abandon} time${run.abandon === 1 ? '' : 's'}. It has forgiven you. Mostly.`,
+    run.deaths[0] === run.deaths[1] ? 'A perfect tie in falling. That is either love or coincidence.' : `I'm not saying ${run.deaths[0] > run.deaths[1] ? 'Wick' : 'Shade'} was the problem. I'm just reading the numbers out loud.`,
+    mins ? `You spent about ${mins} minute${mins === 1 ? '' : 's'} together in here. I hope it was nice. I enjoyed it.` : 'I hope you had a nice time together. I did.',
+    'Thank you for playing.',
+  ] };
+  narr.clear();
+}
+function updateCredits(dt) {
+  credits.t += dt;
+  const mi = menuInput();
+  if ((mi.ok || mi.pause) && credits.t > 3) { gstate = 'title'; menuMode = 'main'; menuSel = 0; }
+}
+function renderCredits(t) {
+  ctx.drawImage(bgCanvas, 0, 0);
+  ctx.fillStyle = 'rgba(7,6,15,0.5)'; ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#f6ecd6'; ctx.font = 'italic bold 60px Georgia, serif'; ctx.fillText('Wick & Shade', W / 2, 120);
+  ctx.font = 'italic 22px Georgia, serif';
+  credits.lines.forEach((ln, i) => {
+    const a = clamp((credits.t - i * 2.6) / 1.2, 0, 1);
+    ctx.globalAlpha = a; ctx.fillStyle = i === credits.lines.length - 1 ? '#ffd27a' : '#f4ead8';
+    ctx.fillText(ln, W / 2, 200 + i * 52);
+  });
+  ctx.globalAlpha = 1;
+  const wx = W / 2 - 40 + Math.sin(t) * 10;
+  const a = mkPlayer('wick'); a.x = wx - 30; a.y = 690 - 34; a.onGround = true; a.anim = 0; a.blink = 1;
+  const b = mkPlayer('shade'); b.x = wx + 30; b.y = 690 - 34; b.face = -1; b.blink = 1;
+  drawWick(a, t); drawShade(b, t); drawMiniLantern(wx - 1, 655);
+  if (credits.t > 3) { ctx.font = '15px Georgia'; ctx.fillStyle = 'rgba(244,234,216,0.5)'; ctx.fillText('Press A to return to the title', W / 2, H - 24); }
+}
+
+/* ------------------------------ main loop ------------------------------ */
+buildBackground();
+let last = performance.now(), gtime = 0, manual = false;
+function step(dt) {
+  pollInput();
+  gtime += dt;
+  if (gstate === 'title') updateTitle(dt);
+  else if (gstate === 'join') updateJoin(dt);
+  else if (gstate === 'play') updatePlay(dt);
+  else if (gstate === 'pause') updatePause(dt);
+  else if (gstate === 'credits') updateCredits(dt);
+  if (gstate === 'play') { if (!forced && menuInput().alt) narr.advance(); narr.update(dt); }
+}
+function render() {
+  if (gstate === 'title') renderTitle(gtime);
+  else if (gstate === 'join') renderJoin(gtime);
+  else if (gstate === 'play') renderPlay(gtime);
+  else if (gstate === 'pause') renderPause(gtime);
+  else if (gstate === 'credits') renderCredits(gtime);
+}
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!manual) step(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* test hooks (harmless in normal play) */
+window.__ws = {
+  get lv() { return lv; }, get players() { return players; }, get lantern() { return lantern; }, get state() { return gstate; },
+  isShadow, loadLevel: (i) => { startLevel(i); }, step, render,
+  setManual(v) { manual = v; }, setForced(f) { forced = f; }, LEVELS, narr,
+  setState(s) { gstate = s; },
+};
+</script>
+</body>
+</html>

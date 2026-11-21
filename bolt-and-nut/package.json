@@ -1,0 +1,14 @@
+{
+  "name": "bolt-and-nut-dev",
+  "private": true,
+  "description": "Build tooling for Bolt & Nut. The desktop app itself lives in app/.",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/all.mjs",
+    "vercel-build": "bash scripts/vercel-build.sh"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "three": "0.170.0"
+  }
+}

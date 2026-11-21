@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bolt &amp; Nut</title>
+<meta name="description" content="A 3D couch co-op about magnets, opposites, and a very patient orientation facilitator.">
+<link rel="icon" href="/icon.png">
+<style>
+  :root{--ink:#2b2338;--cream:#fff8ee;--red:#e5484d;--blue:#3d8bfd;--teal:#2ec4b6;--sand:#f6d9b8;--card:rgba(255,248,238,.86)}
+  *{box-sizing:border-box}
+  html{background:var(--sand)}
+  body{margin:0;min-height:100vh;color:var(--ink);font:18px/1.55 "Nunito","Trebuchet MS","DejaVu Sans",Verdana,sans-serif;background:linear-gradient(170deg,#ffe7c9 0,#f6d9b8 55%,#eac39b 100%) fixed}
+  main{max-width:760px;margin:0 auto;padding:48px 16px 64px}
+  h1{margin:0;font-size:clamp(52px,11vw,96px);line-height:.95;letter-spacing:-2px;font-weight:900;color:var(--cream);text-shadow:0 5px 0 var(--ink),0 9px 22px rgba(0,0,0,.2)}
+  h1 .b{color:var(--red)} h1 .n{color:var(--blue)} h1 .amp{font-size:.7em}
+  .tag{display:inline-block;margin:18px 0 32px;font-size:20px;font-weight:700;background:var(--card);padding:6px 14px;border-radius:12px}
+  .btns{display:grid;gap:14px}
+  a.btn{display:block;text-decoration:none;border-radius:18px;padding:20px 24px;font-size:26px;font-weight:900;transition:transform .1s,box-shadow .1s;outline:none;border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink)}
+  a.btn small{display:block;font-weight:700;font-size:16px;opacity:.85;margin-top:2px}
+  a.primary{background:var(--red);color:var(--cream)}
+  a.secondary{background:var(--blue);color:var(--cream)}
+  a.btn:hover,a.btn:focus-visible{transform:translateY(-2px);box-shadow:0 7px 0 var(--ink),0 0 0 4px #fff}
+  section{background:var(--card);border:3px solid var(--ink);border-radius:18px;padding:20px 24px;margin-top:28px}
+  h2{font-size:14px;letter-spacing:.25em;text-transform:uppercase;margin:0 0 10px;font-weight:900;color:var(--teal)}
+  ol{padding-left:22px;margin:0}
+  li{margin:6px 0}
+  p{margin:0}
+  p+p{margin-top:8px}
+  b{font-weight:900}
+  .r{color:var(--red)} .bl{color:var(--blue)}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:15px;background:rgba(43,35,56,.08);padding:1px 6px;border-radius:4px}
+  footer{margin-top:28px;font-size:14px;text-align:center;opacity:.75}
+</style>
+</head>
+<body>
+<main>
+  <h1><span class="b">Bolt</span> <span class="amp">&amp;</span> <span class="n">Nut</span></h1>
+  <p class="tag">A 3D couch co-op about magnets, opposites, and a very patient orientation facilitator.</p>
+  <div class="btns">
+    <a class="btn primary" href="/BoltAndNut.AppImage" download="BoltAndNut.AppImage">Download for Steam Deck<small>Version __VERSION__ &middot; Linux AppImage &middot; about __SIZE_MB__ MB</small></a>
+    <a class="btn secondary" href="/play/">Play in this browser<small>Same game. Plug in two controllers, or share a keyboard.</small></a>
+  </div>
+  <section>
+    <h2>Install on the Deck</h2>
+    <ol>
+      <li>In <b>Desktop Mode</b>, tap the red button above. The file lands in <code>Downloads</code>.</li>
+      <li>In Dolphin, move it to <code>/home/deck/Games</code> (next to Wick &amp; Shade is fine).</li>
+      <li>Right-click it &rarr; <b>Properties</b> &rarr; <b>Permissions</b> &rarr; tick <b>Is executable</b> &rarr; <b>OK</b>.</li>
+      <li>Open Steam &rarr; <b>Games</b> &rarr; <b>Add a Non-Steam Game to My Library&hellip;</b> &rarr; <b>Browse&hellip;</b> &rarr; pick the file. Set the file type to <b>All Files</b> if it's hidden.</li>
+      <li>Return to <b>Gaming Mode</b> and launch it from your library.</li>
+    </ol>
+    <p style="margin-top:10px">Updating? The file name stays the same, so just replace the old file (tick <b>Is executable</b> again) and your Steam shortcut keeps working.</p>
+  </section>
+  <section>
+    <h2>Controllers</h2>
+    <p>On <b>Who is who?</b>, each player presses <b>A</b> on their own controller. The first press is <b class="r">Bolt</b>, the second is <b class="bl">Nut</b>. Only one controller? Press <b>Y</b> on it to share it. Keyboard works too: WASD + Space + E for Bolt, arrows + / + . for Nut.</p>
+    <p><b class="r">Bolt</b> holds <b>X</b> to pull. <b class="bl">Nut</b> presses <b>X</b> to push. <b>Y</b> moves the narrator along, and <b>Start</b> opens hints.</p>
+  </section>
+  <section>
+    <h2>Black screen?</h2>
+    <p>The Deck app starts in safe graphics mode. If you try <b>Options &rarr; Graphics engine &rarr; graphics card</b> and the screen goes black, wait 15 seconds and it switches back by itself.</p>
+  </section>
+  <footer>Progress saves on the device you play on.</footer>
+</main>
+</body>
+</html>

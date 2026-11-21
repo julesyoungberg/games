@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wick &amp; Shade</title>
+<meta name="description" content="A couch co-op about light, shadow, and a narrator who will not stop talking.">
+<link rel="icon" href="/icon.png">
+<style>
+  :root{--bg:#07060f;--card:#14102a;--ink:#f4ead8;--dim:rgba(244,234,216,.72);--gold:#ffd27a;--violet:#c4adff}
+  *{box-sizing:border-box}
+  html{background:#07060f}
+  body{margin:0;min-height:100vh;color:var(--ink);font:18px/1.55 Georgia,"Times New Roman",serif;background:radial-gradient(ellipse at 75% 0%,#2d2149 0,#120e26 45%,#07060f 100%) fixed}
+  main{max-width:760px;margin:0 auto;padding:48px 16px 64px}
+  h1{font-style:italic;font-size:clamp(46px,9vw,84px);margin:0;line-height:1.05;text-shadow:6px 8px 0 rgba(80,40,160,.35)}
+  .tag{font-style:italic;color:var(--dim);margin:12px 0 36px;font-size:20px}
+  .btns{display:grid;gap:14px}
+  a.btn{display:block;text-decoration:none;border-radius:16px;padding:20px 24px;font-size:26px;font-weight:bold;transition:transform .1s,box-shadow .1s;outline:none}
+  a.btn small{display:block;font-weight:normal;font-size:16px;opacity:.8;margin-top:2px}
+  a.primary{background:var(--gold);color:#2a1d12;box-shadow:0 0 48px rgba(255,200,120,.28)}
+  a.secondary{background:var(--card);color:var(--violet);border:2px solid rgba(196,173,255,.4)}
+  a.btn:hover,a.btn:focus-visible{transform:scale(1.015);box-shadow:0 0 0 4px #fff}
+  section{background:rgba(20,16,42,.75);border:1px solid rgba(255,220,160,.18);border-radius:16px;padding:20px 24px;margin-top:28px}
+  h2{font-size:14px;letter-spacing:.3em;text-transform:uppercase;color:#d9b77a;margin:0 0 10px;font-weight:bold}
+  ol{padding-left:22px;margin:0}
+  li{margin:6px 0}
+  p{margin:0}
+  b{color:var(--gold)}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:15px;background:rgba(255,255,255,.08);padding:1px 6px;border-radius:4px}
+  footer{margin-top:28px;color:var(--dim);font-size:14px;text-align:center}
+</style>
+</head>
+<body>
+<main>
+  <h1>Wick &amp; Shade</h1>
+  <p class="tag">A couch co-op about light, shadow, and a narrator who will not stop talking.</p>
+  <div class="btns">
+    <a class="btn primary" href="/WickAndShade.AppImage" download="WickAndShade.AppImage">Download for Steam Deck<small>Version __VERSION__ &middot; Linux AppImage &middot; about __SIZE_MB__ MB</small></a>
+    <a class="btn secondary" href="/play/">Play in this browser<small>Same game. Plug in two controllers, or share a keyboard.</small></a>
+  </div>
+  <section>
+    <h2>Install on the Deck</h2>
+    <ol>
+      <li>In <b>Desktop Mode</b>, tap the gold button above. The file lands in <code>Downloads</code>.</li>
+      <li>In Dolphin, move it to <code>/home/deck/Games</code> (make the folder if it isn't there).</li>
+      <li>Right-click it &rarr; <b>Properties</b> &rarr; <b>Permissions</b> &rarr; tick <b>Is executable</b> &rarr; <b>OK</b>.</li>
+      <li>Open Steam &rarr; <b>Games</b> &rarr; <b>Add a Non-Steam Game to My Library&hellip;</b> &rarr; <b>Browse&hellip;</b> &rarr; pick the file. Set the file type to <b>All Files</b> if it's hidden.</li>
+      <li>Return to <b>Gaming Mode</b> and launch it from your library.</li>
+    </ol>
+    <p style="margin-top:10px">Updating? The file name stays the same, so just replace the old file (tick <b>Is executable</b> again) and your Steam shortcut keeps working.</p>
+  </section>
+  <section>
+    <h2>Controllers</h2>
+    <p>On the <b>Who is who?</b> screen, each player presses <b>A</b> on their own controller. The first press is Wick, the second is Shade. Only one controller? Press <b>Y</b> on it to split it in half. In the browser, press a button on each controller once so the page can see it.</p>
+  </section>
+  <footer>Progress saves on the device you play on.</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,20 @@
+import { Bot } from './bot.mjs';
+const t = new Bot(3);
+t.go(0, 12.1, -2);
+t.go(1, 13.2, -6.2); t.idle(0.2); t.tick({}, { power: true }); t.run(1.2, () => ({}), () => ({ mx: 1 }));
+console.log('nut up?', t.st());
+t.go(1, 17.5, -6, 5, 0.2); t.idle(2); console.log('lift', t.st(), t.w.movers[0].off);
+t.run(1, () => ({ mx: 1 })); t.go(0, 23.5, -4); console.log('bolt up', t.st());
+// anchors: face +x, grab first, release, grab second
+t.go(1, 20, -6.5);
+t.grab(1, 0, 1.2); console.log('hang1', t.st(), t.b.hang);
+t.tick({ mx: 1 }, {}); t.tick({ mx: 1 }, {}); t.grab(1, 0, 1.2); console.log('hang2', t.st(), t.b.hang);
+t.idle(1); console.log('dropped', t.st());
+t.go(1, 23.5, -4); t.go(0, 33.6, -4); t.pullNut(36, -4); console.log('nut over', t.st());
+t.go(0, 37, -6.3); t.go(1, 40.5, -3, 6); t.go(1, 43.5, -3); console.log('nut through', t.st(), t.w.gates[0].open);
+t.go(0, 38, -2); t.idle(1.5);
+t.go(1, 45.4, -6.5); t.tick({}, { power: true }); t.run(1.2, () => ({}), b => b.steer(b.n, 48, -6.5)); t.go(1, 48, -6.5);
+console.log('nut on shelf', t.st(), t.w.channels);
+t.idle(1); t.go(0, 44, -2); t.go(0, 54, -3);
+t.go(1, 48, -4.6); t.run(0.5, () => ({}), () => ({ mz: 1 })); t.go(1, 54, -5); t.idle(1.5);
+console.log(t.st(), 'complete', t.w.complete, t.log);

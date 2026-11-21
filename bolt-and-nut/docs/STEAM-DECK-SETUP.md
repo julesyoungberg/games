@@ -1,0 +1,40 @@
+# Bolt & Nut: installing on the Steam Deck
+
+Bolt & Nut is a 3D two-player couch co-op. It comes as one Linux app file, **`BoltAndNut-0.1.0.AppImage`** (about 105 MB), added to Steam the same way as Wick & Shade.
+
+## One-time install (about 5 minutes)
+1. Hold the power button → **Switch to Desktop**.
+2. Download `BoltAndNut-0.1.0.AppImage` from this project's Library (or copy it over on a USB stick).
+3. In **Dolphin**, move it into `/home/deck/Games` (next to Wick & Shade is fine).
+4. Right-click it → **Properties** → **Permissions** → tick **Is executable** → **OK**.
+5. Open **Steam** (desktop) → **Games** → **Add a Non-Steam Game to My Library…** → **Browse…** → `/home/deck/Games`. Set the file type filter to **All Files** if needed, pick the AppImage, **Add Selected Programs**.
+6. Optional: right-click the entry → **Properties** → rename it **Bolt & Nut**, and use `icon.png` as its icon.
+7. **Return to Gaming Mode** and launch it from your library.
+
+## Controllers
+- On **Who is who?**, each person presses **A** on their own controller. First press is **Bolt** (red), second is **Nut** (blue). **X** swaps you.
+- One controller only? Press **Y** on it to share it: left stick + LB/LT play Bolt, right stick + RB/RT play Nut.
+- Keyboard works too: WASD + Space + E for Bolt, arrows + / + . for Nut.
+
+## Controls
+| | Bolt (red) | Nut (blue) |
+|---|---|---|
+| Move | Left stick / D-pad | Left stick / D-pad |
+| Jump | A | A |
+| Power | **Hold X**: pull. Reels in Nut, crates, or zips Bolt up to a floating ring. Let go to drop. Face what you want to grab; a red ring shows what you'll get. | **Press X**: push. Launches Bolt (or crates) up and away. On striped iron floors, Nut launches herself. |
+| Y | Next narrator line (Margaret waits for you) | Same |
+| Start | Menu: hints, back to checkpoint, swap, options | Same |
+
+While Bolt hangs from a ring, **A** hops off it. Stuck? **Start → Ask Margaret for a hint**.
+
+## Graphics (the black-screen fix)
+The game starts in **safe mode**: it draws the 3D scene in software, the same approach that fixed Wick & Shade's black screen. It lowers its own resolution a little if it needs to, to stay smooth.
+
+If you want it sharper and smoother, try **Options → Graphics engine → graphics card**. The game restarts and asks *"Can you see this?"*. Press **A** to keep it. If the screen stays black, just wait 15 seconds and it switches back to safe mode by itself.
+You can also force a mode in Steam: game **Properties → Launch Options** → `--gpu` or `--software`.
+
+## The browser version
+`index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
+
+## What's in this version (0.1.0)
+8 shifts (levels), about 45 to 75 minutes for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review. Progress saves automatically; **Continue** and **Choose a shift** appear on the title screen once you've played. Every shift has been finished start to end by scripted test robots.

@@ -1,0 +1,31 @@
+{
+  "name": "bolt-and-nut",
+  "version": "0.1.0",
+  "description": "A two-player couch co-op about magnets, opposites and a very patient orientation facilitator",
+  "main": "main.js",
+  "author": "Bolt and Nut",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "productName": "Bolt and Nut",
+  "build": {
+    "appId": "games.boltandnut",
+    "productName": "Bolt and Nut",
+    "artifactName": "BoltAndNut-${version}.AppImage",
+    "files": [
+      "main.js",
+      "preload.js",
+      "game/**"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game",
+      "icon": "build/icon.png"
+    },
+    "publish": []
+  }
+}

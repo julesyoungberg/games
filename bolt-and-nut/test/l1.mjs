@@ -1,0 +1,15 @@
+import { Bot } from './bot.mjs';
+const t = new Bot(0);
+t.both(14, -3, 14, -5.5);
+t.run(1.2, () => ({ mx: 1, jump: true }), () => ({ mx: 1, jump: true }));
+console.log('on step', t.st());
+t.boostBolt(22.5, -6, 1, 0);
+console.log('after boost', t.st());
+t.go(0, 28, -6.3); console.log('plate', t.w.channels[1], t.st());
+t.go(1, 22.8, -6.2); t.run(1.0, () => ({}), () => ({ mx: 1, jump: true })); t.go(1, 25.5, -3, 4);
+console.log('nut up?', t.st());
+t.both(33.3, -3, 33.3, -5.5);
+t.run(1.0, () => ({ mx: 1, jump: true }), () => ({ mx: 1, jump: true }));
+t.both(47, -3, 47, -5);
+t.idle(1.5);
+console.log(t.st(), 'complete', t.w.complete, t.log);

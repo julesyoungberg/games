@@ -1,0 +1,34 @@
+{
+  "name": "wick-and-shade",
+  "productName": "Wick and Shade",
+  "version": "1.0.4",
+  "description": "A two-player couch co-op about light, shadow and a narrator who will not stop talking",
+  "main": "main.js",
+  "author": "Wick and Shade",
+  "license": "UNLICENSED",
+  "build": {
+    "appId": "games.wickandshade",
+    "productName": "Wick and Shade",
+    "artifactName": "WickAndShade-${version}.AppImage",
+    "files": [
+      "main.js",
+      "game/**"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game",
+      "icon": "build/icon.png"
+    },
+    "publish": []
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "scripts": {
+    "build": "bash scripts/vercel-build.sh",
+    "start": "electron ."
+  }
+}
