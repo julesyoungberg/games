@@ -961,6 +961,176 @@ const LEVELS = [
     onPlate: (n, by, ch) => 'Steps up, Wick. All the way to the top.',
     outro: "You left the lights on for the next visitors. Thoughtful. The gallery is now closed.",
   },
+  { name: "Stage Door", sub: "Staff only. Some staff more than others.", ambient: 0.6, chapter: "Backstage",
+    map: [
+      '################################',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........v.......w..........#',
+      '#...........P.......Q..........#',
+      '#WS.........P..p....Q...q...E..#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Backstage. Curtains everywhere. Two kinds, because one kind would be too easy.",
+      "The purple ones are ink. Shade slips through them. Wick does not. The gold ones are light. The other way round.",
+    ],
+    hints: [
+      [40, "Shade, jump through the purple curtain above the door and stand on the teal plate."],
+      [100, "Wick, the gold curtain is yours. Through you go, onto the pink plate, so Shade can follow."],
+    ],
+    onPlate: (n, by, ch) => ch === 'p' ? 'Door open. Wick, walk through like you own the place.' : 'Pink door. Shade, your turn.',
+    outro: "Two curtains, two of you. I feel like I have explained theatre.",
+  },
+  { name: "Two Closets", sub: "Everyone has a closet. Some closets are more exclusive.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........#............#......#',
+      '#..........P............P......#',
+      '#.#####....P..#####.....P......#',
+      '#.#...v....P..w...#.....P......#',
+      '#.#.p.v.WS.P..w.p.#.....P...E..#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Two closets. One is ink, one is light. Each holds a plate.",
+      "Both teal doors need holding at the end. You have one lantern. Do the arithmetic.",
+    ],
+    hints: [
+      [40, "Shade, the ink closet on the left has a plate. Hold it so Wick can get through."],
+      [100, "Wick, the light closet past the door has another plate. The lantern can stay in there for you."],
+    ],
+    onPlate: (n, by, ch) => by === 'lantern' ? 'The lantern is holding both doors. It is a very capable lantern.' : null,
+    outro: "The lantern stayed in the closet. It will be fine. It is used to the dark. Ironically.",
+  },
+  { name: "Spotlight", sub: "Wick stays in the wings. The light goes on stage.", ambient: 0.65, cont: true,
+    map: [
+      '################################',
+      '#.............v................#',
+      '#.............v................#',
+      '#.............v................#',
+      '#.............v................#',
+      '#.............v................#',
+      '#.............v................#',
+      '#.............v................#',
+      '#.............v................#',
+      '#.............v................#',
+      '#.............v................#',
+      '#.............v.......p......E.#',
+      '#.............v......###########',
+      '#.............v................#',
+      '#.............v.B.rr...........#',
+      '#.............P................#',
+      '#..W..........P.S..............#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Wick cannot go through the ink curtain. The light can. Light does not care about curtains.",
+    ],
+    hints: [
+      [40, "Wick, stand right up against the curtain. Your light reaches the ink block on the other side."],
+      [100, "Shade, jump into the block's shadow and float up. The ledge is on the right."],
+      [160, "The plate up there opens the stage door and makes a step for Wick."],
+    ],
+    onPlate: (n, by, ch) => 'Stage door open. Wick, you are on.',
+    outro: "A spotlight, operated from the wings. Nobody in the audience will ever know. I will know.",
+  },
+  { name: "Follow Spot", sub: "Shade takes the high road. Wick holds the spotlight.", ambient: 0.85, cont: true,
+    map: [
+      '################################',
+      '#.......#......................#',
+      '#.......#......................#',
+      '#.......#......................#',
+      '#.......#......................#',
+      '#.......#......................#',
+      '#.......#......................#',
+      '#.......#......................#',
+      '#.......#......................#',
+      '#.......v......................#',
+      '#.......v......................#',
+      '#.......v.................p....#',
+      '#.....####====##====##===###...#',
+      '#...........................P..#',
+      '#...##......................P..#',
+      '#...........................P..#',
+      '#WS.........................P.E#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Shade goes up the gantry. Wick stays on the floor. The gold glass up there only works in the light.",
+      "So, Wick. Keep up.",
+    ],
+    hints: [
+      [40, "Wick, walk along underneath Shade. Your light keeps the gold glass solid above you."],
+      [100, "At the end, Shade, stand on the plate so the door down below opens for Wick."],
+    ],
+    onPlate: (n, by, ch) => 'Door open below. Shade, wait for Wick, then hop down.',
+    outro: "Perfect follow spot work. Hit every mark. The critics are beside themselves. There are no critics.",
+  },
+  { name: "Final Bow", sub: "Everyone on stage. Mind the curtains. Mind the other curtains.", ambient: 0.65, cont: true,
+    map: [
+      '################################',
+      '#.............v...........#....#',
+      '#.............v...........#....#',
+      '#.............v...........#....#',
+      '#.............v...........#....#',
+      '#.............v...........#....#',
+      '#.............v...........#....#',
+      '#.............v...........#....#',
+      '#.............v...........#....#',
+      '#.............v...........Q....#',
+      '#.............v...........Q....#',
+      '#.............v.......p...Q.q.E#',
+      '#.............v......###########',
+      '#.............v................#',
+      '#.............v.B.ss......####.#',
+      '#.............P...........w..#.#',
+      '#..W..........P.S.........w.q#.#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Last room backstage. Everything at once: a spotlight, a door, a closet, and a very pink finale.",
+    ],
+    hints: [
+      [40, "Same as before. Wick, light the ink block through the curtain. Shade, float up to the plate."],
+      [100, "Wick, through the stage door and into the gold closet under the ledge. The pink plate in there opens the high door."],
+      [160, "Shade, through the pink door and onto the plate behind it. That keeps the pink step out for Wick."],
+    ],
+    onPlate: (n, by, ch) => ch === 'q' && by === 'shade' ? 'Shade has the inner plate. Wick, climb.' : null,
+    outro: "And bow. Lovely. Backstage is closed. Please collect your belongings and your shadow.",
+  },
   { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
     map: [
       '################################',
@@ -1164,7 +1334,7 @@ function tileAt(tx, ty) { if (tx < 0 || tx >= COLS || ty < 0) return '#'; if (ty
 function isLit(tx, ty) { return tx >= 0 && tx < COLS && ty >= 0 && ty < ROWS && lv.lit[ty * COLS + tx] === 1; }
 function tileSolid(c, tx, ty) {
   switch (c) {
-    case '#': case 'B': return true;
+    case '#': case 'B': case 'v': return true;
     case '=': return isLit(tx, ty);
     case 'x': return !isLit(tx, ty);
     case 'P': return !lv.pressed.p;
@@ -1181,6 +1351,8 @@ function forEachTile(e, fn) {
 }
 function solidFor(e, tx, ty) {
   const c = tileAt(tx, ty);
+  if (c === 'w') return e.kind === 'shade';           // glow curtain: only Shade is stopped by it
+  if (c === 'v') return e.kind !== 'shade';           // ink curtain: only Shade slips through
   if (!tileSolid(c, tx, ty)) return false;
   if (isDynamic(c) && e.ign && e.ign.has(ty * COLS + tx)) return false;
   return true;
@@ -1634,6 +1806,22 @@ function buildStatic() {
       if (!isB(tx + 1, ty)) ictx.fillRect(px + T - 2, py, 2, T);
       if (!isB(tx, ty + 1)) { ictx.fillRect(px, py + T - 2, T, 2); ictx.fillStyle = '#0c0912'; ictx.beginPath(); ictx.arc(px + 12 + hash(tx, ty, 3) * 16, py + T, 4, 0, Math.PI); ictx.fill(); }
       ictx.fillStyle = 'rgba(255,255,255,0.18)'; ictx.fillRect(px + 7, py + 7, 6, 2);
+    } else if (c === 'v') {
+      // ink curtain: dark drapes Shade can slip through
+      for (let k = 0; k < 4; k++) {
+        ictx.fillStyle = k % 2 ? 'rgba(40,24,70,0.78)' : 'rgba(22,12,40,0.85)';
+        ictx.fillRect(px + k * 10, py, 10, T);
+      }
+      ictx.fillStyle = 'rgba(160,120,230,0.35)';
+      for (let k = 0; k < 4; k++) ictx.fillRect(px + k * 10 + 4, py, 1, T);
+      if (tileAt(tx, ty - 1) !== 'v') { ictx.fillStyle = '#7b56c9'; ictx.fillRect(px, py, T, 3); }
+    } else if (c === 'w') {
+      // glow curtain: warm light Wick walks through and Shade cannot
+      const gr = lctx.createLinearGradient(px, 0, px + T, 0);
+      gr.addColorStop(0, 'rgba(255,200,110,0.05)'); gr.addColorStop(0.5, 'rgba(255,214,140,0.42)'); gr.addColorStop(1, 'rgba(255,200,110,0.05)');
+      lctx.fillStyle = gr; lctx.fillRect(px, py, T, T);
+      lctx.fillStyle = 'rgba(255,236,190,0.55)';
+      for (let k = 0; k < 3; k++) lctx.fillRect(px + 8 + k * 12, py + ((ty * 7 + k * 13) % 30), 2, 8);
     }
   }
 }

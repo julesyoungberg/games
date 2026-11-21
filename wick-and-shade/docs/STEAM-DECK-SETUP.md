@@ -41,9 +41,10 @@ Download the new `WickAndShade.AppImage` and replace the old file in `/home/deck
 - Teal plates open teal doors and make teal bridges appear while something stands on them (the lantern counts). Pink plates do the same for pink doors and bridges.
 - Ink **crates** can be pushed by either of you. They hold plates down, make good steps, stack on top of each other, and cast shadows like the ink blocks. The lantern can ride on top of one. A crate that falls out of the level comes back where it started.
 - Small **hooks** hang in the air in some rooms. Wick can stand under one and press the lantern button to hang the light there, and press it again under the hook to take it back.
+- **Curtains**: Shade slips through purple ink curtains and Wick can't; Wick walks through gold glow curtains and Shade can't. Light shines through both.
 - Both of you have to be in the door to finish a chapter.
 
-13 chapters, plus one you have to find. Chapters 11 (The Stockroom) and 12 (The Gallery) are long ones with five rooms in a row; the game shows which room you're in. Separate from the story there are **Challenges**: short, tough rooms with no story, opened as you play. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
+14 chapters, plus one you have to find. Chapters 11 (The Stockroom), 12 (The Gallery) and 13 (Backstage) are long ones with five rooms in a row; the game shows which room you're in. Separate from the story there are **Challenges**: short, tough rooms with no story, opened as you play. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
 
 ## Other files
 - `index.html` is the same game as a single web page, for playing on any computer in a browser.
