@@ -1,0 +1,13 @@
+{
+  "order": 2,
+  "title": "Bolt & Nut",
+  "tagline": "A 3D couch co-op about magnets, opposites, and a very patient orientation facilitator.",
+  "style": "3D puzzle platformer",
+  "appImage": "BoltAndNut.AppImage",
+  "versionFrom": "app/package.json",
+  "accent": "#e5484d",
+  "background": "#2b2338",
+  "legacyHosts": [
+    "bolt-and-nut-game.vercel.app"
+  ]
+}
