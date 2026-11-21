@@ -30,7 +30,7 @@ Wick & Shade comes as one Linux app file: **`WickAndShade.AppImage`** (about 100
 | Y | Next narrator line (the narrator waits for you) | Next narrator line |
 | Start | Pause menu | Pause menu |
 
-Progress saves automatically, and **Continue** picks up where you left off. **Chapter Select** on the title screen lets you jump to any chapter at any time, and for the long chapters, to any room inside them, so a lost save never costs you anything. **Challenges** are all open from the start too. To quit: **Quit** on the title screen, or the Steam button → **Exit game**.
+Progress saves automatically, and **Continue** picks up where you left off. **Chapter Select** on the title screen lets you jump to any chapter at any time, and for the long chapters, to any room inside them, with a little map of each room so you can spot where you were. A lost save never costs you anything. **Challenges** are all open from the start too. To quit: **Quit** on the title screen, or the Steam button → **Exit game**.
 
 ## Updating from an older version
 Download the new `WickAndShade.AppImage` and replace the old file in `/home/deck/Games` (same name, so the Steam shortcut keeps working). If your shortcut still points at an older file with a version number in its name, open the game's **Properties** in Steam and change **Target** to `WickAndShade.AppImage`. Your saved progress carries over, and Continue takes you to the first new chapter.
@@ -49,7 +49,7 @@ Download the new `WickAndShade.AppImage` and replace the old file in `/home/deck
 - **Mirror balls** light up when the lantern can see them and shine too, a bit less far. They can open sun-eyes, hold up gold glass, melt dark glass and wipe out shadows. Hide one from the lantern (behind a crate or an ink block) to switch it off.
 - Both of you have to be in the door to finish a chapter.
 
-18 chapters, plus one you have to find. Chapters 11 to 17 (The Stockroom, The Gallery, Backstage, The Observatory, The Music Room, The Print Shop, The Lighthouse) are long ones with five rooms in a row; the game shows which room you're in. Separate from the story there are **Challenges**: short, tough rooms with no story. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
+18 chapters, plus one you have to find. Chapters 11 to 17 (The Stockroom, The Gallery, Backstage, The Observatory, The Music Room, The Print Shop, The Lighthouse) are long ones with five rooms in a row; the game shows which room you're in. Separate from the story there are 9 **Challenges**: short, tough rooms with no story. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
 
 ## Other files
 - `index.html` is the same game as a single web page, for playing on any computer in a browser.

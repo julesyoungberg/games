@@ -2114,6 +2114,68 @@ const LEVELS = [
     ],
     outro: "Rush hour survived. Nobody was late. The belts are filing a complaint.",
   },
+  { name: "Bank Shot", sub: "Off the drum, past the thorns, into the mirror ball. Call it first.", ambient: 0.6, challenge: true, unlockAt: 44,
+    map: [
+      '################################',
+      '#.....#.................#......#',
+      '#.....#.................#......#',
+      '#.....#.................#......#',
+      '#.....#.................#......#',
+      '#.....#.................#......#',
+      '#.....#.................#......#',
+      '#.....#.................#......#',
+      '#.....#.................#......#',
+      '#.....#.............m...#..u...#',
+      '#.....#.................#......#',
+      '#.....#.................#......#',
+      '#.....#.................#......#',
+      '#.....P.................Q......#',
+      '#.....P.................Q......#',
+      '#.....P.................Q......#',
+      '#WSp..Pjj...............Q.p..E.#',
+      '##########=======###############',
+      '##########^^^^^^^###############',
+      '################################',
+    ],
+    intro: [
+      "One plate, two drums, one mirror ball, and a strip of sunglass over thorns. Somebody has to throw the light without following it.",
+    ],
+    hints: [
+      [150, "Wick stands on the plate to open the first door, then throws the lantern through it onto the drums. Where it lands, the mirror ball wakes up, the eye opens the far door, and the glass holds."],
+    ],
+    outro: "Bank shot. Off the drum, into the mirror. The narrator would like it noted that nobody called it.",
+  },
+  { name: "Ink and Ivory", sub: "Shade takes the plumbing. Wick takes the percussion.", ambient: 0.6, challenge: true, unlockAt: 37,
+    map: [
+      '################################',
+      '#...########.............#.....#',
+      '#...#......#.............#.....#',
+      '#...#......#.............Q.....#',
+      '#...#......#.............Q.....#',
+      '#...#..q...#.............Q.....#',
+      '#...#k###k##.............Q...E.#',
+      '#......................#####k###',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#....................j.........#',
+      '#................#####.........#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#S........W.....j.^^^^^^^......#',
+      '###k############################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Two ink wells, two drums, one door. The wells go places Wick cannot. The drums go places Shade would rather not.",
+    ],
+    hints: [
+      [150, "Wick bounces drum to drum up to the high ledge. Shade dives into the well on the left and holds the plate up in the little room. Then the other well in that room leads out."],
+    ],
+    outro: "A duet. Not a tidy one, but a duet.",
+  },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
 // Challenge levels (challenge:true) live after the story and have their own menu.
@@ -3161,7 +3223,7 @@ function chapterItems() {
   const it = [];
   for (const i of CH_START) if (i < MAIN_COUNT) {
     const n = CH_NUM[i], many = CH_ROOMS[n] > 1;
-    it.push({ label: n + '.  ' + (LEVELS[i].chapter || LEVELS[i].name) + (many ? '  \u203a' : ''), act: () => { if (many) { menuCh = i; menuMode = 'rooms'; menuSel = 0; SFX.menu(); } else goJoin(i); } });
+    it.push({ label: n + '.  ' + (LEVELS[i].chapter || LEVELS[i].name) + (many ? '  \u203a' : ''), lvl: i, act: () => { if (many) { menuCh = i; menuMode = 'rooms'; menuSel = 0; SFX.menu(); } else goJoin(i); } });
   }
   it.push({ label: 'Back', act: () => { menuMode = 'main'; menuSel = 0; } });
   return it;
@@ -3170,13 +3232,13 @@ let menuCh = 0;
 function roomItems() {
   // long chapters: jump straight to any room inside them
   const it = [], n = CH_NUM[menuCh];
-  for (let i = menuCh; i < MAIN_COUNT && CH_NUM[i] === n; i++) it.push({ label: 'Room ' + ROOM_NUM[i] + '.  ' + LEVELS[i].name, act: () => goJoin(i) });
+  for (let i = menuCh; i < MAIN_COUNT && CH_NUM[i] === n; i++) it.push({ label: 'Room ' + ROOM_NUM[i] + '.  ' + LEVELS[i].name, lvl: i, act: () => goJoin(i) });
   it.push({ label: 'Back', act: () => { menuMode = 'chapters'; menuSel = Math.max(0, CH_START.indexOf(menuCh)); } });
   return it;
 }
 function challengeItems() {
   const it = [];
-  CHALLENGES.forEach((i, k) => { if (challengeOpen(i)) it.push({ label: (k + 1) + '.  ' + LEVELS[i].name + (save.done && save.done[LEVELS[i].name] ? '  \u2713' : ''), act: () => goJoin(i) }); });
+  CHALLENGES.forEach((i, k) => { if (challengeOpen(i)) it.push({ label: (k + 1) + '.  ' + LEVELS[i].name + (save.done && save.done[LEVELS[i].name] ? '  \u2713' : ''), lvl: i, act: () => goJoin(i) }); });
   const locked = CHALLENGES.filter(i => !challengeOpen(i)).length;
   if (locked) it.push({ label: locked + ' more unlock as you play the story', act: () => {} });
   it.push({ label: 'Back', act: () => { menuMode = 'main'; menuSel = 0; } });
@@ -3222,6 +3284,7 @@ function drawMiniLantern(x, y) {
 }
 function renderTitle(t) {
   ctx.drawImage(bgCanvas, 0, 0);
+  if (menuMode !== 'main') { drawBrowse(menuItemsFor(), t); return; }
   const lx = W / 2 + Math.sin(t * 0.6) * 260, ly = 330 + Math.sin(t * 1.1) * 30;
   ctx.globalCompositeOperation = 'lighter';
   const g = ctx.createRadialGradient(lx, ly, 0, lx, ly, 360);
@@ -3241,6 +3304,101 @@ function renderTitle(t) {
   if (Object.keys(devState).filter(d => /^g\d+$/.test(d)).length === 0) {
     ctx.fillStyle = 'rgba(255,210,122,0.6)'; ctx.fillText('No controllers seen yet: press any button on one to wake it up.', W / 2, H - 54);
   }
+}
+/* ---------------- chapter select: list on the left, a little map of the room on the right ---------------- */
+const thumbCache = {};
+const THUMB_COL = { '#': '#d9cfbd', B: '#2a1748', '=': '#e9b860', x: '#6b4fb0', P: '#4fc7b8', Q: '#e6609a', r: 'rgba(79,199,184,0.35)', s: 'rgba(230,96,154,0.35)',
+  j: '#a8433a', '<': '#8d8577', '>': '#8d8577', k: '#140a24', m: '#f3e9ff', v: 'rgba(123,86,201,0.55)', w: 'rgba(255,214,140,0.45)', H: '#8a6a3a' };
+function levelThumb(i, cell) {
+  const key = i + ':' + cell;
+  if (thumbCache[key]) return thumbCache[key];
+  const d = LEVELS[i], cv = document.createElement('canvas'); cv.width = COLS * cell; cv.height = ROWS * cell;
+  const c = cv.getContext('2d'), map = d.map;
+  const bg = c.createLinearGradient(0, 0, 0, cv.height); bg.addColorStop(0, '#141029'); bg.addColorStop(1, '#0b0816'); c.fillStyle = bg; c.fillRect(0, 0, cv.width, cv.height);
+  let lx = null, ly = null, marks = [];
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) { const ch = map[y][x]; if (ch === 'L' || (ch === 'W' && lx === null)) { lx = (x + 0.5) * cell; ly = (y + 0.5) * cell; } }
+  if (lx !== null) { const g = c.createRadialGradient(lx, ly, 0, lx, ly, RL / T * cell); g.addColorStop(0, 'rgba(255,196,110,0.32)'); g.addColorStop(1, 'rgba(255,196,110,0)'); c.fillStyle = g; c.fillRect(0, 0, cv.width, cv.height); }
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    const ch = map[y][x], px = x * cell, py = y * cell;
+    if (ch === '#') { const edge = y === 0 || x === 0 || x === COLS - 1 || y === ROWS - 1 || (map[y - 1] && map[y - 1][x] !== '#'); c.fillStyle = edge ? '#e6dcc8' : '#b9ae99'; c.fillRect(px, py, cell, cell); }
+    else if (ch === '^') { c.fillStyle = '#b8304a'; c.beginPath(); c.moveTo(px, py + cell); c.lineTo(px + cell / 2, py + cell * 0.35); c.lineTo(px + cell, py + cell); c.fill(); }
+    else if (ch === 'p' || ch === 'q' || ch === 'o' || ch === 'u') { c.fillStyle = ch === 'p' || ch === 'o' ? '#4fc7b8' : '#e6609a'; if (ch === 'o' || ch === 'u') { c.beginPath(); c.arc(px + cell / 2, py + cell / 2, cell * 0.3, 0, TAU); c.fill(); } else c.fillRect(px + 2, py + cell - 4, cell - 4, 4); }
+    else if (ch === 'C') { c.fillStyle = '#0c0912'; c.fillRect(px + 1, py + 1, cell - 2, cell - 2); c.strokeStyle = '#7b56c9'; c.lineWidth = Math.max(1, cell / 10); c.strokeRect(px + 1.5, py + 1.5, cell - 3, cell - 3); }
+    else if (ch === 'E' || ch === 'F') { c.fillStyle = '#ffd27a'; c.fillRect(px + cell * 0.2, py - cell * 0.4, cell * 0.6, cell * 1.4); }
+    else if (ch === 'W' || ch === 'S') marks.push([ch, px, py]);
+    else if (ch === 'k') { c.fillStyle = '#05020c'; c.beginPath(); c.ellipse(px + cell / 2, py + cell * 0.25, cell * 0.45, cell * 0.2, 0, 0, TAU); c.fill(); c.fillStyle = '#b9ae99'; c.fillRect(px, py + cell * 0.35, cell, cell * 0.65); }
+    else if (THUMB_COL[ch]) { c.fillStyle = THUMB_COL[ch]; if (ch === 'm') { c.beginPath(); c.arc(px + cell / 2, py + cell / 2, cell * 0.4, 0, TAU); c.fill(); } else c.fillRect(px, py, cell, cell); }
+  }
+  for (const [ch, px, py] of marks) {
+    c.fillStyle = ch === 'W' ? '#f6ecd6' : '#8a5cff';
+    c.beginPath(); c.ellipse(px + cell / 2, py + cell * 0.55, cell * 0.32, cell * 0.45, 0, 0, TAU); c.fill();
+  }
+  if (lx !== null) { c.fillStyle = '#ffe4a0'; c.fillRect(lx - cell * 0.18, ly - cell * 0.25, cell * 0.36, cell * 0.5); }
+  return (thumbCache[key] = cv);
+}
+function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function wrapText(str, x, y, maxW, lh, maxLines = 2) {
+  const words = String(str || '').split(' '); let line = '', n = 0;
+  for (const w of words) { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > maxW && line) { ctx.fillText(line, x, y + n * lh); line = w; if (++n >= maxLines) return; } else line = t; }
+  if (line) ctx.fillText(line, x, y + n * lh);
+}
+let browseScroll = 0, browseFade = { lvl: -1, t: 0 };
+function drawBrowse(items, t) {
+  ctx.fillStyle = 'rgba(8,5,16,0.55)'; ctx.fillRect(0, 0, W, H);
+  const head = menuMode === 'rooms' ? 'Chapter ' + CH_NUM[menuCh] + ':  ' + (LEVELS[menuCh].chapter || LEVELS[menuCh].name) : menuMode === 'challenges' ? 'Challenges' : 'Chapter Select';
+  ctx.textAlign = 'left'; ctx.font = 'italic bold 44px Georgia, serif'; ctx.fillStyle = '#f6ecd6'; ctx.fillText(head, 80, 96);
+  ctx.fillStyle = 'rgba(255,210,122,0.5)'; ctx.fillRect(80, 114, 120, 2);
+  // list, scrolled so the selection stays in view
+  const rowH = 40, top = 160, vis = 13;
+  const want = Math.min(Math.max(0, menuSel - vis + 3), Math.max(0, items.length - vis));
+  if (menuSel < browseScroll + 2) browseScroll = Math.max(0, menuSel - 2); else if (menuSel > browseScroll + vis - 3) browseScroll = want;
+  browseScroll = Math.min(browseScroll, Math.max(0, items.length - vis));
+  ctx.save(); ctx.beginPath(); ctx.rect(40, top - 30, 560, vis * rowH + 10); ctx.clip();
+  items.forEach((it, i) => {
+    const y = top + (i - browseScroll) * rowH; if (y < top - 40 || y > top + vis * rowH) return;
+    const sel = i === menuSel;
+    if (sel) { ctx.fillStyle = 'rgba(255,210,122,0.09)'; roundRect(70, y - 27, 510, 38, 8); ctx.fill(); drawMiniLantern(84, y - 18); }
+    ctx.font = (sel ? 'bold ' : '') + '22px Georgia, serif'; ctx.fillStyle = sel ? '#ffd27a' : it.lvl == null ? 'rgba(244,234,216,0.45)' : 'rgba(244,234,216,0.72)';
+    let label = it.label; while (ctx.measureText(label).width > 440 && label.length > 4) label = label.slice(0, -2);
+    if (label !== it.label) label = label.trimEnd() + '…';
+    ctx.fillText(label, 114, y);
+  });
+  ctx.restore();
+  ctx.fillStyle = 'rgba(244,234,216,0.35)'; ctx.font = '18px Georgia'; ctx.textAlign = 'center';
+  if (browseScroll > 0) ctx.fillText('▲', 325, top - 34);
+  if (browseScroll + vis < items.length) ctx.fillText('▼', 325, top + vis * rowH - 8);
+  // preview card
+  const it = items[menuSel] || {}, i = it.lvl, cx0 = 640, cw = 576;
+  if (i != null) {
+    if (browseFade.lvl !== i) browseFade = { lvl: i, t: t };
+    const a = Math.min(1, (t - browseFade.t) / 0.18);
+    const th = levelThumb(i, 18), d = LEVELS[i];
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 30; ctx.fillStyle = '#0b0816'; roundRect(cx0 - 12, 138, cw + 24, 588, 14); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.save(); roundRect(cx0, 150, cw, 360, 8); ctx.clip(); ctx.drawImage(th, cx0, 150 + (1 - a) * 8); ctx.restore();
+    ctx.strokeStyle = 'rgba(255,210,122,0.35)'; ctx.lineWidth = 1.5; roundRect(cx0, 150, cw, 360, 8); ctx.stroke();
+    ctx.textAlign = 'left';
+    const isCh = menuMode === 'chapters', n = CH_NUM[i], many = CH_ROOMS[n] > 1;
+    const title = isCh ? (d.chapter || d.name) : d.name;
+    ctx.font = 'bold 30px Georgia, serif'; ctx.fillStyle = '#f6ecd6'; ctx.fillText(title, cx0, 550);
+    let meta;
+    if (d.challenge) meta = 'Challenge ' + (CHALLENGES.indexOf(i) + 1) + ' of ' + CHALLENGES.length + (save.done && save.done[d.name] ? '   ·   cleared ✓' : '');
+    else if (isCh) meta = 'Chapter ' + n + (many ? '   ·   ' + CH_ROOMS[n] + ' rooms' : '') + (save.unlocked > i ? '   ·   visited' : '');
+    else meta = 'Room ' + ROOM_NUM[i] + ' of ' + CH_ROOMS[n] + (save.unlocked > i ? '   ·   cleared ✓' : '');
+    ctx.font = '16px Georgia, serif'; ctx.fillStyle = 'rgba(255,210,122,0.75)'; ctx.fillText(meta, cx0, 578);
+    ctx.font = 'italic 19px Georgia, serif'; ctx.fillStyle = 'rgba(244,234,216,0.72)';
+    if (isCh && many) {
+      // the rooms in this chapter as a little strip
+      const rooms = []; for (let k = i; k < MAIN_COUNT && CH_NUM[k] === n; k++) rooms.push(k);
+      const tw = Math.min(104, (cw - (rooms.length - 1) * 14) / rooms.length), tsc = tw / (COLS * 18);
+      rooms.forEach((k, j) => { const x = cx0 + j * (tw + 14), y = 600; ctx.drawImage(levelThumb(k, 18), x, y, tw, ROWS * 18 * tsc);
+        ctx.strokeStyle = 'rgba(244,234,216,0.25)'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, tw - 1, ROWS * 18 * tsc - 1);
+        ctx.font = '13px Georgia'; ctx.fillStyle = 'rgba(244,234,216,0.55)'; ctx.fillText((j + 1) + '. ' + LEVELS[k].name, x, y + ROWS * 18 * tsc + 18, tw); });
+    } else wrapText(d.sub, cx0, 614, cw, 26, 3);
+    ctx.restore();
+  }
+  ctx.font = '15px Georgia'; ctx.fillStyle = 'rgba(244,234,216,0.5)'; ctx.textAlign = 'center';
+  ctx.fillText('A / Space to choose  ·  D-pad / stick / arrows to move  ·  B / E to go back', W / 2, H - 30);
 }
 function updateJoin(dt) {
   joinT += dt;
