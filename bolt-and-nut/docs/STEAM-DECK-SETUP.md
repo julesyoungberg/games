@@ -36,10 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (0.5.0)
-**New look:** real textures, metal and paint that catch the light, proper shadows, a soft glow on lights and lasers, and new robot models. On a computer that draws with software (no graphics card), the game keeps the old simple look so it stays smooth. Options, Picture quality: "sharp" always uses the new look, "fast" always uses the simple one.
+## What's in this version (0.6.0)
+**New look:** a deep factory hall around every level (gears, columns, catwalks, lamps, dust in the air), new fonts, preview pictures and Done/cog badges in the level menus, real textures, metal and paint that catch the light, proper shadows, a soft glow on lights and lasers, and new robot models. On a computer that draws with software (no graphics card), the game keeps the old simple look so it stays smooth. Options, Picture quality: "sharp" always uses the new look, "fast" always uses the simple one.
 
-18 shifts (levels), about 2.5 to 3 hours for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review, Shipping, Switchboard, Lumber Room, Night Shift, Spring Cleaning, Quality Control, Pneumatic Post, Overhead Rail, Slippery Slope, Cling Film.
+20 shifts (levels), about 3 hours for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review, Shipping, Switchboard, Lumber Room, Night Shift, Spring Cleaning, Quality Control, Pneumatic Post, Overhead Rail, Slippery Slope, Cling Film, Mixed Signals, Year-End Review.
 
 Also **Overtime**: short, harder bonus puzzles on the title screen. They unlock as you finish shifts.
 

@@ -1,6 +1,7 @@
 // Bolt & Nut — app shell: screens, narrator, game loop.
 import { createWorld, step, restartFromCheckpoint } from './sim.js';
 import { LEVELS, LINES, ALL, OVERTIME, NMAIN } from './levels.js';
+import THUMBS from './thumbs.js';
 const lvName = i => ALL[i].ot ? `Overtime ${ALL[i].ot}` : `Shift ${i + 1}`;
 const otOpen = k => true; // every level is always open, so lost saves never matter
 import { Input } from './input.js';
@@ -82,7 +83,11 @@ function renderMenu() {
   if (!menu) return;
   const items = menu.items.filter(i => !i.hidden);
   menu.sel = Math.max(0, Math.min(items.length - 1, menu.sel));
-  menuEl.innerHTML = `<div class="box ${menu.cls || ''}">${menu.title ? `<h2>${menu.title}</h2>` : ''}${menu.sub ? `<p class="sub">${menu.sub}</p>` : ''}<ul>${items.map((it, i) => `<li class="${i === menu.sel ? 'sel' : ''} ${it.dim ? 'dim' : ''}">${it.label}${it.get ? `<span class="val">◂ ${it.get()} ▸</span>` : ''}</li>`).join('')}</ul>${menu.foot ? `<p class="foot">${menu.foot}</p>` : ''}</div>`;
+  const list = `<ul>${items.map((it, i) => `<li class="${i === menu.sel ? 'sel' : ''} ${it.dim ? 'dim' : ''}">${it.label}${it.badges ? `<span class="badges">${it.badges}</span>` : ''}${it.get ? `<span class="val">◂ ${it.get()} ▸</span>` : ''}</li>`).join('')}</ul>`;
+  // level menus show a preview picture of the highlighted level
+  const cur = items[menu.sel], hasPv = items.some(it => it.thumb);
+  const pv = hasPv ? `<div class="pv">${cur && cur.thumb ? `<img src="${cur.thumb}" alt="">` : '<div class="noimg"></div>'}${cur && cur.status ? `<div class="status">${cur.status}</div>` : ''}<p>${cur && cur.desc ? cur.desc : ''}</p></div>` : '';
+  menuEl.innerHTML = `<div class="box ${menu.cls || ''}">${menu.title ? `<h2>${menu.title}</h2>` : ''}${menu.sub ? `<p class="sub">${menu.sub}</p>` : ''}${hasPv ? `<div class="row">${list}${pv}</div>` : list}${menu.foot ? `<p class="foot">${menu.foot}</p>` : ''}</div>`;
   const selEl = menuEl.querySelector('li.sel'); if (selEl) selEl.scrollIntoView({ block: 'nearest' });
 }
 function menuInput(m) {
@@ -117,16 +122,22 @@ function goTitle() {
     ],
   });
 }
+// progress badges for the level menus
+function lvBadges(i) {
+  const done = save.done.includes(i), cog = save.cogs.includes(i);
+  return { badges: `${done ? '<b class="bd done">Done</b>' : ''}${cog ? '<b class="bd cog">⚙</b>' : ''}`,
+    status: `${done ? '<b class="bd done">Finished</b>' : '<b class="bd todo">Not finished yet</b>'}${cog ? '<b class="bd cog">⚙ Golden cog found</b>' : '<b class="bd todo">Golden cog not found</b>'}` };
+}
 function chooseShift() {
   openMenu({
-    title: 'Choose a shift', sub: `Every shift is open. Golden cogs found: ${save.cogs.filter(i => i < NMAIN).length} of ${NMAIN}`, back: goTitle,
-    items: LEVELS.map((L, i) => ({ label: `${i + 1}. ${L.name}${save.done.includes(i) ? ' ✓' : ''}${save.cogs.includes(i) ? ' ⚙' : ''}`, act: () => goJoin(i) })).concat([{ label: 'Back', act: goTitle }]),
+    title: 'Choose a shift', sub: `Every shift is open. Finished: ${save.done.filter(i => i < NMAIN).length} of ${NMAIN}. Golden cogs: ${save.cogs.filter(i => i < NMAIN).length} of ${NMAIN}.`, back: goTitle,
+    items: LEVELS.map((L, i) => ({ label: `${i + 1}. ${L.name}`, ...lvBadges(i), thumb: THUMBS[i], desc: L.sub, act: () => goJoin(i) })).concat([{ label: 'Back', act: goTitle }]),
   });
 }
 function overtimeMenu() {
   openMenu({
     title: 'Overtime', sub: 'Short, tricky bonus puzzles. Unpaid, obviously.', back: goTitle,
-    items: OVERTIME.map((L, k) => { const i = NMAIN + k, open = otOpen(k); return { label: open ? `${k + 1}. ${L.name}${save.done.includes(i) ? ' ✓' : ''}${save.cogs.includes(i) ? ' ⚙' : ''}` : `${k + 1}. Locked: finish Shift ${L.after + 1}`, dim: !open, act: () => { if (open) goJoin(i); else SFX.pullMiss(); } }; }).concat([{ label: 'Back', act: goTitle }]),
+    items: OVERTIME.map((L, k) => { const i = NMAIN + k, open = otOpen(k); return { label: open ? `${k + 1}. ${L.name}` : `${k + 1}. Locked: finish Shift ${L.after + 1}`, ...lvBadges(i), dim: !open, thumb: THUMBS[i], desc: L.sub, act: () => { if (open) goJoin(i); else SFX.pullMiss(); } }; }).concat([{ label: 'Back', act: goTitle }]),
   });
 }
 function optionsMenu(back) {
@@ -366,6 +377,7 @@ window.__bn = {
   get mode() { return mode; }, get world() { return world; }, view, narr, Input,
   start(i) { Input.assign = ['k1', 'k2']; startLevel(i); },
   force(arr) { Input.forced = arr; },
+  get count() { return ALL.length; },
 };
 
 goTitle();

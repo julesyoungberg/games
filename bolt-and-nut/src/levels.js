@@ -8,6 +8,8 @@ import S15 from './lv/s15.js';
 import S16 from './lv/s16.js';
 import S17 from './lv/s17.js';
 import S18 from './lv/s18.js';
+import S19 from './lv/s19.js';
+import S20 from './lv/s20.js';
 import OT1 from './lv/ot1.js';
 import OT2 from './lv/ot2.js';
 import OT3 from './lv/ot3.js';
@@ -587,6 +589,8 @@ export const LEVELS = [
   S16,
   S17,
   S18,
+  S19,
+  S20,
 ];
 
 // Overtime: short, harder bonus puzzles. Each unlocks when the main shift `after` (0-based) is done.

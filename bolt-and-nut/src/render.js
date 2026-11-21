@@ -8,6 +8,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { makeSurfaces, gradientTex, hallTex } from './fx.js';
 import { makeBolt, makeNut } from './robots.js';
+import { buildScenery } from './scenery.js';
 import { groundAt, pickTarget } from './sim.js';
 
 export const THEMES = [
@@ -237,7 +238,7 @@ export class View {
       if (this.skyTex) this.skyTex.dispose();
       this.skyTex = gradientTex('#' + top.getHexString(), '#' + bg.getHexString(), '#' + bot.getHexString());
       this.scene.background = this.skyTex;
-      this.scene.fog = new THREE.Fog(th.bg, 50, 130);
+      this.scene.fog = new THREE.Fog(th.bg, 26, 105);
       this.hemi.intensity = dark ? 0.45 : 0.45;
       this.sun.color.set(dark ? 0xc8c0ff : 0xfff1dc); this.sun.intensity = dark ? 2.2 : 3.0;
       this.fill.intensity = dark ? 0.9 : 0.6; this.fill.color.set(dark ? 0x7f9cff : 0xcfe0ff);
@@ -300,13 +301,16 @@ export class View {
       const ht = hallTex(); ht.userData.keep = false; const L = x1 - x0 + 120;
       const hm = new THREE.MeshStandardMaterial({ map: ht, color: col(th.wall).lerp(col(0xffffff), dark ? 0.1 : 0.45), roughness: 0.9, emissive: dark ? 0x101830 : 0x000000 });
       ht.repeat.set(L / 24, 1);
-      const hall = new THREE.Mesh(new THREE.PlaneGeometry(L, 24), hm); hall.position.set((x0 + x1) / 2, 6, -48); this.level.add(hall);
+      let yb = 0, yt = 0; for (const s of w.solids) if (s.style === 'floor') { yb = Math.min(yb, s.max.y); yt = Math.max(yt, s.max.y); }
+      const H = yt - yb + 50; ht.repeat.set(L / 24, H / 24);
+      const hall = new THREE.Mesh(new THREE.PlaneGeometry(L, H), hm); hall.position.set((x0 + x1) / 2, yb - 18 + H / 2, -48); this.level.add(hall);
     }
+    this.scenery = F ? buildScenery(this.level, w, th, this.surf, dark) : null;
     // far background gears
     let xmax = 0; this.minX = Infinity; for (const s of w.solids) { xmax = Math.max(xmax, s.max.x); this.minX = Math.min(this.minX, s.min.x); }
     this.gears = [];
     const gm = LM({ color: th.gear }, METAL);
-    for (let x = -10, i = 0; x < xmax + 30; x += 22, i++) {
+    if (!F) for (let x = -10, i = 0; x < xmax + 30; x += 22, i++) {
       const r = 3.5 + (i % 3) * 1.8;
       const g = new THREE.Group();
       const disc = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 18), gm); disc.rotation.x = Math.PI / 2; g.add(disc);
@@ -506,7 +510,7 @@ export class View {
     });
     // signs
     for (const s of w.signs) {
-      const tex = canvasTex(512, 128, (c, W, H) => { c.fillStyle = 'rgba(255,255,255,0.0)'; c.clearRect(0, 0, W, H); c.fillStyle = '#ffffff'; c.globalAlpha = 0.85; c.font = 'bold 64px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s.text, W / 2, H / 2); });
+      const tex = canvasTex(512, 128, (c, W, H) => { c.fillStyle = 'rgba(255,255,255,0.0)'; c.clearRect(0, 0, W, H); c.fillStyle = '#ffffff'; c.globalAlpha = 0.85; let fs = 64; c.font = `bold ${fs}px sans-serif`; while (c.measureText(s.text).width > W - 16 && fs > 20) { fs -= 2; c.font = `bold ${fs}px sans-serif`; } c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s.text, W / 2, H / 2); });
       const m = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
       m.position.set(s.x, s.y, s.z + 0.02); this.level.add(m);
     }
@@ -533,7 +537,7 @@ export class View {
     for (let i = 0; i < n; i++) {
       if (this.pl.length >= this.maxP) this.pl.shift();
       const a = Math.random() * Math.PI * 2, s = speed * (0.4 + Math.random() * 0.6);
-      this.pl.push({ x, y, z, vx: Math.cos(a) * s, vy: up * (0.5 + Math.random()), vz: Math.sin(a) * s, t: 0, life: life * (0.6 + Math.random() * 0.6), c: col(color), s: 0.6 + Math.random() * 0.8 });
+      this.pl.push({ x, y, z, vx: Math.cos(a) * s, vy: up * (0.5 + Math.random()), vz: Math.sin(a) * s, t: 0, life: life * (0.6 + Math.random() * 0.6), c: this.fancy && color !== 0xffffff ? col(color).multiplyScalar(2.4) : col(color), s: 0.6 + Math.random() * 0.8 });
     }
   }
   pushRing(x, y, z) {
@@ -650,7 +654,10 @@ export class View {
       this.exitMesh.beam.material.opacity = 0.08 + inside * 0.1;
     }
     for (const c of this.cpMeshes) { c.bulbM.color.set(c.cp.hit ? 0x9dffb0 : 0x777777); c.bulbM.emissive.set(c.cp.hit ? 0x2ec48f : 0x000000); c.bulbM.emissiveIntensity = this.fancy ? 2.5 : 1; }
-    for (const g of this.gears) g.rotation.z += g.userData.speed * dt;
+    if (this.scenery) { // haze starts just behind the action, so the background layers fade with depth
+      const cd = this.camPos.distanceTo(this.camLook); this.scene.fog.near = cd + 6; this.scene.fog.far = cd + 70;
+    }
+    if (this.scenery) this.scenery.update(t, dt, this.camLook); else for (const g of this.gears) g.rotation.z += g.userData.speed * dt;
     // particles
     let n = 0;
     for (let i = this.pl.length - 1; i >= 0; i--) {
@@ -690,6 +697,7 @@ export class View {
     if (p.pulledBy || (p.target && p.target.kind === 'anchor')) sq = 1 + Math.sin(this.time * 20) * 0.04;
     R.body.scale.set(1 / Math.sqrt(sq), sq, 1 / Math.sqrt(sq));
     R.body.position.y = (sq - 1) * -0.3 + (p.grounded && sp > 0.5 ? Math.abs(Math.sin(R.walk * 2)) * 0.06 : 0);
+    if (R.still > 0.4) R.body.position.y += Math.sin(this.time * 2.4 + who * 1.7) * 0.02; // idle breathing
     R.body.rotation.x = p.grounded ? Math.min(0.15, sp * 0.02) : 0;
     R.feet.forEach((f, i) => { f.position.z = 0.03 + (p.grounded ? Math.sin(R.walk * 2 + i * Math.PI) * Math.min(0.15, sp * 0.03) : 0.05); });
     // blink

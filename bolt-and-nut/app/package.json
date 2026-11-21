@@ -1,6 +1,6 @@
 {
   "name": "bolt-and-nut",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A two-player couch co-op about magnets, opposites and a very patient orientation facilitator",
   "main": "main.js",
   "author": "Bolt and Nut",
