@@ -291,7 +291,7 @@ export function pickTarget(w, bolt) {
     // how well it lines up with where Bolt is facing (3D, so things far above count less)
     const dot = hd < 1.2 ? 0.5 : (dx * bolt.face.x + dz * bolt.face.z) / d;
     if (dot < 0.3) return; // only things in front of Bolt (or right above / below him)
-    cands.push({ obj, kind, score: d * (2 - 1.5 * dot) * (kind === 'nut' ? 0.8 : 1) * (kind === 'anchor' && bolt.grounded && hd < 2.2 ? 2.5 : 1) });
+    cands.push({ obj, kind, score: d * (2 - 1.5 * dot) * (kind === 'nut' ? 0.8 : 1) * (kind === 'anchor' && bolt.grounded && hd < 2.2 ? 2.5 : 1) * (kind === 'anchor' && !bolt.grounded ? 0.5 : 1) });
   };
   if (nut.alive) add(nut, nut.pos.x, nut.pos.y, nut.pos.z, 'nut');
   for (const c of w.crates) if (c.alive && !c.wood) add(c, c.pos.x, c.pos.y, c.pos.z, 'crate');
