@@ -1131,6 +1131,179 @@ const LEVELS = [
     onPlate: (n, by, ch) => ch === 'q' && by === 'shade' ? 'Shade has the inner plate. Wick, climb.' : null,
     outro: "And bow. Lovely. Backstage is closed. Please collect your belongings and your shadow.",
   },
+  { name: "First Light", sub: "The building has eyes. They like the lantern.", ambient: 0.6, chapter: "The Observatory",
+    map: [
+      '################################',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......#.................#....#',
+      '#.......o.................#....#',
+      '#.......#.................#....#',
+      '#.......P.................Q....#',
+      '#.......P...u.............Q....#',
+      '#.......P.................Q....#',
+      '#.WS....P.................Q..E.#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The Observatory. Someone built a whole building to look at light. I respect the commitment.",
+      "See the little sun-eyes? Light one up and it opens its doors. No stepping on anything. Just shine.",
+    ],
+    hints: [
+      [40, "Wick, walk up to the eye in the wall. The teal door opens while it can see the lantern."],
+      [100, "The pink eye on the floor runs the far door. Leave the lantern somewhere it can see."],
+    ],
+    onPlate: (n, by, ch) => by === 'light' ? 'The eye is open. So is the door. Same thing, really.' : null,
+    outro: "Doors that open when you look at them nicely. I wish all doors were like that.",
+  },
+  { name: "Long Exposure", sub: "Two eyes, very far apart. Find somewhere they can both see.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#.......................#..#...#',
+      '#.......................#..#...#',
+      '#.......................#..#...#',
+      '#.......................#..#...#',
+      '#.......................#..#...#',
+      '#...o................u..#..#...#',
+      '#............H..........#..#...#',
+      '#.......................#..#...#',
+      '#.......................#..#...#',
+      '#.......................#..#...#',
+      '#..#########rrr.........#..#...#',
+      '#.......................#..#...#',
+      '#.......................P..Q...#',
+      '#rr.....................P..Q...#',
+      '#.......................P..Q...#',
+      '#...p.WS................P..Q.E.#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Two eyes, two doors, one lantern. The eyes are a long way apart.",
+      "There is a hook somewhere in the middle. Hooks are where lanterns go to be useful.",
+    ],
+    hints: [
+      [40, "Shade, the teal plate on the left brings out the steps to the high shelf."],
+      [100, "Wick, up the steps and hang the lantern on the hook. From there it can see both eyes."],
+    ],
+    onPlate: (n, by, ch) => by === 'light' ? 'One eye open. Is the other one looking?' : null,
+    outro: "A long exposure. Both eyes open at once. Very artistic. Very slightly creepy.",
+  },
+  { name: "Eclipse", sub: "The eye sees everything. Unless something is in the way.", ambient: 0.7, cont: true,
+    map: [
+      '################################',
+      '###########.....#.....#........#',
+      '###########.....#.....#........#',
+      '###########.....#.....#........#',
+      '###########.....#.....#........#',
+      '###########.....#.....#........#',
+      '###########.....#.....#........#',
+      '###########.....#.....#........#',
+      '###########.....#.....#........#',
+      '###########.....Q.....P........#',
+      '###########.....Q..B..P........#',
+      '###########.W...Q..B..P........#',
+      '###################B######.....#',
+      '##########################.....#',
+      '#..............us..............#',
+      '#...............s..............#',
+      '#.S.............s......p.....E.#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "This eye keeps the pink glass up in Shade's corridor. While it can see the lantern, Shade is stuck.",
+      "Wick cannot carry the light far enough away. So the light will have to hide.",
+    ],
+    hints: [
+      [40, "Wick, hop over the ink block and put the lantern down right behind it. The block hides it from the eye."],
+      [100, "Shade, the glass is gone. Run through and stand on the teal plate at the end."],
+      [160, "Wick, pick the lantern back up. The teal door is open now."],
+    ],
+    onPlate: (n, by, ch) => by === 'shade' ? 'Teal door open. Wick, grab your light and go.' : null,
+    outro: "An eclipse. Arranged entirely by a block of ink. Astronomers would be furious.",
+  },
+  { name: "Daylight Saving", sub: "Leave the light up high where the eye can see it. Then walk into the dark.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#...........................#..#',
+      '#...........................#..#',
+      '#...........................#..#',
+      '#.o.........................#..#',
+      '#...........................#..#',
+      '#...........................P..#',
+      '#...........................P..#',
+      '#...H.......................P..#',
+      '#.q.........................P.E#',
+      '#######...................xx####',
+      '#######........................#',
+      '#######ss...............xx.....#',
+      '#######........................#',
+      '#######...ss.........xx........#',
+      '#######.....B..................#',
+      '#######.S...B..W...............#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The eye up there is very high. The door it opens is very far. And the dark glass on the right only holds up in the dark.",
+      "Somebody has to stay in the light, and it is not going to be either of you.",
+    ],
+    hints: [
+      [40, "Wick, put the lantern down just right of the ink block. Shade can ride its shadow up to the shelf."],
+      [100, "Shade, the pink plate on the shelf brings out the steps for Wick."],
+      [160, "Wick, take the lantern up and hang it on the hook by the eye. Then both of you head for the dark glass."],
+    ],
+    onPlate: (n, by, ch) => by === 'light' ? 'The high door is open. Now go where the light is not.' : (ch === 'q' ? 'Steps are out. Wick, climb.' : null),
+    outro: "You left the light on for the eye and walked off into the dark. Very trusting. Very sweet.",
+  },
+  { name: "Totality", sub: "Block the eye. Leave the light. Walk into the dark. In that order.", ambient: 0.55, cont: true,
+    map: [
+      '################################',
+      '#####.....#.....#..............#',
+      '#####.....#.....#..............#',
+      '#####.....#.....#..............#',
+      '#####.....#.....#..............#',
+      '#####.....#.....#..............#',
+      '#####.....#.....#..............#',
+      '#####.....#.....#..............#',
+      '#####.....#.....#..............#',
+      '#####.....Q.....P..............#',
+      '#####.....Q..B..P..............#',
+      '#####.W...Q..B..P..............#',
+      '#############B######...........#',
+      '####################...........#',
+      '#........us....................#',
+      '#.........s....................#',
+      '#.S.......s......p............E#',
+      '######################xxxxxxx###',
+      '######################^^^^^^^###',
+      '################################',
+    ],
+    intro: [
+      "The last room of the Observatory. Everything you just learned, in the right order.",
+      "Hide the light from the eye. Then leave it. Then trust the dark.",
+    ],
+    hints: [
+      [40, "Wick, over the ink block, and put the lantern down behind it, out of the eye's sight."],
+      [100, "Shade, through to the teal plate. Hold it while Wick gets through the door."],
+      [160, "Leave the lantern where it is. The dark glass over the thorns only holds without it."],
+    ],
+    onPlate: (n, by, ch) => by === 'shade' ? 'Door open. Wick, go. Without the lantern. I know. I know.' : null,
+    outro: "Totality. The eye saw nothing, the glass held, and the lantern is still back there, glowing at nobody. It is fine. It is a lantern.",
+  },
   { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
     map: [
       '################################',
@@ -1371,6 +1544,7 @@ function loadLevel(idx, opts = {}) {
     else if (c === 'H') { lv.hooks.push({ tx: x, ty: y }); grid[y][x] = '.'; }
     else if (c === 'E' || c === 'F') { lv.exits.push({ tx: x, ty: y, kind: c }); grid[y][x] = '.'; }
     else if (c === 'p' || c === 'q') { lv.plates.push({ tx: x, ty: y, ch: c, down: false }); grid[y][x] = '.'; }
+    else if (c === 'o' || c === 'u') { lv.plates.push({ tx: x, ty: y, ch: c === 'o' ? 'p' : 'q', down: false, sensor: true }); grid[y][x] = '.'; }
     else if (c === 'C') { lv.crates.push({ crate: true, x: x * T, y: y * T, w: T, h: T, vx: 0, vy: 0, sx: x * T, sy: y * T, onGround: false, ign: null }); grid[y][x] = '.'; }
   }
   players[1].face = 1;
@@ -1728,6 +1902,14 @@ function updatePlates() {
   for (const pl of lv.plates) {
     const rx = pl.tx * T + 3, ry = pl.ty * T + 28, rw = T - 6, rh = 12;
     let d = false, who = null;
+    if (pl.sensor) {
+      // light sensor: counts as pressed while the lantern's light reaches it
+      d = isLit(pl.tx, pl.ty) && !isShadow((pl.tx + 0.5) * T, (pl.ty + 0.5) * T); who = 'light';
+      if (d && !pl.down) { SFX.plate(true); by = who; }
+      if (!d && pl.down) SFX.plate(false);
+      pl.down = d; if (d) any[pl.ch] = true;
+      continue;
+    }
     players.forEach(p => { if (p.dead <= 0 && overl(p.x, p.y, p.w, p.h + 1, rx, ry, rw, rh)) { d = true; who = p.kind; } });
     if (!lantern.held && overl(lantern.x, lantern.y, lantern.w, lantern.h + 1, rx, ry, rw, rh)) { d = true; who = who || 'lantern'; }
     for (const c of lv.crates) if (overl(c.x, c.y, c.w, c.h + 1, rx, ry, rw, rh)) { d = true; who = who || 'crate'; }
@@ -1939,6 +2121,15 @@ function drawDynamicTiles(t) {
   for (const pl of lv.plates) {
     const px = pl.tx * T, py = pl.ty * T;
     const col = CH_COL[pl.ch];
+    if (pl.sensor) {
+      const cx = px + T / 2, cy = py + T / 2;
+      if (pl.down) { ctx.fillStyle = col[1]; ctx.beginPath(); ctx.arc(cx, cy, 19, 0, TAU); ctx.fill(); }
+      ctx.strokeStyle = pl.down ? col[0] : col[3]; ctx.lineWidth = 2.5;
+      for (let k = 0; k < 8; k++) { const a = k * TAU / 8 + (pl.down ? lv.time * 0.8 : 0); ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * 11, cy + Math.sin(a) * 11); ctx.lineTo(cx + Math.cos(a) * 16, cy + Math.sin(a) * 16); ctx.stroke(); }
+      ctx.fillStyle = col[2]; ctx.beginPath(); ctx.arc(cx, cy, 8, 0, TAU); ctx.fill();
+      ctx.fillStyle = pl.down ? col[4] : col[0]; ctx.beginPath(); ctx.arc(cx, cy, pl.down ? 5 : 3, 0, TAU); ctx.fill();
+      continue;
+    }
     ctx.fillStyle = col[2]; ctx.fillRect(px + 2, py + T - 5, T - 4, 5);
     ctx.fillStyle = col[0]; ctx.globalAlpha = pl.down ? 0.6 : 1; ctx.fillRect(px + 5, py + T - (pl.down ? 7 : 11), T - 10, pl.down ? 3 : 6); ctx.globalAlpha = 1;
   }
