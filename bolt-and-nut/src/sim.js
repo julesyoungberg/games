@@ -46,7 +46,14 @@ function makeBuilder(w) {
       w.solids.push(m); w.movers.push(m); return m;
     },
     crate(x, z, top = 0, opt = {}) { const c = makeBody('crate', x, top + 0.6, z, 0.6, 0.6, 0.6); c.wood = !!opt.wood; c.home = { x, y: top + 0.6, z }; w.crates.push(c); w.bodies.push(c); return c; },
-    anchor(x, y, z) { w.anchors.push({ x, y, z, kind: 'anchor' }); },
+    // anchor ring; opt.path = [[0,0,0],[dx,dy,dz],...] makes it glide back and forth (opt.speed m/s, pausing at the ends)
+    anchor(x, y, z, opt = {}) {
+      const a = { x, y, z, kind: 'anchor' };
+      if (opt.path) { a.home = { x, y, z }; a.path = opt.path; a.speed = opt.speed || 2; a.s = 0; a.dir = 1; a.wait = 0; a.len = [0]; for (let i = 1; i < opt.path.length; i++) { const p0 = opt.path[i - 1], p1 = opt.path[i]; a.len.push(a.len[i - 1] + Math.hypot(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2])); } a.total = a.len[a.len.length - 1]; }
+      w.anchors.push(a); return a;
+    },
+    // pneumatic tube between two floor hatches: step in at one end, pop out of the other. opt.outA / opt.outB: [dx, dz] exit direction.
+    tube(ax, az, atop, bx, bz, btop, opt = {}) { const d = Math.sign(bx - ax) || 1; w.tubes.push({ a: { x: ax, z: az, top: atop, out: opt.outA || [-d, 0] }, b: { x: bx, z: bz, top: btop, out: opt.outB || [d, 0] }, t: -9 }); },
     laser(x0, z0, x1, z1, y0, y1, chs = null, timer = null, any = false) { w.lasers.push({ any, min: { x: Math.min(x0, x1), y: y0, z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), y: y1, z: Math.max(z0, z1) }, chs: chs ? [].concat(chs) : null, timer, on: true }); },
     fan(x0, z0, x1, z1, base, height, chs = null) { w.fans.push({ min: { x: Math.min(x0, x1), y: base, z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), y: base + height, z: Math.max(z0, z1) }, chs: chs ? [].concat(chs) : null, on: true }); L.box(x0, z0, x1, z1, base - 6, base, 'fan'); },
     checkpoint(x0, z0, x1, z1, bx, bz, nx, nz) { w.checkpoints.push({ min: { x: Math.min(x0, x1), z: Math.min(z0, z1) }, max: { x: Math.max(x0, x1), z: Math.max(z0, z1) }, b: { x: bx, z: bz }, n: { x: nx, z: nz }, hit: false }); },
@@ -82,7 +89,7 @@ export function createWorld(index) {
   // a level definition object can be passed directly (used by tests of work-in-progress levels)
   let def; if (typeof index === 'object') { def = index; index = -1; } else def = ALL[index];
   const w = {
-    index, def, t: 0, solids: [], gates: [], bridges: [], movers: [], plates: [], lasers: [], fans: [], anchors: [], crates: [], switches: [], springs: [], cogs: [], bodies: [], decos: [], zones: [], checkpoints: [], signs: [],
+    index, def, t: 0, solids: [], gates: [], bridges: [], movers: [], plates: [], lasers: [], fans: [], anchors: [], crates: [], switches: [], springs: [], cogs: [], tubes: [], bodies: [], decos: [], zones: [], checkpoints: [], signs: [],
     channels: {}, events: [], exit: null, exitT: 0, complete: false, spawn: null, stats: { falls: [0, 0], zaps: [0, 0], pulls: 0, pushes: 0, launches: 0 },
   };
   def.build(makeBuilder(w));
@@ -169,6 +176,31 @@ function moveBody(w, b, dx, dy, dz) {
 function emit(w, type, data = {}) { w.events.push({ type, ...data }); }
 
 /* ---------------- kinematics: gates, bridges, movers ---------------- */
+function updateAnchors(w, dt) {
+  for (const a of w.anchors) {
+    if (!a.path) continue;
+    if (a.wait > 0) { a.wait -= dt; continue; }
+    a.s += a.dir * a.speed * dt;
+    if (a.s >= a.total) { a.s = a.total; a.dir = -1; a.wait = 0.6; } else if (a.s <= 0) { a.s = 0; a.dir = 1; a.wait = 0.6; }
+    let i = 1; while (i < a.len.length - 1 && a.len[i] < a.s) i++;
+    const f = (a.s - a.len[i - 1]) / Math.max(1e-6, a.len[i] - a.len[i - 1]), p0 = a.path[i - 1], p1 = a.path[i];
+    a.x = a.home.x + p0[0] + (p1[0] - p0[0]) * f; a.y = a.home.y + p0[1] + (p1[1] - p0[1]) * f; a.z = a.home.z + p0[2] + (p1[2] - p0[2]) * f;
+  }
+}
+function updateTubes(w, dt) {
+  for (const b of w.bodies) if (b.tubeCd > 0) b.tubeCd -= dt;
+  for (const tb of w.tubes) for (const [from, to] of [[tb.a, tb.b], [tb.b, tb.a]]) for (const b of w.bodies) {
+    if (!b.alive || b.tubeCd > 0) continue;
+    const bot = b.pos.y - b.half.y;
+    if (Math.abs(b.pos.x - from.x) > 0.55 || Math.abs(b.pos.z - from.z) > 0.55 || bot < from.top - 0.2 || bot > from.top + 0.5) continue;
+    if (b.pulledBy) releaseTarget(w, b.pulledBy);
+    if (b.kind === 'player' && b.target) releaseTarget(w, b);
+    b.pos = { x: to.x, y: to.top + b.half.y + 0.7, z: to.z }; b.prev = { ...b.pos };
+    b.vel = { x: to.out[0] * 4.5, y: 7, z: to.out[1] * 4.5 }; b.grounded = false; b.ground = null; b.tubeCd = 0.8;
+    if (b.kind === 'player') { b.launched = true; b.coyote = 0; }
+    tb.t = w.t; emit(w, 'tube', { x: to.x, y: to.top + 0.5, z: to.z, fx: from.x, fz: from.z, fy: from.top + 0.5, who: b.id });
+  }
+}
 function updateKinematics(w, dt) {
   for (const g of w.gates) {
     let want = chActive(w, g.chs, g.any);
@@ -329,7 +361,7 @@ function updatePlayer(w, p, inp, dt) {
     const a = p.target.obj;
     const tx = a.x, ty = a.y - 1.0, tz = a.z;
     const dx = tx - p.pos.x, dy = ty - p.pos.y, dz = tz - p.pos.z, d = Math.hypot(dx, dy, dz);
-    if (d < 0.25) { p.vel.x = p.vel.y = p.vel.z = 0; if (!p.hang) emit(w, 'hang'); p.hang = true; }
+    if (d < 0.25) { p.vel.x = dx / dt; p.vel.y = dy / dt; p.vel.z = dz / dt; if (!p.hang) emit(w, 'hang'); p.hang = true; }
     else { const s = Math.min(C.grappleSpeed, d / dt) / d; p.vel.x = dx * s; p.vel.y = dy * s; p.vel.z = dz * s; }
     p.launched = false; p.coyote = 0;
     return;
@@ -360,6 +392,7 @@ export function step(w, inputs, dt = 1 / 60) {
   w.t += dt;
   // channels from plates (evaluated from last positions)
   updateKinematics(w, dt);
+  updateAnchors(w, dt);
   for (const p of w.players) updatePlayer(w, p, inputs[p.id], dt);
   // pulled bodies move toward Bolt (carry point)
   const bolt = w.players[0];
@@ -401,6 +434,7 @@ export function step(w, inputs, dt = 1 / 60) {
       emit(w, 'spring', { x: b.pos.x, y: b.pos.y - b.half.y, z: b.pos.z, who: b.id });
     }
   }
+  updateTubes(w, dt);
   // conveyor belts
   if (!w.belts) w.belts = w.solids.filter(s => s.conv).map(s => s.conv);
   for (const g of w.belts) g.rev = g.chs ? chActive(w, g.chs, true) : false;

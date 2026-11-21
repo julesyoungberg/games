@@ -329,6 +329,22 @@ export class View {
       const glow = new THREE.Mesh(new THREE.SphereGeometry(0.75, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffd76a, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(glow);
       this.level.add(g); return { cg, g, m, glow };
     });
+    this.tubeMeshes = w.tubes.map(tb => {
+      const glass = new THREE.MeshLambertMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.35, depthWrite: false });
+      const H = Math.max(tb.a.top, tb.b.top) + 4.5;
+      const seg = (A, B) => { const L = A.distanceTo(B); const m = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, L + 0.5, 12, 1, true), glass); m.position.copy(A).add(B).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); this.level.add(m); };
+      const pa = [new THREE.Vector3(tb.a.x, tb.a.top + 1.6, tb.a.z), new THREE.Vector3(tb.a.x, H, tb.a.z), new THREE.Vector3(tb.b.x, H, tb.b.z), new THREE.Vector3(tb.b.x, tb.b.top + 1.6, tb.b.z)];
+      for (let i = 1; i < pa.length; i++) seg(pa[i - 1], pa[i]);
+      const mouths = [tb.a, tb.b].map(e => {
+        const g = new THREE.Group(); g.position.set(e.x, e.top, e.z);
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.14, 6, 18), new THREE.MeshLambertMaterial({ color: 0x3fa7d6 })); rim.rotation.x = Math.PI / 2; rim.position.y = 0.1; g.add(rim);
+        const hole = new THREE.Mesh(new THREE.CircleGeometry(0.58, 18), new THREE.MeshBasicMaterial({ color: 0x1b2230 })); hole.rotation.x = -Math.PI / 2; hole.position.y = 0.03; g.add(hole);
+        const hood = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.5, 14, 1, true), new THREE.MeshLambertMaterial({ color: 0x3fa7d6, side: THREE.DoubleSide })); hood.position.y = 1.85; g.add(hood);
+        const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.4, 4), new THREE.MeshBasicMaterial({ color: 0x9fd8ff })); arrow.position.set(e.out[0] * 0.95, 0.35, e.out[1] * 0.95); arrow.rotation.set(e.out[1] * Math.PI / 2, 0, -e.out[0] * Math.PI / 2); g.add(arrow);
+        this.level.add(g); return { g, rim };
+      });
+      return { tb, mouths, glass };
+    });
     this.switchMeshes = w.switches.map(sw => {
       const g = new THREE.Group(); g.position.set(sw.x, sw.top, sw.z);
       const c = CH_COLORS[sw.ch] || 0x999999;
@@ -352,6 +368,10 @@ export class View {
       g.add(ring);
       const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 8, 4), new THREE.MeshLambertMaterial({ color: 0x6b7280 })); chain.position.y = 4.5; g.add(chain);
       const halo = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 4, 20), new THREE.MeshBasicMaterial({ color: 0xff8c8c, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, depthWrite: false })); g.add(halo);
+      if (a.path) { // overhead rail the moving ring hangs from
+        const railM = new THREE.MeshLambertMaterial({ color: 0x6b7280 });
+        for (let i = 1; i < a.path.length; i++) { const p0 = a.path[i - 1], p1 = a.path[i]; const A = new THREE.Vector3(a.home.x + p0[0], a.home.y + p0[1] + 8.5, a.home.z + p0[2]), B = new THREE.Vector3(a.home.x + p1[0], a.home.y + p1[1] + 8.5, a.home.z + p1[2]); const L = A.distanceTo(B); const r = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, L + 0.25), railM); r.position.copy(A).add(B).multiplyScalar(0.5); r.lookAt(B); this.level.add(r); }
+      }
       this.level.add(g); return { a, g, ring, halo };
     });
     this.laserMeshes = w.lasers.map(l => {
@@ -495,6 +515,7 @@ export class View {
       am.halo.material.opacity = on ? (B.target ? 0.9 : 0.45 + Math.sin(t * 6) * 0.15) : 0;
       am.ring.material.emissive.set(on ? 0x662222 : 0x000000);
       am.g.rotation.y = Math.sin(t * 0.8 + am.a.x) * 0.3;
+      if (am.a.path) am.g.position.set(am.a.x, am.a.y, am.a.z);
     }
     if (tgt && !B.target && tgt.kind !== 'anchor' && opts.showTarget) {
       const o = tgt.obj; this.marker.visible = true; this.marker.position.set(o.pos.x, o.pos.y + o.half.y + 0.45 + Math.sin(t * 5) * 0.08, o.pos.z);
@@ -528,6 +549,8 @@ export class View {
       c.g.visible = !c.cg.got; c.g.rotation.y = t * 1.6; c.g.position.y = c.cg.y + Math.sin(t * 2 + c.cg.x) * 0.12;
       c.m.opacity = opts.cogsFound ? 0.45 : 1; c.glow.material.opacity = opts.cogsFound ? 0.06 : 0.16 + Math.sin(t * 3) * 0.05;
     }
+    // tubes
+    for (const tm of this.tubeMeshes) { const k = Math.max(0, 1 - (w.t - tm.tb.t) / 0.4); tm.glass.opacity = 0.3 + k * 0.4; tm.mouths.forEach(m => m.rim.scale.setScalar(1 + k * 0.25 + Math.sin(t * 3) * 0.03)); }
     // springs
     for (const sm of this.springMeshes) {
       const k = Math.max(0, 1 - (w.t - sm.sp.t) / 0.25); // 1 right after a bounce

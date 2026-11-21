@@ -2,6 +2,11 @@
 // Bolt (red) PULLS: partner, crates, anchors (hold power). Nut (blue) PUSHES: launches partner and crates,
 // and rockets herself off iron floors.
 
+import S13 from './lv/s13.js';
+import S14 from './lv/s14.js';
+import OT4 from './lv/ot4.js';
+import OT5 from './lv/ot5.js';
+
 const BW = (L, x0, x1, top, h = 3) => L.box(x0, -9.5, x1, -8, top - 6, top + h, 'backwall');
 
 export const LEVELS = [
@@ -566,10 +571,12 @@ export const LEVELS = [
     },
     outro: 'Shift twelve complete. The factory is quiet. The belts are still. Management says: same time tomorrow.',
   },
+  S13,
+  S14,
 ];
 
 // Overtime: short, harder bonus puzzles. Each unlocks when the main shift `after` (0-based) is done.
-export const OVERTIME = [];
+export const OVERTIME = [OT4, OT5];
 OVERTIME.forEach((L, k) => { L.ot = k + 1; });
 
 export const ALL = [...LEVELS, ...OVERTIME];
@@ -600,6 +607,7 @@ export const LINES = {
     'Ooh, a golden cog. {n} so far. Do not tell Accounting. They will want to count them.',
   ],
   cogAgain: 'You already found this cog. It has been returned to its hiding place for, ah, quality reasons.',
+  tubeFirst: 'The pneumatic tube! Our fastest delivery method. Also our only one that sounds like a sneeze.',
   springFirst: 'Boing. That is the technical term. Springs throw whatever lands on them straight up. Including robots. Especially robots.',
   switchFirst: 'Click! Switches stay where you leave them. Unlike plates, which are needy.',
   crateLost: 'The crate fell out of the factory. A new crate has been issued. It is the same crate. Do not think about it.',

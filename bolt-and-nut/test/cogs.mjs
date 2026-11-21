@@ -13,10 +13,10 @@ const plan = [
   ['rocket'],
   ['custom', t => { setup(t, 30.5, -1, 26, -6.3); t.idle(0.3); }], // standing on the fast belt edge (plate not pressed: belt pushes back toward x 30)
   ['custom', t => { setup(t, 49.5, -6.5, 45, -0.6); t.tick({}, { power: true }); t.idle(3.5); }],
-  ['launch'], ['launch'],
+  ['launch'], ['launch'], ['launch'],
 ];
 let ok = true;
-for (let l = 0; l < 12; l++) {
+for (let l = 0; l < plan.length; l++) {
   const t = new Bot(l); const c = t.w.cogs[0];
   const [kind, fn] = plan[l];
   if (kind === 'custom') fn(t); else moves[kind](t, c);

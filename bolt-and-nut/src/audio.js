@@ -72,6 +72,7 @@ export const SFX = {
   fall() { tone('sine', 700, 120, 0.6, 0.12); },
   respawn() { tone('sine', 520, 520, 0.08, 0.08); tone('sine', 780, 780, 0.1, 0.08, 0.08); tone('sine', 1040, 1040, 0.14, 0.07, 0.16); },
   cog() { [880, 1175, 1568, 2093].forEach((f, i) => tone('triangle', f, f, 0.18, 0.08, i * 0.07)); },
+  whoosh() { noise(0.45, 0.22, 400, 2400, 1.5, 0, 'bandpass'); tone('sine', 300, 900, 0.3, 0.05); },
   boing() { tone('sine', 180, 720, 0.25, 0.14); tone('triangle', 360, 1100, 0.18, 0.05, 0.03); },
   toggle(on) { tone('square', on ? 660 : 440, on ? 990 : 330, 0.06, 0.07); tone('triangle', on ? 1320 : 660, on ? 1320 : 520, 0.12, 0.05, 0.05); },
   plate(on) { tone('square', on ? 500 : 300, on ? 700 : 220, 0.08, 0.06); noise(0.05, 0.15, 1500, 800, 3); },

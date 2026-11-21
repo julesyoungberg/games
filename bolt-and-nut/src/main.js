@@ -126,7 +126,7 @@ function chooseShift() {
 function overtimeMenu() {
   openMenu({
     title: 'Overtime', sub: 'Short, tricky bonus puzzles. Unpaid, obviously.', back: goTitle,
-    items: OVERTIME.map((L, k) => { const i = NMAIN + k, open = otOpen(k); return { label: open ? `${k + 1}. ${L.name}${save.done.includes(i) ? ' ✓' : ''}` : `${k + 1}. Locked: finish Shift ${L.after + 1}`, dim: !open, act: () => { if (open) goJoin(i); else SFX.pullMiss(); } }; }).concat([{ label: 'Back', act: goTitle }]),
+    items: OVERTIME.map((L, k) => { const i = NMAIN + k, open = otOpen(k); return { label: open ? `${k + 1}. ${L.name}${save.done.includes(i) ? ' ✓' : ''}${save.cogs.includes(i) ? ' ⚙' : ''}` : `${k + 1}. Locked: finish Shift ${L.after + 1}`, dim: !open, act: () => { if (open) goJoin(i); else SFX.pullMiss(); } }; }).concat([{ label: 'Back', act: goTitle }]),
   });
 }
 function optionsMenu(back) {
@@ -249,6 +249,7 @@ function handleEvents(evts) {
       case 'plate': SFX.plate(e.on); if (e.on) lastProgress = performance.now(); break;
       case 'gate': SFX.gate(e.open); break;
       case 'cog': SFX.cog(); view.burst(e.x, e.y, e.z, 0xffc53d, 26, 5, 4, 0.8); Input.rumble(e.who, 0.4, 150); { const had = save.cogs.includes(levelIdx); if (!had) { save.cogs.push(levelIdx); store.set('bn-save', save); } narr.sayIfQuiet(had ? LINES.cogAgain : pick(LINES.cog).replace('{n}', String(save.cogs.filter(i => i < NMAIN).length))); } break;
+      case 'tube': SFX.whoosh(); view.burst(e.fx, e.fy, e.fz, 0x9fd8ff, 10, 3, 3, 0.4); view.burst(e.x, e.y, e.z, 0x9fd8ff, 14, 4, 4, 0.5); if (!firsts.tube && e.who !== undefined) { firsts.tube = 1; narr.sayIfQuiet(LINES.tubeFirst); } break;
       case 'spring': SFX.boing(); view.burst(e.x, e.y + 0.1, e.z, 0xf2b84b, 8, 3, 2, 0.4); if (e.who !== undefined) Input.rumble(e.who, 0.3, 90); if (!firsts.spring && e.who !== undefined) { firsts.spring = 1; narr.sayIfQuiet(LINES.springFirst); } break;
       case 'switch': SFX.toggle(e.on); lastProgress = performance.now(); if (!firsts.sw) { firsts.sw = 1; narr.sayIfQuiet(LINES.switchFirst); } break;
       case 'bridge': SFX.bridge(e.on); break;
