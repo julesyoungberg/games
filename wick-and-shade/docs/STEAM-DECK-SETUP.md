@@ -44,9 +44,11 @@ Download the new `WickAndShade.AppImage` and replace the old file in `/home/deck
 - **Curtains**: Shade slips through purple ink curtains and Wick can't; Wick walks through gold glow curtains and Shade can't. Light shines through both.
 - Little **sun-eyes** sit on some walls. While the lantern's light reaches one (and no ink block or crate is in the way), it works like a plate held down. Hide the light behind something and it lets go.
 - **Drums** throw whoever lands on them high into the air. Hold down to stand on one without bouncing. A dropped or thrown lantern bounces off drums too.
+- **Conveyor belts** carry whatever stands on them: you, crates, the lantern.
+- **Ink wells** are for Shade only: stand on one and press down to come up out of its partner. Wells pair up from left to right (the first with the second, the third with the fourth).
 - Both of you have to be in the door to finish a chapter.
 
-16 chapters, plus one you have to find. Chapters 11 (The Stockroom), 12 (The Gallery), 13 (Backstage), 14 (The Observatory) and 15 (The Music Room) are long ones with five rooms in a row; the game shows which room you're in. Separate from the story there are **Challenges**: short, tough rooms with no story. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
+17 chapters, plus one you have to find. Chapters 11 to 16 (The Stockroom, The Gallery, Backstage, The Observatory, The Music Room, The Print Shop) are long ones with five rooms in a row; the game shows which room you're in. Separate from the story there are **Challenges**: short, tough rooms with no story. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
 
 ## Other files
 - `index.html` is the same game as a single web page, for playing on any computer in a browser.
