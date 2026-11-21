@@ -1,42 +1,50 @@
 # Games
 
 Original couch co-op games for two players on one Steam Deck (two Bluetooth controllers), plus a browser
-version of each. One folder per game; each folder is its own Vercel project.
+version of each. One folder per game, all published together as one site:
 
-| Game | Folder | Live site | Vercel project |
-|---|---|---|---|
-| Wick & Shade (2D, canvas) | [`wick-and-shade/`](wick-and-shade) | https://wick-and-shade.vercel.app | `wick-and-shade` (root directory `wick-and-shade`) |
-| Bolt & Nut (3D, three.js) | [`bolt-and-nut/`](bolt-and-nut) | https://bolt-and-nut-game.vercel.app (`bolt-and-nut.vercel.app` was taken) | `bolt-and-nut` (root directory `bolt-and-nut`) |
+**https://couch-coop-games.vercel.app**
 
-Every site has the same three routes:
+| Game | Folder | Page |
+|---|---|---|
+| Wick & Shade (2D) | [`wick-and-shade/`](wick-and-shade) | https://couch-coop-games.vercel.app/wick-and-shade/ |
+| Bolt & Nut (3D, three.js) | [`bolt-and-nut/`](bolt-and-nut) | https://couch-coop-games.vercel.app/bolt-and-nut/ |
 
-- `/` landing page with install steps
-- `/play/` the browser version
-- `/dl` the Steam Deck AppImage (always the latest build, saved as `<Game>.AppImage` so the Steam shortcut survives updates;
-  old versioned links such as `/WickAndShade-1.0.3.AppImage` redirect to it)
+Every game gets the same routes:
+
+- `/<game>/` landing page with the Steam Deck install steps
+- `/<game>/play/` the browser version
+- `/<game>/dl` the Steam Deck AppImage (always the latest build, saved under a fixed name such as
+  `WickAndShade.AppImage` so the Steam shortcut survives updates; old versioned links redirect to it)
+
+The old addresses (`wick-and-shade.vercel.app`, `bolt-and-nut-game.vercel.app`, `bolt-and-nut.vercel.app`) redirect
+to the matching path here, so `wick-and-shade.vercel.app/dl` still downloads the game.
 
 ## How a new version ships
 
-1. Change the game inside its folder and bump `version` (Wick & Shade: `wick-and-shade/package.json`;
-   Bolt & Nut: `bolt-and-nut/app/package.json`).
+1. Change the game inside its folder and bump its version (the file named by `versionFrom` in its `game.json`:
+   Wick & Shade `wick-and-shade/package.json`, Bolt & Nut `bolt-and-nut/app/package.json`).
 2. Run the game's checks (Bolt & Nut: `npm ci && node build.mjs && node test/all.mjs`; Wick & Shade: the bot playthroughs).
-3. Commit and push to `main`. Vercel builds the AppImage and the site itself (`scripts/vercel-build.sh`, about 1-2 minutes).
-   The landing page picks up the new version number automatically.
+3. Push to `main`. Vercel (project `couch-games`) runs `scripts/build-site.mjs`, which builds every game's AppImage
+   and site from source and publishes the lot in a few minutes. Other branches get preview deployments.
 
-Pushes to other branches get preview deployments. A push that doesn't touch a game's folder doesn't rebuild that game
-(`ignoreCommand` in its `vercel.json`).
-
-AppImages are never committed: Vercel builds them from source on every deploy. To build one locally, run
-`bash scripts/vercel-build.sh` inside the game folder; the output lands in `public/`.
+AppImages are never committed. To build the whole site locally: `node scripts/build-site.mjs`
+(output in `.vercel/output/static`). To build one game: `npm ci && bash scripts/vercel-build.sh` inside its folder.
 
 ## Adding a game
 
-1. Make a new folder with a `vercel.json` and `scripts/vercel-build.sh` (copy one of the existing games) that writes
-   the site to `public/`.
-2. In Vercel, import this repo as a new project and set **Root Directory** to the new folder.
+Make a new top-level folder containing:
 
-## Vercel setup notes
+- `game.json`: `title`, `tagline`, `style`, `appImage` (file name, or omit for browser-only), `versionFrom`, `accent`,
+  `background`, optional `order`
+- `scripts/vercel-build.sh`: writes `public/` with `index.html`, `icon.png`, `play/index.html` and the AppImage.
+  Use relative links in `index.html` (`play/`, `icon.png`), because the page is served under `/<game>/`.
 
-- Both projects live in the `jules-youngbergs-projects` team; each has **Root Directory** set to its game folder.
-  Build settings come from the folder's `vercel.json`.
-- Commits that only touch files outside a game's folder (like this README) skip that game's build.
+Push it and it appears on the home page. No Vercel setup needed.
+
+## Vercel notes
+
+- Project `couch-games` in the `jules-youngbergs-projects` team, connected to this repo, root directory = repo root.
+- `scripts/build-site.mjs` writes Vercel's Build Output API format (`.vercel/output/config.json`) so per-game routes
+  are generated from `game.json`.
+- The old `wick-and-shade` Vercel project only holds a redirect to this site.

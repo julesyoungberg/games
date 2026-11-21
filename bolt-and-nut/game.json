@@ -8,6 +8,7 @@
   "accent": "#e5484d",
   "background": "#2b2338",
   "legacyHosts": [
-    "bolt-and-nut-game.vercel.app"
+    "bolt-and-nut-game.vercel.app",
+    "bolt-and-nut.vercel.app"
   ]
 }
