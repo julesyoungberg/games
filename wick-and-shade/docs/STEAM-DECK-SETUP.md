@@ -1,11 +1,11 @@
 # Wick & Shade: installing on the Steam Deck
 
-Wick & Shade comes as one Linux app file: **`WickAndShade-1.0.4.AppImage`** (about 100 MB). You add it to Steam like any other non-Steam game. After that it shows up in your library and launches fullscreen from Gaming Mode with no browser involved.
+Wick & Shade comes as one Linux app file: **`WickAndShade.AppImage`** (about 100 MB). You add it to Steam like any other non-Steam game. After that it shows up in your library and launches fullscreen from Gaming Mode with no browser involved.
 
 ## One-time install (about 5 minutes)
 1. Hold the power button → **Switch to Desktop**.
 2. Get the AppImage onto the Deck. Easiest is to open this project's Library in the Deck's browser and download it. A USB stick works too.
-3. In **Dolphin** (the file manager), make a folder `/home/deck/Games` and move `WickAndShade-1.0.4.AppImage` into it.
+3. In **Dolphin** (the file manager), make a folder `/home/deck/Games` and move `WickAndShade.AppImage` into it.
 4. Right-click the file → **Properties** → **Permissions** → tick **Is executable** → **OK**.
    (Double-click it now if you want a quick test. It opens fullscreen. Choose **Quit** on the title screen to close it.)
 5. Open **Steam** (desktop) → **Games** menu → **Add a Non-Steam Game to My Library…** → **Browse…** → go to `/home/deck/Games`. Change the file type filter to **All Files** if the AppImage isn't listed. Select it → **Add Selected Programs**.
@@ -33,16 +33,17 @@ Wick & Shade comes as one Linux app file: **`WickAndShade-1.0.4.AppImage`** (abo
 Progress saves automatically. **Continue** and **Chapter Select** appear on the title screen once you've played, and **Challenges** appears once you've played far enough to open the first one. To quit: **Quit** on the title screen, or the Steam button → **Exit game**.
 
 ## Updating from an older version
-Move the new AppImage into `/home/deck/Games`, delete the old one, then in Steam open the game's **Properties** and change **Target** to the new file name. Your saved progress carries over, and Continue takes you to the first new chapter.
+Download the new `WickAndShade.AppImage` and replace the old file in `/home/deck/Games` (same name, so the Steam shortcut keeps working). If your shortcut still points at an older file with a version number in its name, open the game's **Properties** in Steam and change **Target** to `WickAndShade.AppImage`. Your saved progress carries over, and Continue takes you to the first new chapter.
 
 ## The rules of the world
 - Shade stands on the purple shadows the lantern casts from black ink blocks. If a shadow swallows Shade, Shade floats up through it.
 - Gold **sunglass** is solid only inside the lantern's light. Purple **duskglass** is solid only outside it.
 - Teal plates open teal doors and make teal bridges appear while something stands on them (the lantern counts). Pink plates do the same for pink doors and bridges.
 - Ink **crates** can be pushed by either of you. They hold plates down, make good steps, stack on top of each other, and cast shadows like the ink blocks. The lantern can ride on top of one. A crate that falls out of the level comes back where it started.
+- Small **hooks** hang in the air in some rooms. Wick can stand under one and press the lantern button to hang the light there, and press it again under the hook to take it back.
 - Both of you have to be in the door to finish a chapter.
 
-12 chapters, plus one you have to find. Chapter 11, The Stockroom, is a long one with five rooms in a row; the game shows which room you're in. Separate from the story there are **Challenges**: short, tough rooms with no story, opened as you play. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
+13 chapters, plus one you have to find. Chapters 11 (The Stockroom) and 12 (The Gallery) are long ones with five rooms in a row; the game shows which room you're in. Separate from the story there are **Challenges**: short, tough rooms with no story, opened as you play. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
 
 ## Other files
 - `index.html` is the same game as a single web page, for playing on any computer in a browser.

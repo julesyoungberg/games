@@ -228,6 +228,7 @@ const LINES = {
   ],
   shadowFirst: 'Look at that. Shade, standing on nothing. Well, on a shadow. Which is nearly nothing.',
   floatFirst: 'Shade floats up through shadow like a bubble. A dark, slightly sad bubble.',
+  hookFirst: 'Wick hung the lantern on a hook. Light from above. Very dramatic. Very gallery.',
   dropFirst: 'Wick put the lantern down. It will wait for you. Lanterns are patient like that.',
   throwFirst: "Wick threw the lantern! Wick. That is the light source. Be gentle with the light source.",
   waveFirst: 'Shade waves. Wick, I believe that is affection. Or a warning. Shade is hard to read.',
@@ -786,6 +787,180 @@ const LEVELS = [
     onPlate: (n, by, ch) => ch === 'q' ? 'Pink door open. Now about that bridge.' : by === 'lantern' ? 'The lantern holds the door. It can stay there. Forever, perhaps.' : null,
     outro: "You left the light behind and it waited, like I said it would. The stockroom is closed. Thank you for shopping.",
   },
+  { name: "Hanging Around", sub: "A new hook. Please do not hang anything on it except the lantern.", ambient: 0.6, chapter: "The Gallery",
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#............H.................#',
+      '#..............................#',
+      '#WS.p......................E.p.#',
+      '#######rrrrrrr========rrr#######',
+      '#######..................#######',
+      '#######^^^^^^^^^^^^^^^^^^#######',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Welcome to the gallery. Quiet, please. The art is sleeping.",
+      "New exhibit: the hook. Wick, stand under one and press the lantern button. The light stays up there. You do not have to.",
+    ],
+    hints: [
+      [40, "Shade, hold the plate so the teal bridge appears. Wick, walk out to the end of it."],
+      [90, "Wick, see the hook above the end of the bridge? Stand under it and press the lantern button."],
+      [150, "With the light hanging there, the gold glass stays solid. Wick, go hold the plate on the far side so Shade can follow."],
+    ],
+    onPlate: (n, by, ch) => by === 'wick' && n > 1 ? 'Wick has the far plate. Shade, the bridge is yours.' : null,
+    outro: "You hung a light and walked away from it. Very modern. Very gallery.",
+  },
+  { name: "Hold That Thought", sub: "Wick, you are needed elsewhere. The light is not.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................P..........#',
+      '#...................P..........#',
+      '#...S.W.H...........P.....q..E.#',
+      '#########.BB.......###...#######',
+      '#..............................#',
+      '#..............................#',
+      '#.....................ss.......#',
+      '#..............................#',
+      '#..............................#',
+      '#.................ss...........#',
+      '#..............................#',
+      '#.....p........................#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Shade needs a shadow up here. Wick needs to be down there. The lantern cannot be in two places.",
+      "But it can be in one place without Wick. That is what hooks are for.",
+    ],
+    hints: [
+      [40, "Wick, hang the lantern on the hook at the edge. The ink block will throw a long flat shadow."],
+      [90, "Shade can walk that shadow across. The door at the end needs the plate on the floor held."],
+      [150, "Wick, hop down to the floor plate. Shade, cross, go through, and stand on the pink plate. Pink steps for Wick."],
+    ],
+    onPlate: (n, by, ch) => ch === 'q' ? 'Pink steps, Wick. Up you come.' : null,
+    outro: "Two places at once. Technically one of you was a lantern. I will allow it.",
+  },
+  { name: "Crate Expectations", sub: "The crate would like to cross. The crate cannot see in the dark.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#...........#.............#....#',
+      '#...........#.............#....#',
+      '#...........#.............#....#',
+      '#...........#.............#....#',
+      '#...........#.............#....#',
+      '#...........#.............#....#',
+      '#...........#.............#....#',
+      '#...........#.............#....#',
+      '#...........#.............Q....#',
+      '#...........P.............Q....#',
+      '#.........H.P.............Q....#',
+      '#...........P.............Q....#',
+      '#Sp.W..C....P......q....p.Q.E..#',
+      '#########=======################',
+      '#########.......################',
+      '#########^^^^^^^################',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "A crate, a glass bridge, and two doors. Everyone has a job. Some of you have two.",
+    ],
+    hints: [
+      [40, "The gold bridge needs light the whole time the crate is on it. Something hanging above it, perhaps."],
+      [100, "Shade, hold the teal plate at the start so the door stays open. Wick, push the crate across."],
+      [160, "Crate on the pink plate. Then Wick on the far teal plate, so Shade can come through."],
+    ],
+    onPlate: (n, by, ch) => ch === 'q' ? 'The crate has arrived. The crate is very proud.' : null,
+    outro: "The crate made it. I have been told crates cannot feel pride. I have chosen not to believe that.",
+  },
+  { name: "Encore", sub: "Same trick, twice, higher. Audiences love that.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#............................pE#',
+      '#............................###',
+      '#........................rrrr###',
+      '#SW...H............q.H.BB....###',
+      '#######.BBsssssss#####.......###',
+      '#######..........#####.......###',
+      '#######^^^^^^^^^^#####^^^^^^^###',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Two hooks. One lantern. Two ink blocks. You can see where this is going.",
+      "Shade can, anyway. Shade is going across.",
+    ],
+    hints: [
+      [40, "Wick, the first hook. Shade, ride the shadow across and stand on the pink plate."],
+      [100, "Wick, take the lantern back down and cross the pink bridge. The second hook is waiting."],
+      [160, "This shadow goes up, not across. Shade, climb onto the block and let it carry you to the high plate."],
+    ],
+    onPlate: (n, by, ch) => ch === 'q' ? 'Pink bridge. Wick, bring the lantern.' : 'Teal bridge for Wick. Take a bow.',
+    outro: "An encore. Nobody asked for an encore. You did it anyway. That is showbusiness.",
+  },
+  { name: "Curtain Call", sub: "Light from above, dark below. The stage is set.", ambient: 0.7, cont: true,
+    map: [
+      '################################',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#....#.........................#',
+      '#..H.x.........................#',
+      '#....x.........................#',
+      '#....x.........................#',
+      '#....x.........................#',
+      '#..rrx.........................#',
+      '#....x.........................#',
+      '#....x.........................#',
+      '#rr..x.........................#',
+      '#....x.........................#',
+      '#pSW.x.......................E.#',
+      '######xxxxxxxxxxxxxxxxxxxxxx####',
+      '######......................####',
+      '######^^^^^^^^^^^^^^^^^^^^^^####',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Last room of the gallery. The gate wants light. The bridge wants dark.",
+      "They are very close together. They do not get along.",
+    ],
+    hints: [
+      [40, "Purple glass is solid in the dark. The gate needs light to open. The bridge needs dark to stay."],
+      [100, "Carry the light and the bridge vanishes. Leave it on the floor and the bridge vanishes. Hang it high, though..."],
+      [150, "Shade, hold the plate for the teal steps. Wick, climb up and hang the lantern on the high hook."],
+    ],
+    onPlate: (n, by, ch) => 'Steps up, Wick. All the way to the top.',
+    outro: "You left the lights on for the next visitors. Thoughtful. The gallery is now closed.",
+  },
   { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
     map: [
       '################################',
@@ -954,13 +1129,14 @@ function loadLevel(idx, opts = {}) {
   lv = { idx, def, grid, time: 0, plates: [], exits: [], occ: [], light: null, lit: new Uint8Array(COLS * ROWS),
     pressed: { p: false, q: false }, doorAnim: { p: 0, q: 0 }, crates: [], saidPlate: new Set(), complete: false, completeT: 0, fadeIn: 1, hintsFired: new Set(),
     plateCount: 0, exitWait: 0, exitWaitSaid: false, idle: 0, particles: [], ambient: def.ambient ?? 0.6, exitKind: 'E',
-    shadowSaid: false };
+    shadowSaid: false, hooks: [] };
   players = [mkPlayer('wick'), mkPlayer('shade')];
   let lanSpawn = null;
   for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
     const c = grid[y][x];
     if (c === 'W' || c === 'S') { const p = players[c === 'W' ? 0 : 1]; p.sx = p.x = x * T + (T - p.w) / 2; p.sy = p.y = (y + 1) * T - p.h; grid[y][x] = '.'; }
     else if (c === 'L') { lanSpawn = [x, y]; grid[y][x] = '.'; }
+    else if (c === 'H') { lv.hooks.push({ tx: x, ty: y }); grid[y][x] = '.'; }
     else if (c === 'E' || c === 'F') { lv.exits.push({ tx: x, ty: y, kind: c }); grid[y][x] = '.'; }
     else if (c === 'p' || c === 'q') { lv.plates.push({ tx: x, ty: y, ch: c, down: false }); grid[y][x] = '.'; }
     else if (c === 'C') { lv.crates.push({ crate: true, x: x * T, y: y * T, w: T, h: T, vx: 0, vy: 0, sx: x * T, sy: y * T, onGround: false, ign: null }); grid[y][x] = '.'; }
@@ -974,7 +1150,7 @@ function loadLevel(idx, opts = {}) {
     }
   }
   lv.occAll = lv.crates.length ? lv.occ.concat(lv.crates) : lv.occ;
-  lantern = { x: 0, y: 0, w: 14, h: 18, vx: 0, vy: 0, held: !lanSpawn, onGround: false, ign: null, spin: 0 };
+  lantern = { x: 0, y: 0, w: 14, h: 18, vx: 0, vy: 0, held: !lanSpawn, onGround: false, ign: null, spin: 0, hung: null };
   if (lanSpawn) { lantern.x = lanSpawn[0] * T + 13; lantern.y = (lanSpawn[1] + 1) * T - 18; }
   else placeHeldLantern(players[0]);
   computeLight();
@@ -1126,13 +1302,14 @@ function placeHeldLantern(wk) {
   lantern.x = cx - 7; lantern.y = wk.y + 2;
 }
 function returnLantern(say = true) {
-  lantern.held = true; lantern.vx = lantern.vy = 0;
+  lantern.held = true; lantern.hung = null; lantern.vx = lantern.vy = 0;
   placeHeldLantern(players[0]);
   if (say) narr.say(pick(LINES.lanternLost), { ifQuiet: true });
 }
 function updateLantern(dt) {
   const wk = players[0];
   if (lantern.held) { placeHeldLantern(wk); return; }
+  if (lantern.hung) { lantern.spin = 0; return; }
   lantern.spin *= 0.95;
   const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
   lantern.vy = Math.min(lantern.vy + 1900 * dt, 900);
@@ -1272,7 +1449,24 @@ function shadeContact(p, adx = 0, ady = 0) {
     }
   }
 }
+// hooks: Wick can hang the lantern on a hook just above head height, and take it back down
+function hookNear(p) {
+  let best = null, bd = 1e9;
+  for (const h of lv.hooks) {
+    const hx = h.tx * T + T / 2, hy = h.ty * T + T / 2, dx = Math.abs(hx - (p.x + p.w / 2)), dy = (p.y + p.h / 2) - hy;
+    if (dx < 34 && dy > -10 && dy < 130 && dx + Math.abs(dy) * 0.2 < bd) { bd = dx + Math.abs(dy) * 0.2; best = h; }
+  }
+  return best;
+}
+function hangLantern(h) { lantern.held = false; lantern.hung = h; lantern.vx = lantern.vy = 0; lantern.spin = 0; lantern.x = h.tx * T + 13; lantern.y = h.ty * T + 14; }
 function wickInteract(p, inp) {
+  const hk = lantern.held ? hookNear(p) : null;
+  if (hk && Math.abs(inp.mx) <= 0.3) {
+    hangLantern(hk); SFX.drop(); run.abandon++;
+    if (!flags.hook) { flags.hook = true; narr.say(LINES.hookFirst, { ifQuiet: true }); }
+    return;
+  }
+  if (!lantern.held && lantern.hung && hookNear(p) === lantern.hung) { lantern.hung = null; lantern.held = true; SFX.pick(); placeHeldLantern(p); return; }
   if (lantern.held) {
     lantern.held = false;
     if (Math.abs(inp.mx) > 0.3) {
@@ -1288,7 +1482,7 @@ function wickInteract(p, inp) {
     run.abandon++;
   } else {
     const dx = (lantern.x + 7) - (p.x + p.w / 2), dy = (lantern.y + 9) - (p.y + p.h / 2);
-    if (dx * dx + dy * dy < 52 * 52) { lantern.held = true; SFX.pick(); placeHeldLantern(p); }
+    if (dx * dx + dy * dy < 52 * 52) { lantern.held = true; lantern.hung = null; SFX.pick(); placeHeldLantern(p); }
   }
 }
 let flags = {};
@@ -1404,6 +1598,15 @@ function isChalk(tx, ty) { const c = tileAt(tx, ty); return c === '#'; }
 function buildStatic() {
   lctx.clearRect(0, 0, W, H); ictx.clearRect(0, 0, W, H);
   lctx.drawImage(bgCanvas, 0, 0);
+  for (const h of lv.hooks) {
+    const hx = h.tx * T + T / 2, hy = h.ty * T;
+    let top = h.ty; while (top > 0 && tileAt(h.tx, top - 1) !== '#') top--;
+    lctx.strokeStyle = 'rgba(214,201,166,0.45)'; lctx.lineWidth = 1.5; lctx.setLineDash([4, 3]);
+    lctx.beginPath(); lctx.moveTo(hx, top * T); lctx.lineTo(hx, hy); lctx.stroke(); lctx.setLineDash([]);
+    lctx.strokeStyle = '#d6c9a6'; lctx.lineWidth = 3; lctx.lineCap = 'round';
+    lctx.beginPath(); lctx.moveTo(hx, hy); lctx.lineTo(hx, hy + 8); lctx.arc(hx - 5, hy + 8, 5, 0, Math.PI * 0.9); lctx.stroke();
+    lctx.fillStyle = '#efe5c8'; lctx.fillRect(hx - 6, hy, 12, 3);
+  }
   for (let ty = 0; ty < ROWS; ty++) for (let tx = 0; tx < COLS; tx++) {
     const c = lv.grid[ty][tx], px = tx * T, py = ty * T;
     if (c === '#') {
@@ -1414,7 +1617,8 @@ function buildStatic() {
       if (!isChalk(tx - 1, ty)) lctx.fillRect(px, py, 2, T);
       if (!isChalk(tx + 1, ty)) lctx.fillRect(px + T - 2, py, 2, T);
       if (!isChalk(tx, ty + 1)) lctx.fillRect(px, py + T - 3, T, 3);
-    } else if (c === '^') {
+    }
+    if (c === '^') {
       lctx.fillStyle = '#5a1430'; lctx.fillRect(px, py + T - 6, T, 6);
       for (let k = 0; k < 4; k++) {
         const bx = px + k * 10;
