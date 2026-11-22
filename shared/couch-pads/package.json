@@ -1,0 +1,7 @@
+{
+  "name": "couch-pads-dev",
+  "private": true,
+  "description": "Test tooling for the shared phone-controller module. Nothing here is deployed.",
+  "scripts": { "test": "node test/e2e.cjs" },
+  "devDependencies": { "peer": "1.0.2" }
+}

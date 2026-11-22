@@ -45,6 +45,10 @@ for (const g of games) {
   fs.cpSync(pub, path.join(stat, g.slug), { recursive: true });
 }
 
+// Phone controller page (/pad/), shared by every game: see shared/couch-pads/
+fs.cpSync(path.join(root, 'shared/couch-pads/pad'), path.join(stat, 'pad'), { recursive: true });
+fs.copyFileSync(path.join(root, 'shared/couch-pads/couch-pads.js'), path.join(stat, 'pad/couch-pads.js'));
+
 // Games index page
 const cards = games.map(g => `
     <article class="game" style="--accent:${esc(g.accent || '#ffd27a')};--bg:${esc(g.background || '#1b1730')}">
@@ -83,6 +87,8 @@ for (const g of games) {
     } });
   }
 }
+routes.push({ src: '^/pad$', status: 308, headers: { Location: '/pad/' } });
+routes.push({ src: '^/pad/.*$', headers: { 'Cache-Control': 'no-cache' }, continue: true });
 routes.push({ handle: 'filesystem' });
 fs.writeFileSync(path.join(out, 'config.json'), JSON.stringify({ version: 3, routes }, null, 2));
 console.log(`\nSite ready: ${games.map(g => `${g.slug} ${g.version}`).join(', ')}`);

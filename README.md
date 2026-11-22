@@ -20,6 +20,13 @@ Every game gets the same routes:
 The old addresses (`wick-and-shade.vercel.app`, `bolt-and-nut-game.vercel.app`, `bolt-and-nut.vercel.app`) redirect
 to the matching path here, so `wick-and-shade.vercel.app/dl` still downloads the game.
 
+## Playing without controllers
+
+- **One keyboard, two players:** both games split the keyboard (WASD + Space vs. arrows), shown on the join screen.
+- **Phones as controllers:** the join screen shows a QR code and room code. Each player opens
+  https://couch-coop-games.vercel.app/pad on their phone and gets an on-screen gamepad. Phones, controllers and
+  keyboards can be mixed. Shared code: [`shared/couch-pads/`](shared/couch-pads) (see its README).
+
 ## How a new version ships
 
 1. Change the game inside its folder and bump its version (the file named by `versionFrom` in its `game.json`:

@@ -8,11 +8,15 @@ set -euo pipefail
 VERSION=$(node -p "require('./package.json').version")
 echo "Building Wick & Shade $VERSION"
 
+# phone controllers (shared/couch-pads): the game loads it from next to index.html
+cp ../shared/couch-pads/couch-pads.js game/couch-pads.js
+
 npx electron-builder --linux AppImage --x64 -p never
 
 rm -rf public && mkdir -p public/play
 cp dist/WickAndShade-"$VERSION".AppImage public/WickAndShade.AppImage
 cp game/index.html public/play/index.html
+cp game/couch-pads.js public/play/couch-pads.js
 # Browser saves from the old wick-and-shade.vercel.app address arrive as #ws-import=... (see site/import-save.js)
 cp site/import-save.js public/import-save.js
 sed -i '0,/<script>/s##<script src="../import-save.js"></script>\n<script>#' public/play/index.html

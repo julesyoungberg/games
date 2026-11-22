@@ -7,6 +7,7 @@ const otOpen = k => true; // every level is always open, so lost saves never mat
 import { Input } from './input.js';
 import { initAudio, SFX, setVolumes, setMood } from './audio.js';
 import { View } from './render.js';
+import '../../shared/couch-pads/couch-pads.js'; // phone controllers (window.CouchPads)
 
 const $ = id => document.getElementById(id);
 const APP = window.bnApp || null; // set by the desktop app's preload
@@ -371,6 +372,14 @@ function idleStep(dt) {
   accumulator += dt;
   while (accumulator >= 1 / 60) { step(world, [a, b], 1 / 60); a.jumpP = b.jumpP = false; accumulator -= 1 / 60; }
 }
+
+// phone controllers: phones show up as extra gamepads (see shared/couch-pads)
+window.CouchPads.init({
+  game: 'Bolt & Nut', accent: '#ffb547',
+  labels: { a: 'Jump', b: 'Power', x: 'Power', y: 'Narrator', start: 'Pause' },
+  keys: ['WASD move · Space jump · E power · Tab narrator · Esc pause', 'Arrows move · / jump · . power · Enter narrator'],
+  screen: () => mode === 'join' ? 'join' : (mode === 'title' || mode === 'paused') ? 'hint' : null,
+});
 
 // test hooks (used by the automated checks; harmless in normal play)
 window.__bn = {
