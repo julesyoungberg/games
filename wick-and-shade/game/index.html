@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.76'; // keep in step with package.json
+const GAME_VERSION = '1.0.77'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -5054,6 +5054,38 @@ const LEVELS = [
     ],
     outro: "Not a figure of eight, strictly. More of a straight line, very fast. The narrator gives it a six.",
   },
+  { name: "Clockwork", sub: "The crate keeps time. Keep up.", ambient: 0.6, challenge: true, unlockAt: 82, crateLoop: true,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#.C......................t.....#',
+      '#>>>>>>>>>>>>>>>>>>>>>>>>>>>...#',
+      '#..........................#...#',
+      '#..........................#...#',
+      '#..........................#...#',
+      '#..........................#...#',
+      '#..........................#...#',
+      '#..........................#...#',
+      '#..........................#...#',
+      '#..........................#...#',
+      '#..........................#...#',
+      '#..........................P...#',
+      '#..........................P...#',
+      '#.WS.......................P..E#',
+      '########^^#####^^####^^#####.###',
+      '############################.###',
+      '############################.###',
+    ],
+    intro: [
+      "Up on the belt, a crate goes round and round. Every time it rolls over the timer plate, the door opens for a little while.",
+      "It's a long way to the door, with thorns on the way. Watch the crate, not the door.",
+    ],
+    hints: [
+      [150, "Start running the moment the crate rolls onto the plate, and don't stop for anything. Jump the thorns at a run."],
+    ],
+    outro: "Tick, tock. The narrator wound the crate up specially. Nobody said thank you, but the narrator is used to that.",
+  },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
 // Challenge levels (challenge:true) live after the story and have their own menu.
@@ -5462,7 +5494,7 @@ function updateCrates(dt) {
     if (c.y > H + 60) {
       // anything riding the crate (the lantern, usually) comes back with it
       if (!lantern.held && lantern.x + lantern.w > c.x - 4 && lantern.x < c.x + c.w + 4 && Math.abs(lantern.y + lantern.h - c.y) < 40) { lantern.x = c.sx + 13; lantern.y = c.sy - lantern.h; lantern.vx = lantern.vy = 0; }
-      c.x = c.sx; c.y = c.sy; c.vy = 0; burst(c.x + T / 2, c.y + T / 2, '#b89cff', 16); narr.say(pick(LINES.crateLost), { ifQuiet: true }); }
+      c.x = c.sx; c.y = c.sy; c.vy = 0; burst(c.x + T / 2, c.y + T / 2, '#b89cff', 16); if (!lv.def.crateLoop) narr.say(pick(LINES.crateLost), { ifQuiet: true }); }
   }
   lv.occAll = lv.crates.length ? lv.occ.concat(lv.crates.filter(c => !c.lift)) : lv.occ; // lifts are brass, not ink: no shadow
 }
@@ -6007,7 +6039,11 @@ function drawDynamicTiles(t) {
         ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(255,220,150,0.18)'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(lv.light.x, lv.light.y); ctx.lineTo(cx, cy - 3); ctx.stroke();
         const g = ctx.createRadialGradient(cx, cy - 3, 0, cx, cy - 3, 34); g.addColorStop(0, 'rgba(255,230,170,0.7)'); g.addColorStop(1, 'rgba(255,200,120,0)');
-        ctx.fillStyle = g; ctx.fillRect(cx - 34, cy - 37, 68, 68); ctx.restore();
+        ctx.fillStyle = g; ctx.fillRect(cx - 34, cy - 37, 68, 68);
+        // little flecks of light wheel slowly round the room, like at a dance
+        for (let k = 0; k < 16; k++) { const an = k * 2.399 + lv.time * (k % 2 ? 0.35 : -0.25), rr = 46 + (k * 53) % 240, tw = 0.5 + 0.5 * Math.sin(lv.time * 2 + k);
+          ctx.fillStyle = `rgba(255,236,190,${(0.07 + 0.09 * tw).toFixed(3)})`; ctx.beginPath(); ctx.arc(cx + Math.cos(an) * rr, cy - 3 + Math.sin(an) * rr * 0.8, 2 + (k % 3), 0, TAU); ctx.fill(); }
+        ctx.restore();
       }
       const fl = m && m.flashT != null ? lv.time - m.flashT : 9;
       if (fl < 0.5) { ctx.strokeStyle = `rgba(255,230,170,${(0.6 * (1 - fl / 0.5)).toFixed(3)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy - 3, 14 + fl * 60, 0, TAU); ctx.stroke(); }
