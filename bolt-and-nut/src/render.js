@@ -145,6 +145,10 @@ export class View {
     // pull beam
     const bm = new THREE.MeshBasicMaterial({ color: 0xff6b6b, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
     this.beam = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 8, 1, true), bm); this.beam.visible = false; this.scene.add(this.beam);
+    // soft outer glow around the beam, and a red light that spills onto the floor while pulling
+    this.beamGlow = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 10, 1, true), new THREE.MeshBasicMaterial({ color: 0xff3048, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false })); this.beamGlow.visible = false; this.scene.add(this.beamGlow);
+    this.pullLight = new THREE.PointLight(0xff4050, 0, 7, 1.6); this.scene.add(this.pullLight);
+    this.pushLight = new THREE.PointLight(0x5aa8ff, 0, 8, 1.6); this.scene.add(this.pushLight); this.pushFlash = 0;
     this.beamRings = [0, 1, 2].map(() => { const r = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.04, 4, 12), bm); r.visible = false; this.scene.add(r); return r; });
     // target marker
     this.marker = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.05, 4, 20), new THREE.MeshBasicMaterial({ color: 0xff5d5d, transparent: true, opacity: 0.7, depthTest: false })); this.marker.rotation.x = Math.PI / 2; this.marker.renderOrder = 5; this.scene.add(this.marker);
@@ -539,7 +543,7 @@ export class View {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
       m.position.set(s.x, s.y, s.z + 0.02); this.level.add(m);
     }
-    this.camPos.set(w.players[0].pos.x + 2, 10, 18); this.camLook.set(w.players[0].pos.x + 2, 1, -4);
+    this.camPos.set(w.players[0].pos.x + 2, 10, 18); this.camLook.set(w.players[0].pos.x + 2, 1, -4); this.lead = 0; this.camY = undefined;
     this.pl = []; this.parts.count = 0;
     if (F) this.level.traverse(o => {
       if (!o.isMesh) return; const m = o.material;
@@ -569,6 +573,7 @@ export class View {
   pushRing(x, y, z) {
     const r = this.pushRings.find(r => r.t >= 1) || this.pushRings[0];
     r.t = 0; r.position.set(x, y, z); r.visible = true;
+    this.pushFlash = 1; this.pushLight.position.set(x, y + 0.6, z);
   }
 
   /* ---------- per-frame ---------- */
@@ -581,7 +586,12 @@ export class View {
     const mid = new THREE.Vector3((B.pos.x + N.pos.x) / 2, (B.pos.y + N.pos.y) / 2, (B.pos.z + N.pos.z) / 2);
     const spread = Math.hypot(B.pos.x - N.pos.x, (B.pos.y - N.pos.y) * 1.3, (B.pos.z - N.pos.z) * 0.6);
     const dist = Math.min(30, Math.max(13, 11 + spread * 0.72)) * (opts.zoom || 1);
-    const look = new THREE.Vector3(Math.max(this.minX + 7, mid.x + 0.5), mid.y + 0.3, -4.2 + (mid.z + 4) * 0.3);
+    // look a little ahead of where the pair is heading (smoothed so a turn doesn't jerk the view)
+    const vx = (B.grounded ? B.vel.x : B.vel.x * 0.5) + (N.grounded ? N.vel.x : N.vel.x * 0.5);
+    this.lead = (this.lead || 0) + (Math.max(-2.2, Math.min(2.2, vx * 0.16)) - (this.lead || 0)) * Math.min(1, dt * 1.2);
+    // follow height gently, so every hop doesn't bob the camera
+    this.camY = this.camY === undefined ? mid.y : this.camY + (mid.y - this.camY) * Math.min(1, dt * (Math.abs(mid.y - this.camY) > 2.5 ? 3 : 1.4));
+    const look = new THREE.Vector3(Math.max(this.minX + 7, mid.x + 0.5 + (opts.title ? 0 : this.lead)), this.camY + 0.3, -4.2 + (mid.z + 4) * 0.3);
     const want = new THREE.Vector3(look.x, look.y + dist * 0.68, look.z + dist * 0.78);
     if (opts.title) { look.x += 1.5; want.set(look.x + 1 + Math.sin(t * 0.15) * 2, look.y + 6.5, look.z + 11); }
     const k = Math.min(1, dt * (opts.snap ? 60 : 3.2));
@@ -632,6 +642,7 @@ export class View {
       const o = tgt.obj; this.marker.visible = true; this.marker.position.set(o.pos.x, o.pos.y + o.half.y + 0.45 + Math.sin(t * 5) * 0.08, o.pos.z);
       this.marker.scale.setScalar(o.kind === 'crate' ? 1.1 : 0.8); this.marker.material.opacity = 0.55;
     } else this.marker.visible = false;
+    this.pushFlash = Math.max(0, this.pushFlash - dt * 5); this.pushLight.intensity = FANCY ? this.pushFlash * this.pushFlash * 14 : 0;
     // beam
     if (B.target) {
       const a = new THREE.Vector3(B.pos.x, B.pos.y + 0.95, B.pos.z);
@@ -641,8 +652,11 @@ export class View {
       this.beam.position.copy(a).addScaledVector(d, 0.5);
       this.beam.scale.set(0.07 + Math.sin(t * 30) * 0.015, len, 0.07 + Math.sin(t * 30) * 0.015);
       this.beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.clone().normalize());
+      this.beamGlow.visible = this.beam.visible; this.beamGlow.position.copy(this.beam.position); this.beamGlow.quaternion.copy(this.beam.quaternion);
+      this.beamGlow.scale.set(0.2 + Math.sin(t * 13) * 0.03, len, 0.2 + Math.sin(t * 13) * 0.03);
+      this.pullLight.position.copy(a).addScaledVector(d, 0.35); this.pullLight.intensity = FANCY ? 4 + Math.sin(t * 25) * 1.2 : 0;
       this.beamRings.forEach((r, i) => { const f = ((t * 1.6 + i / 3) % 1); r.visible = len > 0.6; r.position.copy(b).addScaledVector(d, -f); r.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), d.clone().normalize()); r.scale.setScalar(1 - f * 0.5); });
-    } else { this.beam.visible = false; this.beamRings.forEach(r => r.visible = false); }
+    } else { this.beam.visible = false; this.beamGlow.visible = false; this.pullLight.intensity = 0; this.beamRings.forEach(r => r.visible = false); }
     // push rings
     for (const r of this.pushRings) { if (r.t >= 1) { r.visible = false; continue; } r.t = Math.min(1, r.t + dt / 0.35); r.scale.setScalar(0.4 + r.t * 3.3); r.material.opacity = (1 - r.t) * 0.8; }
     // lasers

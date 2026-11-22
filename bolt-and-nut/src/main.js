@@ -22,13 +22,13 @@ const store = {
 const save = (() => {
   const raw = store.get('bn-save', { unlocked: 0, done: [] });
   const idx = n => ALL.findIndex(L => L.name === n);
-  if (raw.v === 2) return { ...raw, done: raw.done.map(idx).filter(i => i >= 0), cogs: (raw.cogs || []).map(idx).filter(i => i >= 0), unlocked: Math.max(0, idx(raw.cur)) };
+  if (raw.v === 2) return { ...raw, best: raw.best || {}, done: raw.done.map(idx).filter(i => i >= 0), cogs: (raw.cogs || []).map(idx).filter(i => i >= 0), unlocked: Math.max(0, idx(raw.cur)) };
   // v1 saved indices; main shifts never moved, Overtime indices did, so keep only the first 16 shifts
   const keep = a => (a || []).filter(i => i < 16);
-  return { unlocked: Math.min(raw.unlocked || 0, 16), done: keep(raw.done), cogs: keep(raw.cogs), finished: raw.finished };
+  return { unlocked: Math.min(raw.unlocked || 0, 16), done: keep(raw.done), cogs: keep(raw.cogs), finished: raw.finished, best: {} };
 })();
 function saveGame() {
-  store.set('bn-save', { v: 2, done: save.done.map(i => ALL[i].name), cogs: save.cogs.map(i => ALL[i].name), cur: LEVELS[Math.min(save.unlocked, NMAIN - 1)].name, finished: !!save.finished });
+  store.set('bn-save', { v: 2, done: save.done.map(i => ALL[i].name), cogs: save.cogs.map(i => ALL[i].name), cur: LEVELS[Math.min(save.unlocked, NMAIN - 1)].name, finished: !!save.finished, best: save.best || {} });
 }
 // new shifts get added over time: anything after a finished shift is unlocked
 if (save.done && save.done.length) save.unlocked = Math.max(save.unlocked, Math.min(NMAIN - 1, Math.max(...save.done.filter(d => d < NMAIN), -1) + 1));
@@ -141,10 +141,11 @@ function goTitle() {
   });
 }
 // progress badges for the level menus
+const clock = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
 function lvBadges(i) {
-  const done = save.done.includes(i), cog = save.cogs.includes(i);
+  const done = save.done.includes(i), cog = save.cogs.includes(i), best = save.best[ALL[i].name];
   return { badges: `${done ? '<b class="bd done">Done</b>' : ''}${cog ? '<b class="bd cog">⚙</b>' : ''}`,
-    status: `${done ? '<b class="bd done">Finished</b>' : '<b class="bd todo">Not finished yet</b>'}${cog ? '<b class="bd cog">⚙ Golden cog found</b>' : '<b class="bd todo">Golden cog not found</b>'}` };
+    status: `${done ? '<b class="bd done">Finished</b>' : '<b class="bd todo">Not finished yet</b>'}${cog ? '<b class="bd cog">⚙ Golden cog found</b>' : '<b class="bd todo">Golden cog not found</b>'}${best ? `<b class="bd todo">Best ${clock(best)}</b>` : ''}` };
 }
 function chooseShift() {
   openMenu({
@@ -323,7 +324,13 @@ function finishLevel() {
   saveGame();
   const s = world.stats;
   const last = levelIdx === NMAIN - 1;
+  // best times, kept by level name
+  const secs = world.t, prev = save.best[L.name], newBest = !prev || secs < prev - 0.05;
+  if (newBest) { save.best[L.name] = Math.round(secs * 10) / 10; saveGame(); }
+  const timeTxt = `Time ${clock(secs)}${newBest ? (prev ? ' · <b class="bd done">New best!</b>' : '') : ` · best ${clock(prev)}`}`;
+  const cogTxt = save.cogs.includes(levelIdx) ? '<b class="bd cog">⚙ Golden cog found</b>' : '<b class="bd todo">Golden cog still hidden</b>';
   const newOt = OVERTIME.findIndex(o => o.after === levelIdx);
+  narr.moveOn(); // anything still queued is about the level they just left
   narr.say(newOt >= 0 && !ot ? [L.outro, 'Also: there is an Overtime bonus puzzle that goes with this shift. Title screen, Overtime. Unpaid. Very rewarding. Spiritually.'] : L.outro);
   const nextOt = ot && NMAIN + L.ot < ALL.length && otOpen(L.ot) ? NMAIN + L.ot : -1;
   const items = ot ? [
@@ -338,7 +345,7 @@ function finishLevel() {
   ];
   openMenu({
     cls: 'done', title: `${lvName(levelIdx)} complete`, sub: L.name, items,
-    foot: `Falls: Bolt ${s.falls[0]}, Nut ${s.falls[1]} · Launches: ${s.launches} · Pulls: ${s.pulls} · Lasered: ${s.zaps[0] + s.zaps[1]}`,
+    foot: `<span class="tm">${timeTxt}</span> ${cogTxt}<br>Falls: Bolt ${s.falls[0]}, Nut ${s.falls[1]} · Launches: ${s.launches} · Pulls: ${s.pulls} · Lasered: ${s.zaps[0] + s.zaps[1]}`,
   });
 }
 function goCredits() {
