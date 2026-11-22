@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.65'; // keep in step with package.json
+const GAME_VERSION = '1.0.66'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -4655,6 +4655,38 @@ const LEVELS = [
     ],
     outro: "Sweeping not required. The narrator swept anyway, out of habit.",
   },
+  { name: "Slapshot", sub: "Throw it like you mean it.", ambient: 0.6, challenge: true, unlockAt: 82,
+    map: [
+      '################################',
+      '#...............#..........#...#',
+      '#...............#..........#...#',
+      '#...............#..........#...#',
+      '#...............#..........#...#',
+      '#...............#..........#...#',
+      '#...............#..........#...#',
+      '#...............#..........#...#',
+      '#...............#..........#...#',
+      '#...............#..........#...#',
+      '#...............#..........#...#',
+      '#.WS............#..........#...#',
+      '#####k##........#..........#...#',
+      '########........P..........Q...#',
+      '########........P..........Q...#',
+      '########........P..........Q...#',
+      '########........P.....p....Qu.E#',
+      '########^^^xxxxiiiiikiiiiii#####',
+      '###########^^^^#################',
+      '################################',
+    ],
+    intro: [
+      "Dark glass over the thorns: solid only in the dark. A long sheet of ice beyond it, and a sun-eye behind the last door.",
+      "A lantern thrown onto ice keeps sliding. Just saying.",
+    ],
+    hints: [
+      [150, "Shade, take the ink well to the far side and hold the teal plate. Wick, jump from the edge of the ledge and throw the lantern while you're in the air. It slides all the way to the sun-eye, and the dark glass goes dark enough to walk on."],
+    ],
+    outro: "Top corner. The narrator is on their feet. The narrator does not have feet. Still.",
+  },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
 // Challenge levels (challenge:true) live after the story and have their own menu.
@@ -4975,7 +5007,7 @@ function updateLantern(dt) {
     // a lantern dropped or thrown onto a drum gets thrown right back up
     lantern.vy = -880; lantern.onGround = false; lv.drumHit[lantern.onDrum - 1] = lv.time; SFX.drum(true);
   }
-  if (lantern.onGround) { lantern.vx *= Math.pow(0.0005, dt); const bd = beltUnder(lantern); if (bd) moveX(lantern, bd * BELT * dt); }
+  if (lantern.onGround) { lantern.vx *= Math.pow(iceUnder(lantern) ? 0.5 : 0.0005, dt); const bd = beltUnder(lantern); if (bd) moveX(lantern, bd * BELT * dt); }
   if (lantern.y > H + 60) { returnLantern(); return; }
   let thorn = false;
   forEachTile(lantern, (tx, ty) => { if (tileAt(tx, ty) === '^') thorn = true; });
@@ -6263,7 +6295,7 @@ const GUIDE = [
   ['>', 'Belts', 'Carry whatever stands on them: you, crates, the lantern.', ['...', '...', '>>>']],
   ['k', 'Ink wells', 'Shade only: stand on one and press down to come out of its partner. They pair left to right.', ['...', '...', '#k#']],
   ['f', 'Steam vents', 'Lift you to the top of the steam (hold down to sink). A lantern set down on one floats up. A crate shuts them off.', ['...', '...', '#f#']],
-  ['i', 'Ice', 'Slippery underfoot. A crate pushed on ice keeps sliding until it hits something.', ['...', '...', '#ii']],
+  ['i', 'Ice', 'Slippery underfoot. A crate pushed on ice slides until it hits something. So does a thrown lantern.', ['...', '...', '#ii']],
   ['l', 'Lifts', 'Rise while anything stands on them: you, a crate, the lantern. Step off, or hold down, and they sink back down.', ['...', '...', '#ll']],
   ['n', 'Candles', 'Touch one with the lantern and it stays lit for good: a small light of its own.', ['...', '.n.', '###']],
   ['m', 'Mirror balls', 'Shine too while the lantern can see them, a bit less far.', ['...', '.m.', '...']],
