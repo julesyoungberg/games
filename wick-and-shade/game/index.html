@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.71'; // keep in step with package.json
+const GAME_VERSION = '1.0.72'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -5457,7 +5457,7 @@ let flags = {};
 function overl(ax, ay, aw, ah, bx, by, bw, bh) { return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by; }
 const TIMER_S = 5;
 function updatePlates() {
-  const any = { p: false, q: false }; let by = null;
+  const any = { p: false, q: false }, held = { p: false, q: false }, tleft = { p: 99, q: 99 }; let by = null;
   for (const pl of lv.plates) {
     const rx = pl.tx * T + 3, ry = pl.ty * T + 28, rw = T - 6, rh = 12;
     let d = false, who = null;
@@ -5466,7 +5466,7 @@ function updatePlates() {
       d = isLit(pl.tx, pl.ty) && !isShadow((pl.tx + 0.5) * T, (pl.ty + 0.5) * T); who = 'light';
       const quiet = lv.time - (pl.sndT || -9) < 1.5; if (d !== pl.down && !quiet) { SFX.plate(d); pl.sndT = lv.time; }
       if (d && !pl.down) by = who;
-      pl.down = d; if (d) any[pl.ch] = true;
+      pl.down = d; if (d) { any[pl.ch] = true; held[pl.ch] = true; }
       continue;
     }
     players.forEach(p => { if (p.dead <= 0 && overl(p.x, p.y, p.w, p.h + 1, rx, ry, rw, rh)) { d = true; who = p.kind; } });
@@ -5481,11 +5481,12 @@ function updatePlates() {
       if (!d && on && lv.time - (pl.tickT || -9) > (left < 1.6 ? 0.25 : 0.5)) { pl.tickT = lv.time; SFX.tick(left < 1.6); }
       if (pl.on && !on) SFX.plate(false);
       pl.on = on; pl.left = d ? TIMER_S : Math.max(0, left);
-      pl.down = d; if (on) any[pl.ch] = true;
+      pl.down = d; if (on) any[pl.ch] = true; if (d) held[pl.ch] = true; else if (on) tleft[pl.ch] = Math.min(tleft[pl.ch], pl.left);
       continue;
     }
-    pl.down = d; if (d) any[pl.ch] = true;
+    pl.down = d; if (d) { any[pl.ch] = true; held[pl.ch] = true; }
   }
+  lv.timerLeft = { p: held.p ? 99 : tleft.p, q: held.q ? 99 : tleft.q };
   for (const ch of ['p', 'q']) {
     if (any[ch] !== lv.pressed[ch]) {
       lv.pressed[ch] = any[ch];
@@ -5869,6 +5870,8 @@ function drawDynamicTiles(t) {
         if (!below) { ctx.fillRect(px + 4, py + h - 4, T - 8, 4); if (h > 20) colourGlyph(ch, px + T / 2, py + h - 14, 5, col[0]); }
       }
       ctx.strokeStyle = col[1]; ctx.strokeRect(px + 4.5, py + (above ? 0 : 0.5), T - 9, T - (below ? 0 : 1));
+      const tl = lv.timerLeft ? lv.timerLeft[ch] : 99;
+      if (tl < 1.6 && Math.sin(lv.time * 22) > 0) { ctx.strokeStyle = col[0]; ctx.lineWidth = 3; ctx.strokeRect(px + 5, py + 1, T - 10, T - 2); ctx.lineWidth = 1; }
     } else if (c === 'r' || c === 's') {
       const ch = c === 'r' ? 'p' : 'q', col = CH_COL[ch];
       if (lv.pressed[ch]) {
