@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.59'; // keep in step with package.json
+const GAME_VERSION = '1.0.60'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -5013,6 +5013,7 @@ function updateExits(dt) {
     const ins = players.map(p => p.dead <= 0 && inRect(p, r));
     if (ins[0] && ins[1]) {
       lv.complete = true; lv.exitKind = ex.kind; lv.completeT = 0; SFX.win();
+      if (lv.def.challenge) { save.best = save.best || {}; lv.prevBest = save.best[lv.def.name]; lv.clearT = lv.time; if (!(lv.prevBest <= lv.time)) save.best[lv.def.name] = lv.time; writeSave(); }
       const line = ex.kind === 'F' ? lv.def.outroF : lv.def.outro;
             if (line) narr.say(line, { kind: 'outro' });
       for (let k = 0; k < 40; k++) lv.particles.push({ x: r.x + T / 2, y: r.y + T, vx: rand(-140, 140), vy: rand(-260, -40), life: rand(0.6, 1.4), max: 1.4, c: pick(['#ffd27a', '#b89cff', '#fff']), s: rand(2, 4) });
@@ -5050,6 +5051,18 @@ function drawChapterCard() {
   ctx.font = 'italic 21px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.8)'; ctx.fillText(bits.join('  ·  '), W / 2, 456);
   if (st) { const f = k => { const n = run.deaths[k] - st.d[k]; return n === 0 ? 'never fell' : 'fell ' + (n === 1 ? 'once' : n === 2 ? 'twice' : n + ' times'); };
     ctx.fillText('Wick ' + f(0) + '. Shade ' + f(1) + '.', W / 2, 490); }
+  ctx.globalAlpha = 1;
+}
+const fmtTime = t => { const s = Math.max(1, Math.round(t)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+function drawChallengeCard() {
+  const a = clamp((lv.completeT - 2.1) / 0.6, 0, 1); if (a <= 0) return;
+  ctx.globalAlpha = a; ctx.textAlign = 'center';
+  ctx.font = '600 15px ' + FONT_B; ctx.fillStyle = '#ffd27a'; ctx.letterSpacing = '4px'; ctx.fillText('CHALLENGE CLEARED', W / 2, 330); ctx.letterSpacing = '0px';
+  ctx.font = 'italic 56px ' + FONT_D; ctx.fillStyle = '#f6ecd6'; ctx.fillText(lv.def.name, W / 2, 392);
+  ctx.fillStyle = 'rgba(255,210,122,0.5)'; ctx.fillRect(W / 2 - 40, 418, 80, 1.5);
+  const pb = lv.prevBest, t = lv.clearT || 0, nb = pb != null && t < pb;
+  ctx.font = 'italic 21px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.8)';
+  ctx.fillText(fmtTime(t) + (pb == null ? '' : nb ? '  ·  new best, by ' + Math.max(1, Math.round(pb - t)) + 's' : '  ·  best ' + fmtTime(pb)), W / 2, 456);
   ctx.globalAlpha = 1;
 }
 function flagsLevelReset() { }
@@ -5091,7 +5104,7 @@ function updatePlay(dt) {
   updateParticles(dt);
   if (lv.complete) {
     lv.completeT += dt;
-    const hold = chapterEnds() ? 6 : 2.2, skip = lv.completeT > 3.2 && [0, 1].some(i => { const q = getInp(i); return q && q.jumpP; });
+    const hold = chapterEnds() ? 6 : lv.def.challenge ? 4.6 : 2.2, skip = lv.completeT > 3.2 && [0, 1].some(i => { const q = getInp(i); return q && q.jumpP; });
     if (lv.completeT > hold || (hold > 2.2 && skip)) nextLevel();
   }
 }
@@ -5732,11 +5745,11 @@ function renderPlay(t) {
   drawMotes(t);
   drawParticles();
   if (gstate !== 'pause') drawHUD(t);
-  const card = lv.complete && chapterEnds();
+  const card = lv.complete && (chapterEnds() || lv.def.challenge);
   if (!card) drawNarrator();
   const fade = Math.max(lv.fadeIn, lv.complete ? clamp((lv.completeT - 1.2) / 1, 0, 1) : 0);
   if (fade > 0) { ctx.fillStyle = `rgba(7,6,15,${fade})`; ctx.fillRect(0, 0, W, H); }
-  if (card) { drawChapterCard(); drawNarrator(); }
+  if (card) { if (lv.def.challenge) drawChallengeCard(); else drawChapterCard(); drawNarrator(); }
 }
 
 /* ------------------------------ menus ------------------------------ */
@@ -6023,7 +6036,7 @@ function drawBrowse(items, t) {
     const title = isCh ? (d.chapter || d.name) : d.name;
     ctx.font = 'bold 30px ' + FONT_D; ctx.fillStyle = '#f6ecd6'; ctx.fillText(title, cx0, 550);
     let meta;
-    if (d.challenge) meta = 'Challenge ' + (CHALLENGES.indexOf(i) + 1) + ' of ' + CHALLENGES.length + (save.done && save.done[d.name] ? '   ·   cleared ✓' : '');
+    if (d.challenge) meta = 'Challenge ' + (CHALLENGES.indexOf(i) + 1) + ' of ' + CHALLENGES.length + (save.done && save.done[d.name] ? '   ·   cleared ✓' : '') + (save.best && save.best[d.name] ? '   ·   best ' + fmtTime(save.best[d.name]) : '');
     else if (isCh) { const [dn, nn] = chapterProgress(i); meta = 'Chapter ' + n + (many ? '   ·   ' + CH_ROOMS[n] + ' rooms' : '') + (dn >= nn ? '   ·   complete ✓' : dn > 0 ? '   ·   ' + dn + ' of ' + nn + ' rooms done' : ''); }
     else meta = 'Room ' + ROOM_NUM[i] + ' of ' + CH_ROOMS[n] + (roomDone(i) ? '   ·   cleared ✓' : save.unlocked === i ? '   ·   up next' : '');
     ctx.font = '16px ' + FONT_B; ctx.fillStyle = 'rgba(255,210,122,0.75)'; ctx.fillText(meta, cx0, 578);
