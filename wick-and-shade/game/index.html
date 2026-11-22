@@ -3559,6 +3559,38 @@ const LEVELS = [
     onPlate: (n, by, ch) => ch === 'q' ? 'Second bridge out. Wick, last gutter.' : null,
     outro: "Every gutter crossed, every chimney used. The chimneys would like a word about all the standing behind them.",
   },
+  { name: "Dumbwaiter", sub: "Deliveries to the top shelf.", ambient: 0.55, challenge: true, unlockAt: 66,
+    map: [
+      '################################',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................Q..........#',
+      '#.........###.......Q..........#',
+      '#...................Q..........#',
+      '#...q...............Q........E.#',
+      '##########...###################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#W....C........S...............#',
+      '##########lll###################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "A crate, a lift sunk into the floor, a pink plate on the top shelf, and a pink door on the other side.",
+    ],
+    hints: [
+      [60, "Push the crate onto the lift. It goes up without you, so jump on after it."],
+      [140, "At the top, push the crate left onto the plate. The lift comes back down for whoever is still waiting."],
+    ],
+    outro: "Delivered. The narrator would like a signature, but nobody has hands that can hold a pen.",
+  },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
 // Challenge levels (challenge:true) live after the story and have their own menu.
@@ -3633,7 +3665,7 @@ function loadLevel(idx, opts = {}) {
     }
   }
   if (lv.wells) lv.wells.sort((a, b) => a.tx - b.tx || a.ty - b.ty); // wells pair up left to right: 1st with 2nd, 3rd with 4th
-  lv.occAll = lv.crates.length ? lv.occ.concat(lv.crates) : lv.occ;
+  lv.occAll = lv.crates.length ? lv.occ.concat(lv.crates.filter(c => !c.lift)) : lv.occ; // lifts are brass, not ink: no shadow
   lantern = { x: 0, y: 0, w: 14, h: 18, vx: 0, vy: 0, held: !lanSpawn, onGround: false, ign: null, spin: 0, hung: null };
   lv.lanSpawn = lanSpawn;
   if (lanSpawn) { lantern.x = lanSpawn[0] * T + 13; lantern.y = (lanSpawn[1] + 1) * T - 18; }
@@ -3870,13 +3902,20 @@ function updateLift(c, dt) {
   c.loaded = liftRiders(c, 2, true).length > 0;
   const was = c.moving;
   let dy = c.loaded ? -LIFT * dt : Math.min(LIFT * dt, c.sy - c.y);
+  if (!c.loaded) {
+    // nobody gets shut in under a lift: an empty one waits while anyone is below it, and backs off if they are close
+    const under = players.filter(p => p.dead <= 0 && p.x + p.w > c.x + 1 && p.x < c.x + c.w - 1 && p.y >= c.y + c.h - 4 && p.y < c.sy + T);
+    if (under.length) dy = Math.min(...under.map(p => p.y - c.y - c.h)) < T ? -LIFT * dt : 0;
+  }
   c.moving = 0;
   if (Math.abs(dy) < 0.01 || (dy < 0 && c.y <= c.top + 0.01)) { if (was < 0 && c.y <= c.top + 0.01) SFX.ding(); return; }
   if (dy < 0) dy = Math.max(dy, c.top - c.y);
   const riders = dy < 0 ? liftRiders(c, 5) : liftRiders(c, 2), oy = c.y;
   c.y += dy;
   // going down, it stops for anyone underneath it
-  if (dy > 0 && (hitsTiles(c) || players.some(p => p.dead <= 0 && !riders.includes(p) && overl(p.x, p.y, p.w, p.h, c.x, c.y, c.w, c.h)))) { c.y = oy; return; }
+  if (dy > 0 && hitsTiles(c)) { c.y = oy; return; }
+  // going down, it backs off for anyone underneath it, so nobody gets shut in under a lift
+  if (dy > 0 && players.some(p => p.dead <= 0 && !riders.includes(p) && overl(p.x, p.y, p.w, p.h, c.x, c.y, c.w, c.h))) { c.y = oy; return; }
   // going up it carries its riders; going down they just follow it (so someone half on a ledge stays there)
   if (dy < 0) for (const r of riders) { r.y = c.y - r.h; if (r.vy > 0) r.vy = 0; }
   if (dy < 0 && riders.some(r => hitsTiles(r))) { c.y = oy; for (const r of riders) r.y = c.y - r.h; c.moving = was; return; }
@@ -3911,14 +3950,14 @@ function updateCrates(dt) {
       if (!lantern.held && lantern.x + lantern.w > c.x - 4 && lantern.x < c.x + c.w + 4 && Math.abs(lantern.y + lantern.h - c.y) < 40) { lantern.x = c.sx + 13; lantern.y = c.sy - lantern.h; lantern.vx = lantern.vy = 0; }
       c.x = c.sx; c.y = c.sy; c.vy = 0; burst(c.x + T / 2, c.y + T / 2, '#b89cff', 16); narr.say(pick(LINES.crateLost), { ifQuiet: true }); }
   }
-  lv.occAll = lv.crates.length ? lv.occ.concat(lv.crates) : lv.occ;
+  lv.occAll = lv.crates.length ? lv.occ.concat(lv.crates.filter(c => !c.lift)) : lv.occ; // lifts are brass, not ink: no shadow
 }
 function drawCrates(t) {
   for (const c of lv.crates) {
     const x = Math.round(c.x), y = Math.round(c.y);
     if (c.lift) {
-      ctx.fillStyle = '#0c0912'; ctx.fillRect(x, y, c.w, 14);
-      ctx.fillStyle = '#1a1230'; ctx.fillRect(x + 6, y + 14, c.w - 12, T - 14);
+      ctx.fillStyle = '#4a3a2c'; ctx.fillRect(x, y, c.w, 14);
+      ctx.fillStyle = 'rgba(74,58,44,0.45)'; ctx.fillRect(x + 6, y + 14, c.w - 12, T - 14);
       ctx.fillStyle = '#e9b860'; ctx.fillRect(x, y, c.w, 2);
       ctx.fillStyle = 'rgba(233,184,96,0.35)'; for (let k = 10; k < c.w - 6; k += 12) ctx.fillRect(x + k, y + 6, 4, 2);
       if (c.moving) { ctx.fillStyle = 'rgba(255,214,140,' + (0.5 + 0.4 * Math.sin(t * 10)) + ')'; const ay = y + 24, ax = x + c.w / 2; ctx.beginPath(); ctx.moveTo(ax - 5, ay + (c.moving < 0 ? 3 : -3)); ctx.lineTo(ax + 5, ay + (c.moving < 0 ? 3 : -3)); ctx.lineTo(ax, ay + (c.moving < 0 ? -3 : 3)); ctx.fill(); }
@@ -4921,7 +4960,7 @@ function thumbTile(c, map, x, y, cell) {
     if (ch === '#') { const edge = y === 0 || x === 0 || x === cols - 1 || y === rows - 1 || (map[y - 1] && map[y - 1][x] !== '#'); c.fillStyle = edge ? '#e6dcc8' : '#b9ae99'; c.fillRect(px, py, cell, cell); }
     else if (ch === '^') { c.fillStyle = '#b8304a'; c.beginPath(); c.moveTo(px, py + cell); c.lineTo(px + cell / 2, py + cell * 0.35); c.lineTo(px + cell, py + cell); c.fill(); }
     else if (ch === 'p' || ch === 'q' || ch === 'o' || ch === 'u') { c.fillStyle = ch === 'p' || ch === 'o' ? '#4fc7b8' : '#e6609a'; if (ch === 'o' || ch === 'u') { c.beginPath(); c.arc(px + cell / 2, py + cell / 2, cell * 0.3, 0, TAU); c.fill(); } else c.fillRect(px + 2, py + cell - 4, cell - 4, 4); }
-    else if (ch === 'l') { c.fillStyle = '#0c0912'; c.fillRect(px, py, cell, cell * 0.45); c.fillStyle = '#e9b860'; c.fillRect(px, py, cell, Math.max(1, cell / 10)); }
+    else if (ch === 'l') { c.fillStyle = '#4a3a2c'; c.fillRect(px, py, cell, cell * 0.45); c.fillStyle = '#e9b860'; c.fillRect(px, py, cell, Math.max(1, cell / 10)); }
     else if (ch === 'C') { c.fillStyle = '#0c0912'; c.fillRect(px + 1, py + 1, cell - 2, cell - 2); c.strokeStyle = '#7b56c9'; c.lineWidth = Math.max(1, cell / 10); c.strokeRect(px + 1.5, py + 1.5, cell - 3, cell - 3); }
     else if (ch === 'E' || ch === 'F') { c.fillStyle = '#ffd27a'; c.fillRect(px + cell * 0.2, py - cell * 0.4, cell * 0.6, cell * 1.4); }
     else if (ch === 'k') { c.fillStyle = '#05020c'; c.beginPath(); c.ellipse(px + cell / 2, py + cell * 0.25, cell * 0.45, cell * 0.2, 0, 0, TAU); c.fill(); c.fillStyle = '#b9ae99'; c.fillRect(px, py + cell * 0.35, cell, cell * 0.65); }
@@ -4961,7 +5000,7 @@ function guideSeen() {
   return GUIDE.map((g, k) => k).filter(k => seen.has(GUIDE[k][0]));
 }
 function drawFieldGuide() {
-  const ks = guideSeen(), x0 = 110, y0 = 150, colW = 540, rowH = 74;
+  const ks = guideSeen(), x0 = 110, y0 = 150, colW = 540, rowH = Math.min(74, Math.floor(512 / Math.max(1, Math.ceil(ks.length / 2))));
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 40; ctx.fillStyle = 'rgba(14,10,28,0.94)'; roundRect(70, 50, W - 140, H - 130, 18); ctx.fill(); ctx.restore();
   ctx.strokeStyle = 'rgba(255,210,122,0.22)'; ctx.lineWidth = 1.5; roundRect(70, 50, W - 140, H - 130, 18); ctx.stroke();
   ctx.textAlign = 'center'; ctx.fillStyle = '#f6ecd6'; ctx.font = 'italic 44px ' + FONT_D; ctx.fillText('Field guide', W / 2, 112);
