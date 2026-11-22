@@ -436,7 +436,7 @@ export function step(w, inputs, dt = 1 / 60) {
     const vyBefore = b.vel.y;
     moveBody(w, b, b.vel.x * dt, b.vel.y * dt, b.vel.z * dt);
     if (b.kind === 'player') {
-      if (b.grounded && !wasGrounded) { b.launched = false; if (vyBefore < -8 && !(b.ground && b.ground.spring)) emit(w, 'land', { who: b.id, v: -vyBefore }); }
+      if (b.grounded && !wasGrounded) { b.launched = false; if (vyBefore < -4 && !(b.ground && b.ground.spring)) emit(w, 'land', { who: b.id, v: -vyBefore }); }
     }
     if (b.grounded && b.ground && b.ground.spring && !b.pulledBy) {
       const sp = b.ground.spring; sp.t = w.t;

@@ -22,6 +22,14 @@ canvas#c { position:fixed; inset:0; width:100vw; height:100vh; display:block; im
 #press.on { display:block; }
 #menu { position:fixed; inset:0; display:none; align-items:center; justify-content:center; pointer-events:none; background:rgba(43,35,56,.35); }
 #menu.on { display:flex; }
+#menu .keys { width:300px; flex:none; background:rgba(43,35,56,.06); border-radius:16px; padding:12px 16px; font-size:15px; line-height:1.35; }
+#menu .keys h3 { margin:0 0 4px; font-family:var(--head); font-size:20px; }
+#menu .keys .ck.b h3 { color:#d23b40; } #menu .keys .ck.n h3 { color:#2f6fd8; }
+#menu .keys .ck + .ck { margin-top:10px; padding-top:10px; border-top:2px dashed rgba(43,35,56,.15); }
+#menu .keys table { border-collapse:collapse; margin:2px 0 4px; } #menu .keys td { padding:2px 8px 2px 0; }
+#menu .keys kbd { font:700 13px/1 var(--body, inherit); background:var(--ink); color:var(--cream); border-radius:6px; padding:3px 7px; white-space:nowrap; }
+#menu .keys p { margin:4px 0 0; opacity:.8; } #menu .keys .tiny { margin-top:10px; font-size:13px; opacity:.65; }
+@media (max-width:760px) { #menu .keys { display:none; } }
 #menu .box { background:var(--cream); border-radius:22px; padding:26px 34px; min-width:min(520px,90vw); max-width:92vw; box-shadow:0 8px 0 var(--ink), 0 18px 40px rgba(0,0,0,.3); border:4px solid var(--ink); }
 #menu .box.title { position:fixed; left:6vw; bottom:8vh; min-width:340px; }
 #menu.on:has(.box.title) { background:transparent; }
@@ -70,6 +78,7 @@ canvas#c { position:fixed; inset:0; width:100vw; height:100vh; display:block; im
 #ctrlB b { color:var(--red); } #ctrlN b { color:var(--blue); }
 #narr { position:fixed; left:50%; bottom:3vh; transform:translate(-50%, 20px); width:min(860px,92vw); background:var(--cream); border:4px solid var(--ink); border-radius:20px; padding:14px 22px 16px; box-shadow:0 7px 0 var(--ink); opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; z-index:5; }
 #narr.on { opacity:1; transform:translate(-50%, 0); }
+body.paused #narr { opacity:0 !important; }
 #narr .who { font-family:var(--head); font-size:14px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#8a5a9e; }
 #narrTxt { font-size:22px; font-weight:700; line-height:1.35; min-height:2.7em; margin-top:2px; }
 #narrNext { position:absolute; right:16px; bottom:10px; font-size:15px; font-weight:900; background:var(--ink); color:#fff; border-radius:8px; padding:3px 9px; }

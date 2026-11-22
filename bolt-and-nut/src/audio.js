@@ -18,6 +18,39 @@ export function initAudio() {
   const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   setVolumes(vol);
   music.start();
+  ambience(verb);
+}
+
+// factory ambience: a low room rumble plus distant clanks and steam now and then
+function ambience(verb) {
+  const amb = ctx.createGain(); amb.gain.value = 1; amb.connect(sfxBus);
+  const far = ctx.createGain(); far.gain.value = 0.6; far.connect(verb);
+  const src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 140;
+  const g = ctx.createGain(); g.gain.value = 0.035; src.connect(lp); lp.connect(g); g.connect(amb); src.start();
+  const hum = ctx.createOscillator(); hum.frequency.value = 50; const hg = ctx.createGain(); hg.gain.value = 0.006; hum.connect(hg); hg.connect(amb); hum.start();
+  const one = (fn) => { try { fn(); } catch (e) { } };
+  const event = () => {
+    const t = ctx.currentTime, k = Math.random();
+    if (k < 0.45) one(() => { // distant clank
+      const o = ctx.createOscillator(), og = ctx.createGain(), f = ctx.createBiquadFilter();
+      o.type = 'square'; o.frequency.setValueAtTime(140 + Math.random() * 120, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.25);
+      f.type = 'lowpass'; f.frequency.value = 500; og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.018, t + 0.01); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+      o.connect(f); f.connect(og); og.connect(far); o.start(t); o.stop(t + 0.35);
+    });
+    else if (k < 0.75) one(() => { // steam hiss
+      const s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true; const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 2500 + Math.random() * 2000;
+      const sg = ctx.createGain(), d = 0.6 + Math.random() * 1.2; sg.gain.setValueAtTime(0.0001, t); sg.gain.exponentialRampToValueAtTime(0.012, t + 0.08); sg.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      s.connect(f); f.connect(sg); sg.connect(amb); sg.connect(far); s.start(t, Math.random() * 0.5); s.stop(t + d + 0.05);
+    });
+    else one(() => { // machine whirr passing by
+      const o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sawtooth'; const f0 = 60 + Math.random() * 40; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f0 * 1.6, t + 1.2); o.frequency.linearRampToValueAtTime(f0, t + 2.4);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 300; og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.01, t + 0.6); og.gain.exponentialRampToValueAtTime(0.0001, t + 2.4);
+      o.connect(f); f.connect(og); og.connect(far); o.start(t); o.stop(t + 2.5);
+    });
+    setTimeout(event, 2500 + Math.random() * 5000);
+  };
+  setTimeout(event, 3000);
 }
 export function setVolumes(v) {
   Object.assign(vol, v);
@@ -66,7 +99,14 @@ function humOff() {
 
 export const SFX = {
   jump(who) { tone('square', who ? 330 : 260, who ? 620 : 520, 0.12, 0.06); },
-  land() { noise(0.12, 0.25, 600, 120, 0.8, 0, 'lowpass'); },
+  land(v = 9) { const k = Math.min(1.6, Math.max(0.5, (v - 6) / 6)); noise(0.14 * k, 0.22 * k, 700, 100, 0.8, 0, 'lowpass'); tone('sine', 110, 45, 0.16, 0.12 * k); if (v > 13) tone('triangle', 900, 700, 0.08, 0.03); },
+  // footsteps: Bolt clanks, Nut taps; iron tread plate rings a little
+  step(who, metal) {
+    const r = 0.85 + Math.random() * 0.3;
+    if (who === 0) { noise(0.06, 0.07, 700 * r, 200, 1.2, 0, 'lowpass'); tone('sine', 95 * r, 60, 0.07, 0.06); }
+    else { noise(0.04, 0.05, 2200 * r, 900, 2, 0, 'bandpass'); tone('triangle', 420 * r, 300, 0.04, 0.025); }
+    if (metal) tone('triangle', (who ? 2400 : 1700) * r, (who ? 2300 : 1600) * r, 0.09, 0.012);
+  },
   pullStart() { tone('sine', 300, 900, 0.18, 0.08); humOn(); },
   pullEnd() { humOff(); tone('sine', 700, 260, 0.12, 0.05); },
   pullMiss() { tone('square', 200, 150, 0.1, 0.04); },

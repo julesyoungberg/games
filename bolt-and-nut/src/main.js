@@ -102,7 +102,8 @@ function renderMenu() {
   // level menus show a preview picture of the highlighted level
   const cur = items[menu.sel], hasPv = items.some(it => it.thumb);
   const pv = hasPv ? `<div class="pv">${cur && cur.thumb ? `<img src="${cur.thumb}" alt="">` : '<div class="noimg"></div>'}${cur && cur.status ? `<div class="status">${cur.status}</div>` : ''}<p>${cur && cur.desc ? cur.desc : ''}</p></div>` : '';
-  menuEl.innerHTML = `<div class="box ${menu.cls || ''}">${menu.title ? `<h2>${menu.title}</h2>` : ''}${menu.sub ? `<p class="sub">${menu.sub}</p>` : ''}${hasPv ? `<div class="row">${list}${pv}</div>` : list}${menu.foot ? `<p class="foot">${menu.foot}</p>` : ''}</div>`;
+  const side = menu.side ? `<div class="keys">${menu.side}</div>` : '';
+  menuEl.innerHTML = `<div class="box ${menu.cls || ''}">${menu.title ? `<h2>${menu.title}</h2>` : ''}${menu.sub ? `<p class="sub">${menu.sub}</p>` : ''}${hasPv ? `<div class="row">${list}${pv}</div>` : side ? `<div class="row">${list}${side}</div>` : list}${menu.foot ? `<p class="foot">${menu.foot}</p>` : ''}</div>`;
   const selEl = menuEl.querySelector('li.sel'); if (selEl) selEl.scrollIntoView({ block: 'nearest' });
 }
 function menuInput(m) {
@@ -228,14 +229,33 @@ function startLevel(i) {
   $('banner').classList.remove('on'); void $('banner').offsetWidth; $('banner').classList.add('on');
   narr.say(L.intro);
   const sp = Input.split();
-  $('ctrlB').innerHTML = `<b>Bolt</b> ${sp ? 'left stick · LB jump · LT pull' : 'A jump · hold X pull'}`;
-  $('ctrlN').innerHTML = `<b>Nut</b> ${sp ? 'right stick · RB jump · RT push' : 'A jump · X push'}`;
-  $('ctrlM').innerHTML = `Y: next line · Start: menu &amp; hints`;
+  startLevelCtrlText();
+  { const kb = Input.assign.filter(a => a && a[0] === 'k').length, pad = Input.assign.filter(a => a && a[0] === 'g').length;
+    $('ctrlM').innerHTML = kb && !pad ? 'Tab: next line · Esc: menu &amp; hints' : kb ? 'Y / Tab: next line · Start / Esc: menu' : 'Y: next line · Start: menu &amp; hints'; }
+}
+// what each player's buttons do, for the device they actually hold
+function keysFor(d, who) {
+  const pw = who ? 'push' : 'hold to pull';
+  if (d === 'k1') return [['WASD', 'move'], ['Space', 'jump'], ['E', pw]];
+  if (d === 'k2') return [['Arrows', 'move'], ['/', 'jump'], ['.', pw]];
+  if (d && /L$/.test(d)) return [['Left stick', 'move'], ['LB', 'jump'], ['LT', pw]];
+  if (d && /R$/.test(d)) return [['Right stick', 'move'], ['RB', 'jump'], ['RT', pw]];
+  return [['Stick', 'move'], ['A', 'jump'], ['X or B', pw]];
+}
+function controlsCard() {
+  const one = (who) => {
+    const d = Input.assign[who], nm = who ? 'Nut' : 'Bolt';
+    const rows = keysFor(d, who).map(([k, v]) => `<tr><td><kbd>${k}</kbd></td><td>${v}</td></tr>`).join('');
+    const tip = who ? 'Push near Bolt to launch him. Push a crate to throw it. Push while standing on iron to rocket up.'
+      : 'Pull Nut, crates, rings and wall magnets. Let go to drop. Nut can ride on your head.';
+    return `<div class="ck ${who ? 'n' : 'b'}"><h3>${nm}</h3><table>${rows}</table><p>${tip}</p></div>`;
+  };
+  return `${one(0)}${one(1)}<p class="tiny">Y / Tab: next narrator line · Start / Esc: this menu</p>`;
 }
 function pauseMenu(note) {
   mode = 'paused'; SFX.stopAll();
   openMenu({
-    title: 'Paused', sub: note || `${lvName(levelIdx)}: ${ALL[levelIdx].name}`, back: resume,
+    title: 'Paused', sub: note || `${lvName(levelIdx)}: ${ALL[levelIdx].name}`, back: resume, side: controlsCard(),
     items: [
       { label: 'Resume', act: resume },
       { label: 'Ask Margaret for a hint', act: () => { resume(); narr.say(hint || 'My advice: try things. Pull things. Push things. Stand on things. That is basically the job.', true); } },
@@ -248,7 +268,7 @@ function pauseMenu(note) {
     ],
   });
 }
-function startLevelCtrlText() { const sp = Input.split(); $('ctrlB').innerHTML = `<b>Bolt</b> ${sp ? 'left stick · LB jump · LT pull' : 'A jump · hold X pull'}`; $('ctrlN').innerHTML = `<b>Nut</b> ${sp ? 'right stick · RB jump · RT push' : 'A jump · X push'}`; }
+function startLevelCtrlText() { const t = who => keysFor(Input.assign[who], who).slice(1).map(([k, v]) => `${k} ${v}`).join(' · '); $('ctrlB').innerHTML = `<b>Bolt</b> ${t(0)}`; $('ctrlN').innerHTML = `<b>Nut</b> ${t(1)}`; }
 function resume() { closeMenu(); mode = 'play'; }
 
 function say(key, who, cd = 12) {
@@ -261,8 +281,8 @@ function say(key, who, cd = 12) {
 function handleEvents(evts) {
   for (const e of evts) {
     switch (e.type) {
-      case 'jump': SFX.jump(e.who); break;
-      case 'land': SFX.land(); { const p = world.players[e.who]; view.burst(p.pos.x, p.pos.y - p.half.y, p.pos.z, 0xffffff, 6, 2.5, 1, 0.35); } break;
+      case 'jump': SFX.jump(e.who); view.hop(e.who); break;
+      case 'land': SFX.land(e.v); { const p = world.players[e.who]; view.land(e.who, e.v); if (e.v > 7) view.burst(p.pos.x, p.pos.y - p.half.y, p.pos.z, 0xd8cdb8, Math.round(4 + e.v * 0.4), 2.5, 1, 0.35); if (e.v > 14) view.shake(0.06); } break;
       case 'pull': SFX.pullStart(); Input.rumble(0, 0.2, 80); if (!firsts.pull) { firsts.pull = 1; if (levelIdx >= 1) narr.sayIfQuiet(LINES.pullFirst); } break;
       case 'pull-end': SFX.pullEnd(); break;
       case 'pull-miss': SFX.pullMiss(); break;
@@ -366,6 +386,7 @@ function frame(now) {
         for (let i = 0; i < 2; i++) if (ins[i]) { ins[i].jumpP = !!latch[i].jumpP; ins[i].powerP = !!latch[i].powerP; latch[i] = {}; }
         step(world, ins, 1 / 60);
         handleEvents(world.events);
+        footsteps(1 / 60);
         accumulator -= 1 / 60; steps++;
       }
       if (steps === 5) accumulator = 0;
@@ -383,8 +404,20 @@ function frame(now) {
     idleStep(dt);
   }
   narr.update(dt);
+  document.body.classList.toggle('paused', mode === 'paused');
   view.draw(world, dt, { title: mode === 'title' || mode === 'join' || mode === 'credits', showTarget: mode === 'play', cogsFound: save.cogs.includes(levelIdx) });
   view.adapt(dtMs);
+}
+// footstep sounds: one per stride while a robot walks on the ground
+const stride = [0, 0];
+function footsteps(dt) {
+  for (const p of world.players) {
+    const sp = Math.hypot(p.vel.x, p.vel.z);
+    if (!p.alive || !p.grounded || sp < 1.2 || (p.ground && p.ground.oil)) { stride[p.id] = Math.min(stride[p.id], 0.5); continue; }
+    stride[p.id] += sp * dt;
+    const len = p.id ? 0.75 : 1.0;
+    if (stride[p.id] >= len) { stride[p.id] -= len; SFX.step(p.id, !!(p.ground && p.ground.iron)); }
+  }
 }
 function idleStep(dt) {
   // little title-screen ambience: the robots bounce now and then

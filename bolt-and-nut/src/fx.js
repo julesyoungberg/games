@@ -38,7 +38,7 @@ function rivet(g, x, y, rad) {
 export function makeSurfaces() {
   // floor tile: one 2 m tile, bevelled edges and grout
   const tile = make(256, (g, S, r) => {
-    grime(g, S, r, 242, 10, 8);
+    grime(g, S, r, 242, 10, 3);
     g.fillStyle = grey(168); g.fillRect(0, 0, S, 5); g.fillRect(0, 0, 5, S);
     g.fillStyle = grey(255); g.fillRect(5, 5, S - 5, 3); g.fillRect(5, 5, 3, S - 5);
     g.fillStyle = grey(212); g.fillRect(5, S - 4, S - 5, 4); g.fillRect(S - 4, 5, 4, S - 5);

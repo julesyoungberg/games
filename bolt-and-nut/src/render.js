@@ -5,6 +5,25 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+
+// final colour grade: gentle S-curve, warm highlights / cool shadows, soft vignette, faint film grain
+const GradeShader = {
+  uniforms: { tDiffuse: { value: null }, time: { value: 0 }, vig: { value: 0.28 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float time; uniform float vig; varying vec2 vUv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+    void main(){
+      vec3 c = texture2D(tDiffuse, vUv).rgb;
+      float l = dot(c, vec3(0.299, 0.587, 0.114));
+      c = mix(vec3(l), c, 1.07);                                   // a touch more colour
+      c = c + (c - c * c) * 0.18 * (c - 0.5) * 2.0;                 // soft S-curve
+      c += mix(vec3(-0.012, 0.0, 0.02), vec3(0.02, 0.008, -0.015), smoothstep(0.2, 0.8, l)); // split tone
+      vec2 d = vUv - 0.5; c *= 1.0 - vig * smoothstep(0.35, 0.95, length(d * vec2(1.15, 1.0)));
+      c += (h(vUv * 913.0 + fract(time) * 37.0) - 0.5) * 0.018;    // grain
+      gl_FragColor = vec4(clamp(c, 0.0, 1.0), 1.0);
+    }`,
+};
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { makeSurfaces, gradientTex, hallTex } from './fx.js';
 import { makeBolt, makeNut } from './robots.js';
@@ -190,6 +209,7 @@ export class View {
       this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.5, 0.4, 1.15);
       this.composer.addPass(this.bloom);
       this.composer.addPass(new OutputPass());
+      this.grade = new ShaderPass(GradeShader); this.composer.addPass(this.grade);
     }
     for (const sh of this.pShadows || []) sh.visible = !f;
   }
@@ -234,11 +254,11 @@ export class View {
     this.hemi.intensity = dark ? 0.95 : 1.25;
     if (F) {
       // fancy: a gradient sky, a warm key light with real shadows, a cool rim light
-      const bg = col(th.bg), top = bg.clone().lerp(col(dark ? 0x0a0c18 : 0xffffff), dark ? 0.5 : 0.35), bot = bg.clone().multiplyScalar(dark ? 0.55 : 0.78);
+      const bg = col(th.bg).lerp(col(dark ? 0x10121e : 0x6a6258), dark ? 0.1 : 0.22), top = bg.clone().lerp(col(dark ? 0x0a0c18 : 0xfff6e8), dark ? 0.5 : 0.2), bot = bg.clone().multiplyScalar(dark ? 0.55 : 0.7);
       if (this.skyTex) this.skyTex.dispose();
       this.skyTex = gradientTex('#' + top.getHexString(), '#' + bg.getHexString(), '#' + bot.getHexString());
       this.scene.background = this.skyTex;
-      this.scene.fog = new THREE.Fog(th.bg, 26, 105);
+      this.scene.fog = new THREE.Fog(bg.getHex(), 26, 105); // a little deeper than the level colour, so the hall recedes
       this.hemi.intensity = dark ? 0.45 : 0.45;
       this.sun.color.set(dark ? 0xc8c0ff : 0xfff1dc); this.sun.intensity = dark ? 2.2 : 3.0;
       this.fill.intensity = dark ? 0.9 : 0.6; this.fill.color.set(dark ? 0x7f9cff : 0xcfe0ff);
@@ -265,6 +285,7 @@ export class View {
       g2.p.splice(q, 18); g2.n.splice(q, 18); g2.c.splice(q, 18); g2.u.splice(q / 3 * 2, 12); // drop the duplicate top
     };
     const T = { f1: col(th.f1), f2: col(th.f2), side: col(th.side), wall: col(th.wall), shelf: col(th.shelf), iron1: col(0x4a4f5a), iron2: col(0x3d424c), ironSide: col(0x353943), lip: col(0xffffff).lerp(col(th.f1), 0.4), fan: col(0x51586a), pipe: col(th.pipe) };
+    if (F) { for (const k of ['f1', 'f2', 'lip']) T[k].multiplyScalar(0.82); } // lit floors read as white paper otherwise
     for (const s of w.solids) {
       if (s.kind !== 'static' || s.style === 'plate') continue;
       const mn = [s.min.x, s.min.y, s.min.z], mx = [s.max.x, s.max.y, s.max.z];
@@ -668,7 +689,7 @@ export class View {
     }
     for (const c of this.cpMeshes) { c.bulbM.color.set(c.cp.hit ? 0x9dffb0 : 0x777777); c.bulbM.emissive.set(c.cp.hit ? 0x2ec48f : 0x000000); c.bulbM.emissiveIntensity = this.fancy ? 2.5 : 1; }
     if (this.scenery) { // haze starts just behind the action, so the background layers fade with depth
-      const cd = this.camPos.distanceTo(this.camLook); this.scene.fog.near = cd + 6; this.scene.fog.far = cd + 70;
+      const cd = this.camPos.distanceTo(this.camLook); this.scene.fog.near = cd + 6; this.scene.fog.far = cd + 62;
     }
     if (this.scenery) this.scenery.update(t, dt, this.camLook); else for (const g of this.gears) g.rotation.z += g.userData.speed * dt;
     // particles
@@ -687,9 +708,13 @@ export class View {
       // the shadow camera follows the view, snapped to whole shadow texels so edges don't shimmer
       const sz = 48 / 2048, lx = Math.round(this.camLook.x / sz) * sz, lz = Math.round(this.camLook.z / sz) * sz, ly = Math.round(this.camLook.y / sz) * sz;
       this.sun.target.position.set(lx, ly, lz); this.sun.position.set(lx - 9, ly + 20, lz + 12);
+      if (this.grade) this.grade.uniforms.time.value = this.time;
       this.composer.render(dt);
     } else this.renderer.render(this.scene, this.camera);
   }
+  // squash on a landing (harder landing, bigger squash) and stretch on a jump
+  land(who, v) { const R = who ? this.nut : this.bolt; if (R) R.landK = Math.max(0.6, Math.min(1.8, v / 9)); }
+  hop(who) { const R = who ? this.nut : this.bolt; if (R) { R.hopT = 0.12; R.land = 0; } }
   poseRobot(R, p, dt, w, who) {
     R.root.position.set(p.pos.x, p.pos.y, p.pos.z);
     const moving = Math.hypot(p.vel.x, p.vel.z) > 0.3 || !p.grounded;
@@ -703,15 +728,19 @@ export class View {
     R.walk = (R.walk || 0) + sp * dt * 2.2;
     const air = !p.grounded;
     let sq = 1;
-    if (p.grounded && !R.wasG) R.land = 0.18;
+    if (p.grounded && !R.wasG) { R.land = 0.18; R.landK = R.landK || 1; }
     R.wasG = p.grounded;
-    if (R.land > 0) { R.land -= dt; sq = 1 - R.land * 1.2; }
     if (air) sq = 1 + Math.max(-0.12, Math.min(0.15, p.vel.y * 0.012));
+    if (R.land > 0) { R.land -= dt; sq = 1 - Math.max(0, R.land) * 1.2 * (R.landK || 1); if (R.land <= 0) R.landK = 0; }
+    if (R.hopT > 0) { R.hopT -= dt; sq = Math.max(sq, 1 + R.hopT * 1.4); }
     if (p.pulledBy || (p.target && p.target.kind === 'anchor')) sq = 1 + Math.sin(this.time * 20) * 0.04;
     R.body.scale.set(1 / Math.sqrt(sq), sq, 1 / Math.sqrt(sq));
     R.body.position.y = (sq - 1) * -0.3 + (p.grounded && sp > 0.5 ? Math.abs(Math.sin(R.walk * 2)) * 0.06 : 0);
     if (R.still > 0.4) R.body.position.y += Math.sin(this.time * 2.4 + who * 1.7) * 0.02; // idle breathing
-    R.body.rotation.x = p.grounded ? Math.min(0.15, sp * 0.02) : 0;
+    // lean into speed changes: forward when starting off, back when braking
+    const acc = dt > 0 ? (sp - (R.lastSp || 0)) / dt : 0; R.lastSp = sp;
+    R.lean = (R.lean || 0) + (Math.max(-0.12, Math.min(0.12, acc * 0.006)) - (R.lean || 0)) * Math.min(1, dt * 10);
+    R.body.rotation.x = (p.grounded ? Math.min(0.15, sp * 0.02) : 0) + R.lean;
     R.feet.forEach((f, i) => { f.position.z = 0.03 + (p.grounded ? Math.sin(R.walk * 2 + i * Math.PI) * Math.min(0.15, sp * 0.03) : 0.05); });
     // blink
     R.blinkT = (R.blinkT ?? 2 + Math.random() * 3) - dt;

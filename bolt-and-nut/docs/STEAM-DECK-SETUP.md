@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.0.0)
+## What's in this version (1.1.0)
+Phone controllers work here too (open couch-coop-games.vercel.app/pad on a phone and type the code from the join screen). Footsteps, a factory soundscape and heavier landings. The robots squash harder on big drops and lean when they start and stop. The pause menu now shows each player's buttons for the device they're holding. A colour grade and deeper haze give the picture more depth, and bright floors glare less.
+
+## 1.0.0
 New: four shifts (Quarterly Reset, Night Watch, Open Plan Office, and a new finale, Closing Time) and three Overtime puzzles (Staff Limbo, Team Building, Air Mail).
 
 Fixes from playtesting: button presses are never dropped any more (jump, pull and push), holding X keeps trying to pull until something is in range, a push pressed a moment early still fires, and Margaret skips lines about areas you've already left. The exit glows less, levels fade in, and there's a proper ending screen. Saves are now stored by level name, so new shifts never mix up your progress.
