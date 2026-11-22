@@ -4044,6 +4044,10 @@ function drawHills(g, hills) {
 }
 // a faint landmark on the far hills for each long chapter, so every place looks like somewhere
 function chapterOf(idx) { for (let i = idx; i >= 0; i--) { const d = LEVELS[i]; if (!d || d.challenge || d.secret) return null; if (d.chapter) return d.chapter; if (!d.cont) return null; } return null; }
+// each long chapter's night sky has its own faint colour
+const SKY_TINT = { 'The Stockroom': 'rgba(150,100,50,0.35)', 'The Gallery': 'rgba(170,150,110,0.3)', 'Backstage': 'rgba(170,40,70,0.35)', 'The Observatory': 'rgba(40,60,170,0.4)',
+  'The Music Room': 'rgba(150,70,160,0.35)', 'The Print Shop': 'rgba(90,90,100,0.35)', 'The Lighthouse': 'rgba(30,100,170,0.4)', 'The Clocktower': 'rgba(150,120,50,0.35)',
+  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)' };
 const SIL = '#150f29', GLOW = 'rgba(255,226,170,0.3)';
 const LANDMARKS = {
   'The Stockroom': g => { g.fillStyle = SIL; g.beginPath(); g.moveTo(140, 600); for (let i = 0; i < 5; i++) { g.lineTo(140 + i * 60, 500); g.lineTo(200 + i * 60, 470); g.lineTo(200 + i * 60, 500); } g.lineTo(440, 600); g.fill(); g.fillStyle = GLOW; for (let i = 0; i < 4; i++) g.fillRect(170 + i * 66, 530, 14, 10); },
@@ -4074,7 +4078,8 @@ function openClip() {
 function buildStatic() {
   lctx.clearRect(0, 0, W, H); ictx.clearRect(0, 0, W, H);
   lctx.drawImage(bgCanvas, 0, 0);
-  const lm = LANDMARKS[chapterOf(lv.idx)]; if (lm) { lctx.save(); lm(lctx); lctx.restore(); drawHills(lctx, HILLS.slice(1)); }
+  const chn = chapterOf(lv.idx), lm = LANDMARKS[chn]; if (lm) { lctx.save(); lm(lctx); lctx.restore(); drawHills(lctx, HILLS.slice(1)); }
+  if (SKY_TINT[chn]) { lctx.save(); lctx.globalCompositeOperation = 'soft-light'; lctx.fillStyle = SKY_TINT[chn]; lctx.fillRect(0, 0, W, H); lctx.restore(); }
   for (const h of lv.hooks) {
     const hx = h.tx * T + T / 2, hy = h.ty * T;
     let top = h.ty; while (top > 0 && tileAt(h.tx, top - 1) !== '#') top--;
