@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.86'; // keep in step with package.json
+const GAME_VERSION = '1.0.87'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -5701,6 +5701,38 @@ const LEVELS = [
       [150, "Shade holds the first plate while Wick runs to the second. Then Shade skates for the exit, and Wick follows once Shade is through."],
     ],
     outro: "Not a single skid into the thorns. Or several, and you just aren't telling me.",
+  },
+  { name: "Last Train", sub: "Two doors, one timer, a long platform.", ambient: 0.6, challenge: true, unlockAt: 82,
+    map: [
+      '################################',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........#...............#..#.#',
+      '#.........P...............P..Q.#',
+      '#.........P...............P..Q.#',
+      '#WtS......P...............P.yQE#',
+      '#####^^########^^##^^##^^#######',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Both teal doors answer to the plate by the start. Five seconds after you step off, they shut.",
+      "The far door is a long way off. Think of it as the last train home.",
+    ],
+    hints: [
+      [150, "Wick holds the plate while Shade goes all the way to the pink plate. Then Wick runs flat out and jumps every pit without stopping."],
+    ],
+    outro: "You made the last train. The narrator missed it once. The narrator does not want to talk about it.",
   },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
