@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#120e26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Couch Pad</title>
+<style>
+:root { --acc: #ffd27a; --bg: #120e26; --fg: #f4ead8; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 600 16px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; overscroll-behavior: none; }
+body { touch-action: none; }
+.screen { position: fixed; inset: 0; display: none; }
+.screen.on { display: flex; }
+/* connect screen */
+#connect { flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 20px; text-align: center; touch-action: manipulation; }
+#connect h1 { margin: 0; font-size: 28px; color: var(--acc); }
+#connect p { margin: 0; max-width: 340px; opacity: .8; font-weight: 500; }
+#code { width: 220px; font: 800 44px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: 10px; text-align: center; text-transform: uppercase; padding: 10px 0 10px 10px; border-radius: 14px; border: 2px solid var(--acc); background: #1d1838; color: #fff; -webkit-user-select: text; user-select: text; }
+#go { font: 800 20px system-ui, sans-serif; padding: 12px 40px; border-radius: 99px; border: 0; background: var(--acc); color: #140f24; }
+#status { min-height: 2.6em; font-weight: 500; opacity: .9; }
+/* pad screen */
+#pad { flex-direction: column; }
+#bar { display: flex; align-items: center; gap: 10px; padding: max(8px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) 6px max(14px, env(safe-area-inset-left)); font-size: 15px; }
+#who { color: var(--acc); font-weight: 800; }
+#game { opacity: .75; font-weight: 500; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#dot { width: 10px; height: 10px; border-radius: 50%; background: #e66; flex: 0 0 auto; }
+#dot.direct { background: #6e6; } #dot.relay { background: #ec5; }
+.small { font: 700 13px system-ui, sans-serif; padding: 6px 12px; border-radius: 99px; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); color: var(--fg); }
+#zones { flex: 1; display: flex; position: relative; }
+#left, #right { flex: 1; position: relative; }
+#left { border-right: 1px dashed rgba(255,255,255,.08); }
+#hintL { position: absolute; left: 0; right: 0; top: 45%; text-align: center; opacity: .35; font-weight: 500; pointer-events: none; }
+#stick { position: absolute; width: 150px; height: 150px; margin: -75px 0 0 -75px; border-radius: 50%; border: 3px solid rgba(255,255,255,.25); background: rgba(255,255,255,.05); display: none; pointer-events: none; }
+#knob { position: absolute; left: 50%; top: 50%; width: 64px; height: 64px; margin: -32px 0 0 -32px; border-radius: 50%; background: var(--acc); opacity: .9; }
+.btn { position: absolute; width: var(--s); height: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 3px solid rgba(255,255,255,.35); background: rgba(255,255,255,.08); color: #fff; }
+.btn .l { font: 800 calc(var(--s) * .34) system-ui, sans-serif; line-height: 1; }
+.btn .t { font: 700 calc(var(--s) * .14) system-ui, sans-serif; opacity: .85; margin-top: 2px; text-align: center; max-width: 92%; }
+.btn.down { background: var(--acc); color: #140f24; border-color: var(--acc); transform: scale(.94); }
+#bA { border-color: #6fd08c; } #bB { border-color: #e76a6a; } #bX { border-color: #5fa8ef; } #bY { border-color: #f0cf55; }
+#bStart { position: absolute; left: 8%; top: 6px; border-radius: 99px; padding: 8px 18px; font: 800 14px system-ui, sans-serif; border: 2px solid rgba(255,255,255,.35); background: rgba(255,255,255,.08); color: #fff; }
+#bStart.down { background: var(--acc); color: #140f24; }
+#turn { position: fixed; left: 0; right: 0; bottom: 10px; text-align: center; font-size: 13px; opacity: .55; font-weight: 500; pointer-events: none; display: none; }
+@media (orientation: portrait) { #turn { display: block; } }
+</style>
+</head>
+<body>
+<div id="connect" class="screen on">
+  <h1>📱 Couch Pad</h1>
+  <p>Turn this phone into a controller. Type the room code shown on the game screen.</p>
+  <input id="code" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="····">
+  <button id="go">Connect</button>
+  <div id="status"></div>
+</div>
+<div id="pad" class="screen">
+  <div id="bar"><span id="dot"></span><span id="who">Phone</span><span id="game"></span><button class="small" id="fs">Full screen</button><button class="small" id="leave">Leave</button></div>
+  <div id="zones">
+    <div id="left"><div id="hintL">Drag anywhere here to move</div><div id="stick"><div id="knob"></div></div></div>
+    <div id="right">
+      <div id="bStart" data-b="start">Pause</div>
+      <div class="btn" id="bY" data-b="y"><span class="l">Y</span><span class="t"></span></div>
+      <div class="btn" id="bX" data-b="x"><span class="l">X</span><span class="t"></span></div>
+      <div class="btn" id="bB" data-b="b"><span class="l">B</span><span class="t"></span></div>
+      <div class="btn" id="bA" data-b="a"><span class="l">A</span><span class="t"></span></div>
+    </div>
+  </div>
+  <div id="turn">Tip: turn your phone sideways</div>
+</div>
+<script src="couch-pads.js"></script>
+<script>
+'use strict';
+const CP = window.CouchPads;
+const $ = id => document.getElementById(id);
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) { } } };
+let cid = store.get('couch-pad-cid');
+if (!cid) { cid = Math.random().toString(36).slice(2, 10); store.set('couch-pad-cid', cid); }
+
+/* ---------------- connection ---------------- */
+let room = '', sig = null, link = null, hostId = '', myId = '', relay = false, lastHost = 0, helloAt = 0, joinedAt = 0, watchdog = null, lastLinkTry = 0;
+function setStatus(t) { $('status').textContent = t; }
+function dot() { $('dot').className = link && link.ok ? 'direct' : relay && lastHost && performance.now() - lastHost < 5000 ? 'relay' : ''; }
+
+function connect(code) {
+  room = CP.cleanCode(code);
+  if (room.length !== 4) { setStatus('Room codes are 4 letters.'); return; }
+  store.set('couch-pad-room', room);
+  if (location.hash !== '#' + room) history.replaceState(null, '', location.pathname + location.search + '#' + room);
+  disconnect(true);
+  hostId = CP.PREFIX + room;
+  myId = hostId + '-' + Math.random().toString(36).slice(2, 8);
+  setStatus('Connecting…');
+  joinedAt = performance.now(); helloAt = 0; lastHost = 0; relay = CP.FORCE_RELAY;
+  sig = CP.Signal(() => myId, onSignal, st => {
+    if (st === 'open') startLink();
+    else if (st === 'taken') myId = hostId + '-' + Math.random().toString(36).slice(2, 8);
+    else if (!helloAt) setStatus('Can\'t reach the connection service. Is this phone online?');
+  });
+  clearInterval(watchdog);
+  watchdog = setInterval(check, 1000);
+}
+function disconnect(quiet) {
+  if (sig && hostId) sig.send(hostId, 'CANDIDATE', { k: 'bye', cid });
+  if (link) link.close(); link = null;
+  if (sig) sig.close(); sig = null;
+  clearInterval(watchdog);
+  if (!quiet) { showPad(false); setStatus(''); }
+}
+function startLink() {
+  if (relay) { sig.send(hostId, 'CANDIDATE', { k: 'join', cid }); return; }
+  newLink();
+}
+function newLink() {
+  lastLinkTry = performance.now();
+  if (link) link.close();
+  const l = CP.Link((type, p) => sig && sig.send(hostId, type, Object.assign({ cid }, p)), true,
+    () => { dot(); }, m => onHost(m), () => { if (link === l) link = null; dot(); });
+  link = l;
+}
+function onSignal(src, p) {
+  if (src !== hostId) return;
+  if ((p.k === 'answer' || p.k === 'ice') && link) link.signal(p);
+  else if (p.k === 'msg' && p.m) onHost(p.m);
+}
+function check() {
+  if (!sig) return;
+  const now = performance.now();
+  // no direct link after a few seconds: send inputs through the signaling socket instead
+  if (!relay && !(link && link.ok) && sig.open && now - joinedAt > 6000) { relay = true; sig.send(hostId, 'CANDIDATE', { k: 'join', cid }); }
+  // keep trying for a direct link in the background (it's faster than the relay)
+  if (!CP.FORCE_RELAY && relay && !(link && link.ok) && sig.open && now - lastLinkTry > 10000) newLink();
+  if (!helloAt && now - joinedAt > 9000 && sig.open) setStatus(`No game found with code ${room}. Check the code on the game screen.`);
+  // host went quiet (game reloaded, phone slept): start over with the same code
+  if (helloAt && now - lastHost > 6000 && sig.open) { joinedAt = now; helloAt = 0; relay = CP.FORCE_RELAY; startLink(); $('who').textContent = 'Reconnecting…'; }
+  dot();
+}
+
+/* ---------------- messages from the game ---------------- */
+const NAMES = { a: 'A', b: 'B', x: 'X', y: 'Y' };
+function onHost(m) {
+  lastHost = performance.now();
+  if (m.k === 'hello') {
+    helloAt = lastHost;
+    document.documentElement.style.setProperty('--acc', m.accent || '#ffd27a');
+    $('who').textContent = 'Phone ' + (m.slot + 1);
+    $('game').textContent = m.game ? '· ' + m.game : '';
+    const L = m.labels || {};
+    for (const k in NAMES) $('b' + NAMES[k]).querySelector('.t').textContent = L[k] || '';
+    $('bStart').textContent = L.start || 'Start';
+    showPad(true); dot();
+  } else if (m.k === 'rumble') { try { navigator.vibrate && navigator.vibrate(Math.max(15, Math.min(400, m.ms | 0))); } catch (e) { } }
+  else if (m.k === 'full') { setStatus('That game already has 4 phones connected.'); disconnect(true); }
+}
+
+/* ---------------- input ---------------- */
+let seq = 0, bits = 0, ax = 0, ay = 0, lastSent = '', lastSendT = 0;
+function send(force) {
+  if (!sig || !helloAt) return;
+  const key = bits + ':' + ax + ':' + ay;
+  const now = performance.now();
+  if (!force && key === lastSent && now - lastSendT < 100) return;
+  lastSent = key; lastSendT = now;
+  const o = { k: 'in', s: seq++, b: bits, x: ax, y: ay };
+  if (!(link && link.send(o)) && relay) sig.send(hostId, 'CANDIDATE', { k: 'msg', cid, m: o });
+}
+setInterval(() => send(false), 50);
+
+const BTN = CP.BTN;
+const btnEls = [...document.querySelectorAll('[data-b]')];
+let stickId = null, stickX = 0, stickY = 0;
+const R = 60;
+function layout() {
+  const r = $('right').getBoundingClientRect();
+  const s = Math.min(r.width * 0.3, r.height * 0.3, 118);
+  const cx = r.width * 0.55, cy = r.height * 0.56, d = s * 0.95;
+  const pos = { bA: [cx, cy + d], bB: [cx + d, cy], bX: [cx - d, cy], bY: [cx, cy - d] };
+  for (const id in pos) { const e = $(id); e.style.setProperty('--s', s + 'px'); e.style.left = pos[id][0] + 'px'; e.style.top = pos[id][1] + 'px'; }
+}
+addEventListener('resize', layout);
+function touches(e) {
+  e.preventDefault();
+  let b = 0, stickSeen = false;
+  const left = $('left').getBoundingClientRect();
+  for (const t of e.touches) {
+    if (t.identifier === stickId) { stickSeen = true; moveStick(t.clientX, t.clientY); continue; }
+    if (stickId === null && t.clientX < left.right && e.type === 'touchstart' && [...e.changedTouches].some(c => c.identifier === t.identifier)) {
+      stickId = t.identifier; stickSeen = true; stickX = t.clientX; stickY = t.clientY;
+      const st = $('stick'); st.style.display = 'block'; st.style.left = (t.clientX - left.left) + 'px'; st.style.top = (t.clientY - left.top) + 'px';
+      $('hintL').style.display = 'none'; moveStick(t.clientX, t.clientY); continue;
+    }
+    // buttons: whichever button is under the finger (sliding between buttons works); a near miss picks the closest
+    let best = null, bd = Infinity;
+    for (const el of btnEls) {
+      const r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const dd = Math.hypot(t.clientX - cx, t.clientY - cy), lim = el.id === 'bStart' ? Math.max(r.width, r.height) * 0.7 : r.width * 0.75;
+      if (dd < lim && dd < bd) { bd = dd; best = el; }
+    }
+    if (best) b |= 1 << BTN[best.dataset.b];
+  }
+  if (!stickSeen && stickId !== null) { stickId = null; ax = ay = 0; $('stick').style.display = 'none'; }
+  const newly = b & ~bits;
+  if (newly) try { navigator.vibrate && navigator.vibrate(8); } catch (err) { }
+  bits = b;
+  for (const el of btnEls) el.classList.toggle('down', !!(bits & (1 << BTN[el.dataset.b])));
+  send(true);
+}
+function moveStick(x, y) {
+  let dx = x - stickX, dy = y - stickY; const d = Math.hypot(dx, dy);
+  if (d > R) { // the base follows the finger, so a long drag never gets stuck at the edge
+    stickX += dx * (1 - R / d); stickY += dy * (1 - R / d); dx = x - stickX; dy = y - stickY;
+    const left = $('left').getBoundingClientRect(), st = $('stick');
+    st.style.left = (stickX - left.left) + 'px'; st.style.top = (stickY - left.top) + 'px';
+  }
+  ax = Math.round(dx / R * 100) / 100; ay = Math.round(dy / R * 100) / 100;
+  $('knob').style.transform = `translate(${dx}px,${dy}px)`;
+}
+for (const ev of ['touchstart', 'touchmove', 'touchend', 'touchcancel']) $('zones').addEventListener(ev, touches, { passive: false });
+// mouse fallback (testing on a computer)
+let mouseDown = false;
+$('zones').addEventListener('mousedown', e => { mouseDown = true; mouseTouch(e, 'touchstart'); });
+addEventListener('mousemove', e => { if (mouseDown) mouseTouch(e, 'touchmove'); });
+addEventListener('mouseup', e => { if (mouseDown) { mouseDown = false; mouseTouch(e, 'touchend'); } });
+function mouseTouch(e, type) {
+  const t = { identifier: 999, clientX: e.clientX, clientY: e.clientY };
+  touches({ type, preventDefault() { }, touches: type === 'touchend' ? [] : [t], changedTouches: [t] });
+}
+
+/* ---------------- screens ---------------- */
+let wake = null;
+function showPad(on) {
+  $('connect').classList.toggle('on', !on); $('pad').classList.toggle('on', on);
+  if (on) { layout(); keepAwake(); }
+}
+async function keepAwake() { try { if (navigator.wakeLock && !wake) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) { } }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { keepAwake(); if (sig) { sig.reconnect(); } } });
+$('fs').onclick = () => {
+  const d = document.documentElement;
+  try { if (!document.fullscreenElement) (d.requestFullscreen || d.webkitRequestFullscreen).call(d).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => { })).catch(() => { }); else document.exitFullscreen(); } catch (e) { }
+};
+$('leave').onclick = () => disconnect(false);
+$('go').onclick = () => connect($('code').value);
+$('code').addEventListener('keydown', e => { if (e.key === 'Enter') connect($('code').value); });
+$('code').addEventListener('input', () => { const v = CP.cleanCode($('code').value); $('code').value = v; if (v.length === 4) connect(v); });
+const fromUrl = CP.cleanCode(location.hash.slice(1));
+$('code').value = fromUrl || store.get('couch-pad-room') || '';
+if (fromUrl.length === 4) connect(fromUrl);
+window.__pad = { get bits() { return bits; }, get link() { return link; }, get relay() { return relay; }, get helloAt() { return helloAt; } };
+</script>
+</body>
+</html>

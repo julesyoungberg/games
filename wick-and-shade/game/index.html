@@ -18,6 +18,8 @@
 </head>
 <body>
 <canvas id="game" width="1280" height="800"></canvas>
+<!-- phone controllers (shared/couch-pads, copied in at build time); the game runs fine without it -->
+<script src="couch-pads.js"></script>
 <script>
 'use strict';
 /* =========================================================================
@@ -3963,6 +3965,15 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
+/* phone controllers: phones show up as extra gamepads (see shared/couch-pads) */
+if (window.CouchPads) CouchPads.init({
+  game: 'Wick & Shade', accent: '#ffd27a',
+  labels: { a: 'Jump', b: 'Use', x: 'Use', y: 'Narrator', start: 'Pause' },
+  keys: [], // the join screen already explains two-on-one-keyboard
+  hintAt: 'bottom-right',
+  screen: () => gstate === 'join' ? 'join' : (gstate === 'title' || gstate === 'pause') ? 'hint' : null,
+});
 
 /* test hooks (harmless in normal play) */
 window.__ws = {
