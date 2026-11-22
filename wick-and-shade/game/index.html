@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.83'; // keep in step with package.json
+const GAME_VERSION = '1.0.84'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -230,8 +230,10 @@ const MOODS = {
 
 /* ------------------------------ input ------------------------------ */
 const keys = new Set();
+// keys tapped since the last frame count as held for that frame, so a very quick tap is never lost
+const taps = new Set();
 addEventListener('keydown', e => {
-  keys.add(e.code); initAudio();
+  keys.add(e.code); if (!e.repeat) taps.add(e.code); initAudio();
   if (/^(Space|Arrow|Slash|Period|Enter|Tab|Backspace)/.test(e.code)) e.preventDefault();
   if (e.code === 'F11' || (e.code === 'KeyF' && e.ctrlKey)) { e.preventDefault(); toggleFullscreen(); }
 });
@@ -241,11 +243,22 @@ addEventListener('blur', () => keys.clear());
 function toggleFullscreen() {
   try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); } catch (e) {}
 }
-const K = c => keys.has(c) ? 1 : 0;
+const K = c => keys.has(c) || taps.has(c) ? 1 : 0;
 let pads = [];
 const prevIn = {}, devState = {};
 function axis(p, i) { const v = p.axes[i] || 0; return Math.abs(v) < 0.3 ? 0 : v; }
-function Bt(p, i) { const b = p.buttons[i]; return !!b && (b.pressed || b.value > 0.5); }
+function Bt(p, i) { const b = p.buttons[i]; return !!b && (b.pressed || b.value > 0.5) || !!(padTaps[p.index] && padTaps[p.index][i]); }
+// Controllers are also sampled between frames, so a quick button tap during a slow frame still registers
+const padTaps = {};
+setInterval(() => {
+  if (!navigator.getGamepads) return;
+  let ps; try { ps = navigator.getGamepads(); } catch (e) { return; }
+  for (const p of ps) {
+    if (!p || !p.connected) continue;
+    const t = padTaps[p.index] || (padTaps[p.index] = []);
+    for (let i = 0; i < Math.min(12, p.buttons.length); i++) { const b = p.buttons[i]; if (b && (b.pressed || b.value > 0.5)) t[i] = true; }
+  }
+}, 6);
 function readRaw(dev) {
   if (dev === 'k1') return { mx: K('KeyD') - K('KeyA'), my: K('KeyS') - K('KeyW'), jump: K('Space'), act: K('KeyE') || K('KeyQ'), pause: K('Escape') || K('KeyP'), alt: K('KeyY') || K('Tab') || K('KeyN') };
   if (dev === 'k2') return { mx: K('ArrowRight') - K('ArrowLeft'), my: K('ArrowDown') - K('ArrowUp'), jump: K('Enter') || K('Slash') || K('ShiftRight') || K('Numpad0'), act: K('Period') || K('ControlRight') || K('NumpadDecimal'), pause: K('Backspace'), alt: 0 };
@@ -281,6 +294,7 @@ function pollInput() {
     if (s.any && d[0] === 'g' && pads[parseInt(d.slice(1))]) uiFam = padFamily(pads[parseInt(d.slice(1))].id);
     devState[d] = s; prevIn[d] = { jump: r.jump, act: r.act, pause: r.pause, alt: r.alt, dx, dy };
   }
+  taps.clear(); for (const k in padTaps) padTaps[k] = [];
   if (any) initAudio();
   // a controller that drops out and comes back (Bluetooth sleep, low battery) can return under a different
   // index: follow it by its name so the player keeps their character
@@ -344,7 +358,9 @@ const narr = {
   // Each line has a kind. 'guide' lines (intros, hints) wait for Y/Tab. 'quip' lines (reactions, deaths, outros)
   // close by themselves after a while. Any line that has gone stale, because the players moved on before reading it,
   // is dropped instead of being shown late.
-  q: [], cur: null, meta: null, shown: 0, hold: 0, alpha: 0, deathCd: 0,
+  q: [], cur: null, meta: null, shown: 0, hold: 0, alpha: 0, deathCd: 0, log: [],
+  // every line from this room, heard or skipped, so the pause menu can show anything you missed
+  remember(e, skipped) { if (e.lvl < 0 || this.log.some(o => o.e === e)) return; this.log.push({ e, skipped }); if (this.log.length > 30) this.log.shift(); },
   say(t, opt = {}) {
     if (opt.ifQuiet && (this.cur || this.q.length)) return false;
     const e = { t, kind: opt.kind || (opt.ifQuiet ? 'quip' : 'guide'), at: lv ? lv.time : 0, prog: lv ? lv.prog || 0 : 0, lvl: lv ? lv.idx : -1, ttl: opt.ttl };
@@ -363,11 +379,11 @@ const narr = {
   },
   update(dt) {
     this.deathCd -= dt;
-    this.q = this.q.filter(e => !this.stale(e, false));
+    this.q = this.q.filter(e => { const st = this.stale(e, false); if (st && e.kind !== 'quip') this.remember(e, true); return !st; });
     if (this.cur && this.stale(this.meta, true) && this.shown >= this.cur.length && this.hold > 1.2) this.cur = null;
     if (!this.cur) {
       this.alpha = Math.max(0, this.alpha - dt * 3);
-      if (this.q.length) { this.meta = this.q.shift(); this.cur = this.meta.t; this.shown = 0; this.hold = 0; }
+      if (this.q.length) { this.meta = this.q.shift(); this.cur = this.meta.t; this.shown = 0; this.hold = 0; this.remember(this.meta, false); }
       else return;
     }
     this.alpha = Math.min(1, this.alpha + dt * 4);
@@ -390,7 +406,7 @@ const narr = {
 // Players did something that moves the room along (a plate, a well, a hook, a new part of the room).
 // Lines queued before enough of these are stale.
 applyOpts();
-function narrProgress() { if (lv) lv.prog = (lv.prog || 0) + 1; }
+function narrProgress() { if (lv) { lv.prog = (lv.prog || 0) + 1; lv.progAt = lv.time; } }
 const LINES = {
   death: [
     '{name} has discovered the thorns. Thoroughly.',
@@ -6127,7 +6143,7 @@ function updatePlayer(p, inp, dt, i) {
   // jump
   // a press is remembered for a moment, so a jump pressed just before landing (or while Shade is still
   // floating up through shadow) still happens
-  if (inp && inp.jumpP) p.jbuf = shade && p.embedded ? 0.4 : 0.16;
+  if (inp && inp.jumpP) p.jbuf = shade && p.embedded ? 0.4 : 0.2;
   p.jbuf -= dt; p.jumpT = (p.jumpT || 0) + dt;
   p.coyote = p.onGround || p.inVent ? 0.12 : p.coyote - dt; // you can jump off the top of the steam too
   if (p.jbuf > 0 && p.coyote > 0 && !p.embedded) {
@@ -6384,15 +6400,18 @@ function updateParticles(dt) {
 /* ------------------------------ update ------------------------------ */
 function updatePlay(dt) {
   const mi = menuInput();
-  if (mi.pause && !lv.complete) { gstate = 'pause'; pauseOpts = false; pauseGuide = false; menuSel = 0; SFX.menu(); return; }
+  if (mi.pause && !lv.complete) { gstate = 'pause'; pauseOpts = false; pauseGuide = false; pauseLog = false; menuSel = 0; SFX.menu(); return; }
   lv.time += dt; lv.fadeIn = Math.max(0, lv.fadeIn - dt * 1.4);
   const inps = [getInp(0), getInp(1)];
   const active = inps.some(s => s && (s.mx || s.my || s.jump || s.act));
   lv.idle = active ? 0 : lv.idle + dt;
   if (lv.idle > 32) { lv.idle = -40; narr.say(pick(LINES.idle), { ifQuiet: true }); }
-  (lv.def.hints || []).forEach(([t, txt], k) => {
-    if (lv.time > t && !lv.hintsFired.has(k) && !lv.complete) { lv.hintsFired.add(k); narr.say(txt, { kind: 'hint' }); }
-  });
+  // Hints are for when you're stuck: one only plays after 12 seconds without progress, and when several are due
+  // only the newest plays, since the earlier ones are probably about something you've already done
+  if (!lv.complete && lv.time - (lv.progAt || 0) > 12) {
+    let due = -1; (lv.def.hints || []).forEach(([t], k) => { if (lv.time > t && !lv.hintsFired.has(k)) due = k; });
+    if (due >= 0) { for (let k = 0; k <= due; k++) lv.hintsFired.add(k); narr.say(lv.def.hints[due][1], { kind: 'hint' }); }
+  }
   updatePlates();
   updateCrates(dt);
   if (!lv.complete) updatePlayer(players[0], inps[0], dt, 0);
@@ -7450,12 +7469,13 @@ function renderJoin(t) {
   ctx.fillText(`Controllers connected: ${nPads}   ·   ${bn('B')} / E: back`, W / 2, 668);
   if (assign[0] && assign[1]) { ctx.fillStyle = '#ffd27a'; ctx.font = 'italic 26px ' + FONT_B; ctx.fillText('Here we go…', W / 2, 730); }
 }
-let pauseOpts = false, pauseGuide = false;
+let pauseOpts = false, pauseGuide = false, pauseLog = false;
 function pauseItems() {
-  if (pauseOpts) return optionItems(() => { pauseOpts = false; menuSel = 5; });
+  if (pauseOpts) return optionItems(() => { pauseOpts = false; menuSel = 6; });
   return [
     { label: 'Resume', act: () => { gstate = 'play'; } },
     { label: 'Field guide', act: () => { pauseGuide = true; SFX.menu(); } },
+    { label: 'Narrator lines', act: () => { pauseLog = true; SFX.menu(); } },
     { label: 'Ask for a hint', act: askHint },
     { label: (CH_ROOMS[CH_NUM[lv.idx]] || 1) > 1 ? 'Restart room' : 'Restart chapter', act: () => { startLevel(lv.idx, { quietIntro: true }); } },
     { label: lv && lv.def.challenge ? 'Back to challenges' : (CH_ROOMS[CH_NUM[lv.idx]] || 1) > 1 ? 'Skip room' : 'Skip chapter', act: () => { narr.clear(); if (lv.def.challenge) { gstate = 'title'; menuMode = 'challenges'; menuSel = 0; return; } narr.say(LINES.skip); lv.exitKind = 'E'; nextLevel(); } },
@@ -7476,15 +7496,42 @@ function askHint() {
 }
 function updatePause(dt) {
   const mi = menuInput();
-  if (pauseGuide) { if (mi.pause || mi.back || mi.ok) { pauseGuide = false; SFX.menu(); } return; }
-  if (pauseOpts && (mi.pause || mi.back)) { pauseOpts = false; menuSel = 5; SFX.menu(); return; }
+  if (pauseGuide || pauseLog) { if (mi.pause || mi.back || mi.ok) { pauseGuide = pauseLog = false; SFX.menu(); } return; }
+  if (pauseOpts && (mi.pause || mi.back)) { pauseOpts = false; menuSel = 6; SFX.menu(); return; }
   if (mi.pause || mi.back) { gstate = 'play'; SFX.menu(); return; }
   runMenu(pauseItems(), mi);
+}
+// the narrator's lines from this room, newest at the bottom; ones you skipped past are marked
+function drawNarrLog() {
+  const w = 900, x = (W - w) / 2, items = narr.log.filter(o => lv && o.e.lvl === lv.idx);
+  ctx.font = 'italic 21px ' + FONT_B;
+  const rows = [];
+  for (const o of items) { const ls = wrap(o.e.t, w - 180); rows.push({ ls, skipped: o.skipped }); }
+  let total = 0, keep = [];
+  for (let i = rows.length - 1; i >= 0; i--) { const hh = rows[i].ls.length * 28 + 18; if (total + hh > 470) break; total += hh; keep.unshift(rows[i]); }
+  const h = Math.max(120, total + 40), y = 150;
+  ctx.fillStyle = 'rgba(7,6,15,0.6)'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 40; ctx.fillStyle = 'rgba(14,10,28,0.94)'; roundRect(x, y, w, h, 18); ctx.fill(); ctx.restore();
+  ctx.strokeStyle = 'rgba(255,210,122,0.22)'; ctx.lineWidth = 1.5; roundRect(x, y, w, h, 18); ctx.stroke();
+  ctx.textAlign = 'center'; ctx.fillStyle = '#f6ecd6'; ctx.font = 'italic 44px ' + FONT_D; ctx.fillText('The narrator said', W / 2, 118);
+  ctx.textAlign = 'left';
+  if (!keep.length) { ctx.font = 'italic 21px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.6)'; ctx.fillText('Nothing yet in this room. A rare silence.', x + 40, y + 70); }
+  let yy = y + 44;
+  keep.forEach((r, k) => {
+    const newest = k === keep.length - 1;
+    ctx.font = 'italic 21px ' + FONT_B; ctx.fillStyle = newest ? '#f4ead8' : 'rgba(244,234,216,0.72)';
+    r.ls.forEach((ln, j) => ctx.fillText(ln, x + 40, yy + j * 28));
+    if (r.skipped) { ctx.font = '600 10px ' + FONT_B; ctx.letterSpacing = '2px'; ctx.fillStyle = '#d9b77a'; ctx.textAlign = 'right'; ctx.fillText('SKIPPED', x + w - 36, yy - 4); ctx.textAlign = 'left'; ctx.letterSpacing = '0px'; }
+    yy += r.ls.length * 28 + 18;
+  });
+  ctx.textAlign = 'center'; ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.6)';
+  ctx.fillText('Press ' + bn('A') + ' or ' + bn('B') + ' to go back', W / 2, H - 30);
 }
 function renderPause(t) {
   renderPlay(t);
   ctx.fillStyle = 'rgba(7,6,15,0.72)'; ctx.fillRect(0, 0, W, H);
   if (pauseGuide) { drawFieldGuide(); return; }
+  if (pauseLog) { drawNarrLog(); return; }
   const ph = 130 + pauseItems().length * (pauseItems().length > 7 ? 42 : 46);
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 40; ctx.fillStyle = 'rgba(14,10,28,0.92)'; roundRect(W / 2 - 300, 110, 600, ph + 40, 18); ctx.fill(); ctx.restore();
   ctx.strokeStyle = 'rgba(255,210,122,0.22)'; ctx.lineWidth = 1.5; roundRect(W / 2 - 300, 110, 600, ph + 40, 18); ctx.stroke();
