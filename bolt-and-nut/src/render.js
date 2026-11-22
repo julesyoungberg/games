@@ -530,7 +530,7 @@ export class View {
       // glowing light strips down the inside of the frame
       const strip = LM({ color: 0x8be9c1, emissive: 0x2ec48f, emissiveIntensity: 1.5 });
       for (const s of [-1, 1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.6, 0.12), strip); st.position.set(s * (sx / 2 + 0.01), 1.9, -sz / 2 + 0.36); g.add(st); }
-      padMat.map = this.fancy ? this.surf.plate : null; padMat.color.set(this.fancy ? 0x5fcf9f : 0x8be9c1);
+      padMat.map = this.fancy ? this.surf.plate : null; padMat.emissiveMap = this.fancy ? this.surf.plate : null; padMat.color.set(this.fancy ? 0x3c8a6e : 0x8be9c1); if (this.fancy) { padMat.roughness = 0.35; padMat.metalness = 0.3; }
       const beam = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(sx, sz) / 2, Math.min(sx, sz) / 2, 3.5, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0x8be9c1, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
       beam.position.y = 1.8; g.add(beam);
       this.level.add(g); this.exitMesh = { g, padMat, beam, strip };

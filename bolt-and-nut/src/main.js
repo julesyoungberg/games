@@ -197,6 +197,7 @@ function renderJoin() {
   $('joinCards').innerHTML = card(0, 'Bolt', 'bolt', 'Pulls things. Partner, crates, anchors.') + card(1, 'Nut', 'nut', 'Pushes things. Hard. Rockets off iron.');
   $('joinFoot').innerHTML = a[0] && a[1] ? '<b>A</b> to clock in · <b>X</b> to swap · <b>B</b> to start over' : 'Each player presses <b>A</b> on their own controller. One controller? Press <b>Y</b> to share it. Keyboard: <b>Space</b> (WASD) and <b>/</b> (arrows).';
 }
+let joinT = 0;
 function joinUpdate() {
   const devs = Input.devices(), a = Input.assign;
   const m = Input.menu();
@@ -212,8 +213,11 @@ function joinUpdate() {
     if (/[LR]$/.test(d)) continue;
     const used = a.some(x => x && x.replace(/[LR]$/, '') === d);
     if (d[0] === 'g' && s.narrP && !a[0] && !a[1]) { Input.assign = [d + 'L', d + 'R']; SFX.join(0); SFX.join(1); joinOk = 0; renderJoin(); return; }
+    // some setups show one controller twice (e.g. Steam Input): a second "press" arriving while
+    // Bolt's own button is still held a moment after he joined is the same press, not a new player
+    if (s.jumpP && !used && a[0] && a[0][0] === 'g' && devs[a[0]] && devs[a[0]].jump && performance.now() - joinT < 400) continue;
     if (s.jumpP && !used) {
-      const slot = a[0] ? 1 : 0; a[slot] = d; SFX.join(slot); joinOk = 0; renderJoin();
+      const slot = a[0] ? 1 : 0; a[slot] = d; SFX.join(slot); joinOk = 0; joinT = performance.now(); renderJoin();
       return;
     }
   }

@@ -43,6 +43,18 @@ export const Input = {
     const devs = ['k1', 'k2'];
     pads.forEach((p, i) => { if (p && p.connected) devs.push('g' + i, 'g' + i + 'L', 'g' + i + 'R'); });
     for (const d in state) if (!devs.includes(d)) delete state[d];
+    // a Bluetooth controller that drops and reconnects can come back under a new number:
+    // follow it there (matched by its name), so a player keeps their controller
+    this.ids = this.ids || [null, null];
+    for (let i = 0; i < 2; i++) {
+      const m = this.assign[i] && /^g(\d+)([LR]?)$/.exec(this.assign[i]); if (!m) continue;
+      const p = pads[+m[1]];
+      if (p && p.connected) { this.ids[i] = p.id; continue; }
+      if (!this.ids[i]) continue;
+      const other = this.assign[1 - i] && this.assign[1 - i].replace(/[LR]$/, '');
+      const j = pads.findIndex((q, k) => q && q.connected && q.id === this.ids[i] && 'g' + k !== other);
+      if (j >= 0) { const was = 'g' + m[1]; this.assign[i] = 'g' + j + m[2]; if (m[2] && this.assign[1 - i] && this.assign[1 - i].startsWith(was)) this.assign[1 - i] = 'g' + j + this.assign[1 - i].slice(was.length); }
+    }
     this.anyPressed = false;
     for (const d of devs) {
       const r = raw(d); if (!r) continue;
