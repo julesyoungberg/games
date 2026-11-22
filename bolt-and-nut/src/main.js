@@ -290,7 +290,7 @@ function handleEvents(evts) {
       case 'land': SFX.land(e.v); { const p = world.players[e.who]; view.land(e.who, e.v); if (e.v > 7) view.burst(p.pos.x, p.pos.y - p.half.y, p.pos.z, 0xd8cdb8, Math.round(4 + e.v * 0.4), 2.5, 1, 0.35); if (e.v > 14) view.shake(0.06); } break;
       case 'pull': SFX.pullStart(); Input.rumble(0, 0.2, 80); if (!firsts.pull) { firsts.pull = 1; if (levelIdx >= 1) narr.sayIfQuiet(LINES.pullFirst); } break;
       case 'pull-end': SFX.pullEnd(); break;
-      case 'pull-miss': SFX.pullMiss(); break;
+      case 'pull-miss': SFX.pullMiss(); { const p = world.players[0]; view.burst(p.pos.x, p.pos.y + 1, p.pos.z, 0xff6b6b, 6, 1.5, 1, 0.3); } break; // the press registered: nothing in range yet (holding keeps trying)
       case 'hang': SFX.hang(); if (!firsts.hang) { firsts.hang = 1; narr.sayIfQuiet(LINES.hangFirst); } break;
       case 'push': SFX.push(); view.pushRing(e.x, e.y - 0.2, e.z); Input.rumble(1, 0.35, 120); break;
       case 'launch': SFX.launch(); view.shake(0.18); Input.rumble(e.who, 0.6, 200); if (!firsts.launch) { firsts.launch = 1; narr.sayIfQuiet(LINES.launchFirst); } lastProgress = performance.now(); break;
