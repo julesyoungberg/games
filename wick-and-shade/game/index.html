@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.61'; // keep in step with package.json
+const GAME_VERSION = '1.0.62'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -102,7 +102,7 @@ const SFX = {
   candle() { tone(240, 0.28, 'sine', 0.07, 520); tone(1320, 0.4, 'sine', 0.025, 1180, 0.08); },
   mirror(on) { on ? (tone(1568, 0.3, 'sine', 0.022), tone(2093, 0.35, 'sine', 0.016, null, 0.05)) : tone(1175, 0.12, 'sine', 0.012, 880); },
   vent() { tone(900, 0.35, 'sawtooth', 0.008, 400); tone(300, 0.3, 'sine', 0.02, 520); },
-  drum() { tone(110, 0.22, 'sine', 0.16, 55); tone(220, 0.08, 'triangle', 0.05, 160); },
+  drum(soft) { const k = soft ? 0.4 : 1; tone(110, 0.22, 'sine', 0.16 * k, 55); tone(220, 0.08, 'triangle', 0.05 * k, 160); },
 };
 function startMusic() {
   const g = AC.createGain(); g.gain.value = 0.03;
@@ -4705,7 +4705,7 @@ function updateLantern(dt) {
   for (let i = 0; i < n; i++) { moveX(lantern, lantern.vx * sdt); moveY(lantern, lantern.vy * sdt); }
   if (lantern.onDrum && vyb > 150) {
     // a lantern dropped or thrown onto a drum gets thrown right back up
-    lantern.vy = -880; lantern.onGround = false; lv.drumHit[lantern.onDrum - 1] = lv.time; SFX.drum();
+    lantern.vy = -880; lantern.onGround = false; lv.drumHit[lantern.onDrum - 1] = lv.time; SFX.drum(true);
   }
   if (lantern.onGround) { lantern.vx *= Math.pow(0.0005, dt); const bd = beltUnder(lantern); if (bd) moveX(lantern, bd * BELT * dt); }
   if (lantern.y > H + 60) { returnLantern(); return; }
@@ -5008,8 +5008,8 @@ function updatePlates() {
     if (pl.sensor) {
       // light sensor: counts as pressed while the lantern's light reaches it
       d = isLit(pl.tx, pl.ty) && !isShadow((pl.tx + 0.5) * T, (pl.ty + 0.5) * T); who = 'light';
-      if (d && !pl.down) { SFX.plate(true); by = who; }
-      if (!d && pl.down) SFX.plate(false);
+      const quiet = lv.time - (pl.sndT || -9) < 1.5; if (d !== pl.down && !quiet) { SFX.plate(d); pl.sndT = lv.time; }
+      if (d && !pl.down) by = who;
       pl.down = d; if (d) any[pl.ch] = true;
       continue;
     }
@@ -5023,7 +5023,7 @@ function updatePlates() {
   for (const ch of ['p', 'q']) {
     if (any[ch] !== lv.pressed[ch]) {
       lv.pressed[ch] = any[ch];
-      SFX.door();
+      if (lv.time - ((lv.doorSnd || {})[ch] || -9) > 1.2) { SFX.door(); (lv.doorSnd = lv.doorSnd || {})[ch] = lv.time; }
       if (any[ch]) {
         lv.plateCount++; narrProgress();
         const line = lv.def.onPlate ? lv.def.onPlate(lv.plateCount, by, ch) : null;
