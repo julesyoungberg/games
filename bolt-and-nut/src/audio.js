@@ -146,8 +146,9 @@ function pad(base, when, dur) {
 
 // ---- music: soft pentatonic arpeggio + bass, slowly mutating
 const music = {
-  on: false, step: 0, next: 0, timer: null, mood: 0,
+  on: false, step: 0, next: 0, timer: null, mood: 0, key: 0, bpm: 96,
   scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21],
+  scales: [[0, 2, 4, 7, 9, 12, 14, 16, 19, 21], [0, 3, 5, 7, 10, 12, 15, 17, 19, 22], [0, 2, 4, 7, 11, 12, 14, 16, 19, 23]],
   start() {
     if (this.on || !ctx) return;
     this.on = true; this.next = ctx.currentTime + 0.1;
@@ -157,10 +158,10 @@ const music = {
   newPattern() { const p = []; for (let i = 0; i < 16; i++) p.push(Math.random() < 0.72 ? Math.floor(Math.random() * this.scale.length) : -1); return p; },
   schedule() {
     if (!ctx) return;
-    const spb = 60 / 96 / 2; // eighth notes
+    const spb = 60 / this.bpm / 2; // eighth notes
     while (this.next < ctx.currentTime + 0.25) {
       const s = this.step % 16, bar = Math.floor(this.step / 16);
-      const roots = [0, -3, 5, -5][bar % 4] + (this.mood ? -2 : 0);
+      const roots = [0, -3, 5, -5][bar % 4] + this.key + (this.mood ? -2 : 0);
       const base = 220 * Math.pow(2, roots / 12);
       const n = this.pattern[s];
       const w = this.next - ctx.currentTime;
@@ -173,4 +174,11 @@ const music = {
     }
   },
 };
-export function setMood(m) { music.mood = m; }
+// each level theme gets its own key, pace and colour of scale, so areas sound different
+export function setMood(m, theme = 0, fast = false) {
+  music.mood = m;
+  music.key = [0, 2, -3, 5, -2, -5, 3, -4, 1, 4, -1, -6][theme % 12];
+  music.bpm = (m ? 84 : 96 + (theme % 3) * 4) + (fast ? 8 : 0);
+  const sc = m ? music.scales[1] : music.scales[theme % 4 === 3 ? 2 : 0];
+  if (sc !== music.scale) { music.scale = sc; music.pattern = music.newPattern(); }
+}

@@ -490,7 +490,15 @@ export class View {
       }
       const sheet = new THREE.Mesh(new THREE.BoxGeometry(alongZ ? 0.02 : len, l.max.y - l.min.y, alongZ ? len : 0.02), new THREE.MeshBasicMaterial({ color: 0xff2e4d, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false }));
       sheet.position.set(cx, (l.min.y + l.max.y) / 2, cz); g.add(sheet);
-      this.level.add(g); return { l, g, beams, sheet, beamMat };
+      // red light spilling onto the floor either side of the laser (fancy look only)
+      let spill = null;
+      if (FANCY && Math.abs(groundAt(w, cx, cz, l.min.y + 0.5) - l.min.y) < 0.4) { // only for lasers that start at the floor
+        if (!this.spillTex) { const c = document.createElement('canvas'); c.width = 4; c.height = 64; const x = c.getContext('2d'); const gr = x.createLinearGradient(0, 0, 0, 64); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.5, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 4, 64); this.spillTex = new THREE.CanvasTexture(c); this.spillTex.userData.keep = true; }
+        spill = new THREE.Mesh(new THREE.PlaneGeometry(alongZ ? 2.6 : len + 0.6, alongZ ? len + 0.6 : 2.6), new THREE.MeshBasicMaterial({ color: 0xff2e4d, map: this.spillTex, transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false }));
+        if (alongZ) { spill.material.map = this.spillTex.clone(); spill.material.map.center.set(0.5, 0.5); spill.material.map.rotation = Math.PI / 2; spill.material.map.userData.keep = false; }
+        spill.rotation.x = -Math.PI / 2; spill.position.set(cx, l.min.y + 0.03, cz); g.add(spill);
+      }
+      this.level.add(g); return { l, g, beams, sheet, beamMat, spill };
     });
     this.fanMeshes = w.fans.map(f => {
       const g = new THREE.Group();
@@ -668,6 +676,7 @@ export class View {
       lm.beams.forEach((b, i) => { b.visible = vis; b.scale.set(1, warn && !l.on ? 0.4 : 1 + Math.sin(t * 40 + i) * 0.2, 1); });
       lm.beamMat.opacity = l.on ? 0.85 + Math.sin(t * 50) * 0.1 : 0.35;
       lm.sheet.visible = l.on;
+      if (lm.spill) { lm.spill.visible = vis; lm.spill.material.opacity = l.on ? 0.28 + Math.sin(t * 50) * 0.03 : 0.08; }
     }
     // golden cogs (faded if found on an earlier visit)
     for (const c of this.cogMeshes) {

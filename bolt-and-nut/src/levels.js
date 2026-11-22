@@ -12,6 +12,10 @@ import S19 from './lv/s19.js';
 import S20 from './lv/s20.js';
 import S21 from './lv/s21.js';
 import S22 from './lv/s22.js';
+import S25 from './lv/s25.js';
+import S26 from './lv/s26.js';
+import S27 from './lv/s27.js';
+import S28 from './lv/s28.js';
 import S23 from './lv/s23.js';
 import S24 from './lv/s24.js';
 import OT1 from './lv/ot1.js';
@@ -609,6 +613,10 @@ export const LEVELS = [
   S20,
   S21,
   S22,
+  S25,
+  S26,
+  S27,
+  S28,
   S23,
   S24,
 ];

@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.4.0)
+## What's in this version (1.5.0)
+Four new shifts late in the year, before the finale: Stocktake, Clearing the Air, Topping Out and Clearance. 28 shifts in all. The music now changes key and pace from area to area, and lasers light the floor around them.
+
+## 1.4.0
 Three more Overtime puzzles: Blue Sky Thinking (after shift 8), Hat Trick (after shift 20) and Final Exam, the hardest puzzle in the game, which opens once you finish the year. The Overtime list is now in the order the puzzles open. The title screen names the shift you'll continue, and each level opens with a short camera glide.
 
 ## 1.3.0
@@ -49,14 +52,14 @@ Three new Overtime puzzles: Climate Control, Rush Hour and Parcel Force. Best ti
 Phone controllers work here too (open couch-coop-games.vercel.app/pad on a phone and type the code from the join screen). Footsteps, a factory soundscape and heavier landings. The robots squash harder on big drops and lean when they start and stop. The pause menu now shows each player's buttons for the device they're holding. A colour grade and deeper haze give the picture more depth, and bright floors glare less.
 
 ## 1.0.0
-New: four shifts (Quarterly Reset, Night Watch, Open Plan Office, and a new finale, Closing Time) and three Overtime puzzles (Staff Limbo, Team Building, Air Mail).
+New: four shifts (Quarterly Reset, Night Watch, Stocktake, Clearing the Air, Topping Out, Clearance, Open Plan Office, and a new finale, Closing Time) and three Overtime puzzles (Staff Limbo, Team Building, Air Mail).
 
 Fixes from playtesting: button presses are never dropped any more (jump, pull and push), holding X keeps trying to pull until something is in range, a push pressed a moment early still fires, and Margaret skips lines about areas you've already left. The exit glows less, levels fade in, and there's a proper ending screen. Saves are now stored by level name, so new shifts never mix up your progress.
 
 ## Earlier (0.6.0)
 **New look:** a deep factory hall around every level (gears, columns, catwalks, lamps, dust in the air), new fonts, preview pictures and Done/cog badges in the level menus, real textures, metal and paint that catch the light, proper shadows, a soft glow on lights and lasers, and new robot models. On a computer that draws with software (no graphics card), the game keeps the old simple look so it stays smooth. Options, Picture quality: "sharp" always uses the new look, "fast" always uses the simple one.
 
-24 shifts (levels), about 4 hours for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review, Shipping, Switchboard, Lumber Room, Night Shift, Spring Cleaning, Quality Control, Pneumatic Post, Overhead Rail, Slippery Slope, Cling Film, Mixed Signals, Year-End Review, Quarterly Reset, Night Watch, Open Plan Office, Closing Time.
+28 shifts (levels), about 5 hours for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review, Shipping, Switchboard, Lumber Room, Night Shift, Spring Cleaning, Quality Control, Pneumatic Post, Overhead Rail, Slippery Slope, Cling Film, Mixed Signals, Year-End Review, Quarterly Reset, Night Watch, Stocktake, Clearing the Air, Topping Out, Clearance, Open Plan Office, Closing Time.
 
 Also **Overtime**: short, harder bonus puzzles on the title screen. They unlock as you finish shifts.
 

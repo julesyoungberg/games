@@ -224,7 +224,7 @@ function startLevel(i) {
   levelIdx = i; world = createWorld(i); view.build(world); closeMenu(); fadeIn();
   mode = 'play'; setScreen('hud'); narr.clear(); hint = null; firsts = {}; lineCd = {}; completeT = -1; accumulator = 0;
   lastProgress = performance.now(); idleSaid = 0; hudT = 0;
-  setMood(ALL[i].theme === 5 || ALL[i].theme === 11 ? 1 : 0);
+  setMood(ALL[i].theme === 5 || ALL[i].theme === 11 ? 1 : 0, ALL[i].theme || 0, !!ALL[i].ot);
   const L = ALL[i];
   $('bannerN').textContent = lvName(i); $('bannerT').textContent = L.name; $('bannerS').textContent = L.sub;
   $('banner').classList.remove('on'); void $('banner').offsetWidth; $('banner').classList.add('on');
