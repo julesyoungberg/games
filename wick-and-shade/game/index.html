@@ -46,7 +46,7 @@ function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)
 let run = { deaths: [0, 0], abandon: 0, throws: 0, waves: 0, start: 0 };
 // options (Options menu on the title screen and in the pause menu)
 const OPT_KEY = 'wick-and-shade-options-v1';
-let opts = { music: 6, sfx: 8, narrator: 'wait', rumble: true };
+let opts = { music: 6, sfx: 8, narrator: 'wait', rumble: true, speed: 100 };
 try { const o = JSON.parse(localStorage.getItem(OPT_KEY)); if (o && typeof o === 'object') opts = Object.assign(opts, o); } catch (e) {}
 function writeOpts() { try { localStorage.setItem(OPT_KEY, JSON.stringify(opts)); } catch (e) {} applyOpts(); }
 function applyOpts() {
@@ -5441,11 +5441,14 @@ function optionItems(back) {
   const vol = v => '◂ ' + '●'.repeat(v) + '○'.repeat(10 - v) + ' ▸';
   const step = (k, d) => { opts[k] = clamp(opts[k] + d, 0, 10); writeOpts(); SFX.menu(); };
   const flipN = () => { opts.narrator = opts.narrator === 'auto' ? 'wait' : 'auto'; writeOpts(); SFX.menu(); };
+  const SPEEDS = [100, 85, 70];
+  const flipS = d => { const i = Math.max(0, SPEEDS.indexOf(opts.speed)); opts.speed = SPEEDS[(i + (d || 1) + SPEEDS.length) % SPEEDS.length]; writeOpts(); SFX.menu(); };
   const flipR = () => { opts.rumble = !opts.rumble; writeOpts(); SFX.menu(); if (opts.rumble) { rumble(0, 0.5, 0.3, 150); rumble(1, 0.5, 0.3, 150); } };
   return [
     { label: 'Music   ' + vol(opts.music), adj: d => step('music', d), act: () => step('music', opts.music >= 10 ? -10 : 1) },
     { label: 'Sound   ' + vol(opts.sfx), adj: d => step('sfx', d), act: () => step('sfx', opts.sfx >= 10 ? -10 : 1) },
-    { label: 'Narrator   ◂ ' + (opts.narrator === 'auto' ? 'moves on by itself' : 'waits for Y') + ' ▸', adj: flipN, act: flipN },
+    { label: 'Narrator   ◂ ' + (opts.narrator === 'auto' ? 'moves on by itself' : 'waits for ' + bn('Y')) + ' ▸', adj: flipN, act: flipN },
+    { label: 'Game speed   ◂ ' + (opts.speed === 100 ? 'normal' : opts.speed + '%') + ' ▸', adj: flipS, act: () => flipS(1) },
     { label: 'Rumble   ◂ ' + (opts.rumble ? 'on' : 'off') + ' ▸', adj: flipR, act: flipR },
     { label: 'Back', act: back },
   ];
@@ -5848,7 +5851,7 @@ function step(dt) {
   gtime += dt;
   if (gstate === 'title') updateTitle(dt);
   else if (gstate === 'join') updateJoin(dt);
-  else if (gstate === 'play') updatePlay(dt);
+  else if (gstate === 'play') updatePlay(forced ? dt : dt * (opts.speed || 100) / 100);
   else if (gstate === 'pause') updatePause(dt);
   else if (gstate === 'credits') updateCredits(dt);
   if (gstate === 'play') { if (!forced && menuInput().alt) narr.advance(); narr.update(dt); }
