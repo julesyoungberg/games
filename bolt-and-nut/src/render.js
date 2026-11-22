@@ -289,7 +289,7 @@ export class View {
       g2.p.splice(q, 18); g2.n.splice(q, 18); g2.c.splice(q, 18); g2.u.splice(q / 3 * 2, 12); // drop the duplicate top
     };
     const T = { f1: col(th.f1), f2: col(th.f2), side: col(th.side), wall: col(th.wall), shelf: col(th.shelf), iron1: col(0x4a4f5a), iron2: col(0x3d424c), ironSide: col(0x353943), lip: col(0xffffff).lerp(col(th.f1), 0.4), fan: col(0x51586a), pipe: col(th.pipe) };
-    if (F) { for (const k of ['f1', 'f2', 'lip']) T[k].multiplyScalar(0.82); } // lit floors read as white paper otherwise
+    if (F) { for (const k of ['f1', 'f2', 'lip']) T[k].multiplyScalar(0.74); } // lit floors read as white paper otherwise
     for (const s of w.solids) {
       if (s.kind !== 'static' || s.style === 'plate') continue;
       const mn = [s.min.x, s.min.y, s.min.z], mx = [s.max.x, s.max.y, s.max.z];
