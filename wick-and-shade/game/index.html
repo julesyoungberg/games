@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.66'; // keep in step with package.json
+const GAME_VERSION = '1.0.67'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -413,6 +413,7 @@ const LINES = {
   candleFirst: 'A candle. Lit from the lantern, and it will stay lit long after the lantern has gone. Choose carefully where you leave a light behind.',
   wellFirst: 'Shade dove into the ink and came out of the other well. Wick, do not try that. You would just be a wet lantern.',
   ventFirst: 'A steam vent. Warm air goes up, and so do you. Hold down to sink. The lantern floats too, if you let go of it.',
+  iceFirst: 'Ice. Lovely, slippery ice. Stopping is more of a suggestion here.',
   drumFirst: 'A drum. Land on it and up you go. Hold down if you would rather just stand there and be normal.',
   skip: "Skipping, are we? Fine. I'll tell everyone you solved it brilliantly.",
   swap: "Oh, you've swapped. That's allowed. Nobody here is defined by their lantern.",
@@ -5178,6 +5179,11 @@ function updatePlayer(p, inp, dt, i) {
   const ice = p.onGround && iceUnder(p), acc = ice ? 650 : p.onGround ? 2800 : 1700;
   if (mx) { p.vx += mx * acc * dt; p.face = mx > 0 ? 1 : -1; }
   else { const f = (ice ? 420 : p.onGround ? 3000 : 700) * dt; p.vx = Math.abs(p.vx) <= f ? 0 : p.vx - Math.sign(p.vx) * f; }
+  if (ice) {
+    if (!flags.ice) { flags.ice = true; narr.say(LINES.iceFirst, { ifQuiet: true }); }
+    // skidding throws up a little ice
+    if (Math.abs(p.vx) > 90 && (!mx || Math.sign(mx) !== Math.sign(p.vx)) && Math.random() < dt * 30) lv.particles.push({ x: p.x + p.w / 2 + Math.sign(p.vx) * 8, y: p.y + p.h, vx: p.vx * 0.3 + rand(-30, 30), vy: rand(-90, -30), life: 0.35, max: 0.35, c: '#e6f2fa', s: 2 });
+  }
   p.vx = clamp(p.vx, -maxS, maxS);
   // jump
   // a press is remembered for a moment, so a jump pressed just before landing (or while Shade is still
