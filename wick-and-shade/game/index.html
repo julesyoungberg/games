@@ -44,24 +44,35 @@ let save = { unlocked: 0 };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && typeof s.unlocked === 'number') save = Object.assign(save, s); } catch (e) {}
 function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
 let run = { deaths: [0, 0], abandon: 0, throws: 0, waves: 0, start: 0 };
+// options (Options menu on the title screen and in the pause menu)
+const OPT_KEY = 'wick-and-shade-options-v1';
+let opts = { music: 6, sfx: 8, narrator: 'wait' };
+try { const o = JSON.parse(localStorage.getItem(OPT_KEY)); if (o && typeof o === 'object') opts = Object.assign(opts, o); } catch (e) {}
+function writeOpts() { try { localStorage.setItem(OPT_KEY, JSON.stringify(opts)); } catch (e) {} applyOpts(); }
+function applyOpts() {
+  if (musicBus) musicBus.gain.value = (opts.music / 10) ** 1.5 * 1.6;
+  if (sfxBus) sfxBus.gain.value = (opts.sfx / 10) ** 1.5;
+  if (typeof narr !== 'undefined') narr.autoAdvance = opts.narrator === 'auto';
+}
 
 /* ------------------------------ audio ------------------------------ */
-let AC = null, master = null;
+let AC = null, master = null, musicBus = null, sfxBus = null;
 function initAudio() {
   if (AC) { if (AC.state === 'suspended') AC.resume().catch(() => {}); return; }
   try {
     AC = new (window.AudioContext || window.webkitAudioContext)();
     master = AC.createGain(); master.gain.value = 0.55; master.connect(AC.destination);
+    musicBus = AC.createGain(); musicBus.connect(master); sfxBus = AC.createGain(); sfxBus.connect(master); applyOpts();
     startMusic();
   } catch (e) { AC = null; }
 }
-function tone(f, d, type = 'sine', v = 0.2, f2 = null, delay = 0) {
+function tone(f, d, type = 'sine', v = 0.2, f2 = null, delay = 0, bus = null) {
   if (!AC || AC.state !== 'running') return;
   const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t);
   if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
   g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-  o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.05);
+  o.connect(g); g.connect(bus || sfxBus || master); o.start(t); o.stop(t + d + 0.05);
 }
 const SFX = {
   jump() { tone(380, 0.13, 'triangle', 0.1, 640); },
@@ -84,7 +95,7 @@ const SFX = {
 function startMusic() {
   const g = AC.createGain(); g.gain.value = 0.03;
   const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
-  lp.connect(g); g.connect(master);
+  lp.connect(g); g.connect(musicBus);
   [55, 82.41, 110.0, 164.8].forEach((f, i) => {
     const o = AC.createOscillator(); o.type = i % 2 ? 'triangle' : 'sine'; o.frequency.value = f;
     const lfo = AC.createOscillator(); lfo.frequency.value = 0.04 + i * 0.025;
@@ -94,7 +105,7 @@ function startMusic() {
   const scale = [261.6, 293.7, 329.6, 392.0, 440.0, 523.3, 587.3, 659.3];
   setInterval(() => {
     if (!AC || AC.state !== 'running') return;
-    if (Math.random() < 0.5) { const f = pick(scale) * (Math.random() < 0.35 ? 0.5 : 1); tone(f, 2.2, 'sine', 0.03); }
+    if (Math.random() < 0.5) { const f = pick(scale) * (Math.random() < 0.35 ? 0.5 : 1); tone(f, 2.2, 'sine', 0.03, null, 0, musicBus); }
   }, 850);
 }
 
@@ -238,6 +249,7 @@ const narr = {
 };
 // Players did something that moves the room along (a plate, a well, a hook, a new part of the room).
 // Lines queued before enough of these are stale.
+applyOpts();
 function narrProgress() { if (lv) lv.prog = (lv.prog || 0) + 1; }
 const LINES = {
   death: [
@@ -3108,7 +3120,7 @@ function updateParticles(dt) {
 /* ------------------------------ update ------------------------------ */
 function updatePlay(dt) {
   const mi = menuInput();
-  if (mi.pause && !lv.complete) { gstate = 'pause'; menuSel = 0; SFX.menu(); return; }
+  if (mi.pause && !lv.complete) { gstate = 'pause'; pauseOpts = false; menuSel = 0; SFX.menu(); return; }
   lv.time += dt; lv.fadeIn = Math.max(0, lv.fadeIn - dt * 1.4);
   const inps = [getInp(0), getInp(1)];
   const active = inps.some(s => s && (s.mx || s.my || s.jump || s.act));
@@ -3147,6 +3159,17 @@ function buildBackground() {
   }
 }
 function isChalk(tx, ty) { const c = tileAt(tx, ty); return c === '#'; }
+// everything but chalk: shadows are drawn only here, so they never paint over solid stone
+function openClip() {
+  if (lv.openPath) return lv.openPath;
+  const P = new Path2D(); P.rect(0, 0, W, H);
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+    if (lv.grid[y][x] !== '#') continue;
+    let e = x; while (e + 1 < COLS && lv.grid[y][e + 1] === '#') e++;
+    P.rect(x * T, y * T, (e - x + 1) * T, T); x = e;
+  }
+  return (lv.openPath = P);
+}
 function buildStatic() {
   lctx.clearRect(0, 0, W, H); ictx.clearRect(0, 0, W, H);
   lctx.drawImage(bgCanvas, 0, 0);
@@ -3473,13 +3496,13 @@ function drawShadowsMulti(t) {
   if (!hatchPat) hatchPat = ctx.createPattern(hatch, 'repeat');
   try { hatchPat.setTransform(new DOMMatrix().translate((t * 12) % 20, 0)); } catch (e) {}
   smx.globalCompositeOperation = 'source-in'; smx.globalAlpha = 0.8; smx.fillStyle = hatchPat; smx.fillRect(0, 0, W, H); smx.globalAlpha = 1;
-  ctx.drawImage(smCv, 0, 0);
+  ctx.save(); ctx.clip(openClip(), 'evenodd'); ctx.drawImage(smCv, 0, 0); ctx.restore();
 }
 function drawShadows(t) {
   // One path of convex shadow volumes (same winding, so overlaps don't double up), filled straight onto the screen.
   const L = lv.light; if (!L || !lv.occAll.length) return;
   if (lv.lights && lv.lights.length > 1) return drawShadowsMulti(t);
-  ctx.save(); ctx.beginPath(); ctx.arc(L.x, L.y, RL, 0, TAU); ctx.clip();
+  ctx.save(); ctx.clip(openClip(), 'evenodd'); ctx.beginPath(); ctx.arc(L.x, L.y, RL, 0, TAU); ctx.clip();
   ctx.beginPath();
   for (const r of lv.occAll) {
     if (L.x > r.x && L.x < r.x + r.w && L.y > r.y && L.y < r.y + r.h) continue;
@@ -3586,6 +3609,21 @@ function drawHUD(t) {
     ctx.fillText(missing.map(i => players[i].name).join(' & ') + "'s controller disconnected", W / 2, H - 35);
   }
 }
+// dust drifting through the lantern light: only visible near a light, brighter closer to it
+const MOTES = Array.from({ length: 70 }, () => ({ x: Math.random() * 1280, y: Math.random() * 800, s: 0.6 + Math.random() * 1.4, vx: (Math.random() - 0.5) * 6, vy: -2 - Math.random() * 5, ph: Math.random() * 6.28 }));
+function drawMotes(t) {
+  if (!lv.lights || !lv.lights.length) return;
+  ctx.globalCompositeOperation = 'lighter';
+  for (const m of MOTES) {
+    const x = ((m.x + m.vx * t + Math.sin(t * 0.5 + m.ph) * 14) % W + W) % W, y = ((m.y + m.vy * t) % H + H) % H;
+    let a = 0;
+    for (const S of lv.lights) { const d = Math.hypot(x - S.x, y - S.y) / S.r; if (d < 1) a = Math.max(a, (1 - d) * (S.mirror ? 0.5 : 1)); }
+    if (a <= 0.02) continue;
+    ctx.fillStyle = `rgba(255,226,170,${(a * a * 0.55 * (0.6 + 0.4 * Math.sin(t * 2 + m.ph))).toFixed(3)})`;
+    ctx.fillRect(x, y, m.s, m.s);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
 function renderPlay(t) {
   ctx.drawImage(levelCanvas, 0, 0);
   drawDynamicTiles(t);
@@ -3606,6 +3644,7 @@ function renderPlay(t) {
     ctx.fillStyle = g; ctx.fillRect(L.x - 46, L.y - 46, 92, 92);
     ctx.globalCompositeOperation = 'source-over';
   }
+  drawMotes(t);
   drawParticles();
   drawHUD(t);
   drawNarrator();
@@ -3621,6 +3660,7 @@ function titleItems() {
   it.push({ label: 'New Game', act: () => { run = { deaths: [0, 0], abandon: 0, throws: 0, waves: 0, start: performance.now() }; flags = {}; goJoin(0); } });
   it.push({ label: 'Chapter Select', act: () => { menuMode = 'chapters'; menuSel = 0; } });
   if (CHALLENGES.some(challengeOpen)) it.push({ label: 'Challenges', act: () => { menuMode = 'challenges'; menuSel = 0; } });
+  it.push({ label: 'Options', act: () => { menuMode = 'options'; menuSel = 0; } });
   if (NATIVE) it.push({ label: 'Quit', act: quitGame }); else it.push({ label: 'Fullscreen', act: toggleFullscreen });
   return it;
 }
@@ -3649,13 +3689,26 @@ function challengeItems() {
   it.push({ label: 'Back', act: () => { menuMode = 'main'; menuSel = 0; } });
   return it;
 }
-const menuItemsFor = () => menuMode === 'chapters' ? chapterItems() : menuMode === 'rooms' ? roomItems() : menuMode === 'challenges' ? challengeItems() : titleItems();
+function optionItems(back) {
+  const vol = v => '◂ ' + '●'.repeat(v) + '○'.repeat(10 - v) + ' ▸';
+  const step = (k, d) => { opts[k] = clamp(opts[k] + d, 0, 10); writeOpts(); SFX.menu(); };
+  const flipN = () => { opts.narrator = opts.narrator === 'auto' ? 'wait' : 'auto'; writeOpts(); SFX.menu(); };
+  return [
+    { label: 'Music   ' + vol(opts.music), adj: d => step('music', d), act: () => step('music', opts.music >= 10 ? -10 : 1) },
+    { label: 'Sound   ' + vol(opts.sfx), adj: d => step('sfx', d), act: () => step('sfx', opts.sfx >= 10 ? -10 : 1) },
+    { label: 'Narrator   ◂ ' + (opts.narrator === 'auto' ? 'moves on by itself' : 'waits for Y') + ' ▸', adj: flipN, act: flipN },
+    { label: 'Back', act: back },
+  ];
+}
+const menuItemsFor = () => menuMode === 'options' ? optionItems(() => { menuMode = 'main'; menuSel = TITLE_OPT_IDX(); }) : menuMode === 'chapters' ? chapterItems() : menuMode === 'rooms' ? roomItems() : menuMode === 'challenges' ? challengeItems() : titleItems();
 function goJoin(idx) {
   pendingLevel = idx; SFX.ok();
   if (assign[0] && assign[1] && devState[assign[0]] && devState[assign[1]]) { narr.clear(); startLevel(idx); return; }
   assign = [null, null]; joinT = 0; gstate = 'join';
 }
+const TITLE_OPT_IDX = () => titleItems().findIndex(it => it.label === 'Options');
 function runMenu(items, mi) {
+  if (mi.navX && items[menuSel] && items[menuSel].adj) items[menuSel].adj(mi.navX);
   if (mi.navY) { menuSel = (menuSel + mi.navY + items.length) % items.length; SFX.menu(); }
   if (mi.ok) items[menuSel].act();
 }
@@ -3691,6 +3744,13 @@ function drawMiniLantern(x, y) {
 }
 function renderTitle(t) {
   ctx.drawImage(bgCanvas, 0, 0);
+  if (menuMode === 'options') {
+    ctx.textAlign = 'center'; ctx.font = 'italic 64px ' + FONT_D; ctx.fillStyle = '#f6ecd6'; ctx.fillText('Options', W / 2, 220);
+    ctx.font = 'italic 20px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.6)'; ctx.fillText('Left and right to change. Saved on this device.', W / 2, 262);
+    drawMenuList(menuItemsFor(), W / 2, 360);
+    ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.5)'; ctx.fillText('A / Space to choose  ·  D-pad / stick / arrows to move  ·  B / E to go back', W / 2, H - 30);
+    return;
+  }
   if (menuMode !== 'main') { drawBrowse(menuItemsFor(), t); return; }
   const lx = W / 2 + Math.sin(t * 0.6) * 260, ly = 330 + Math.sin(t * 1.1) * 30;
   ctx.globalCompositeOperation = 'lighter';
@@ -3829,7 +3889,9 @@ function updateJoin(dt) {
   joinT += dt;
   const mi = menuInput();
   if (mi.back && !assign[0]) { gstate = 'title'; menuMode = 'main'; SFX.menu(); return; }
-  if (mi.alt && mi.altDev) {
+  // a phone controller has no shoulder buttons to split into halves, so Y on a phone does nothing here
+  const altPhone = mi.altDev && /^g\d+$/.test(mi.altDev) && pads[+mi.altDev.slice(1)] && /^Phone/.test(pads[+mi.altDev.slice(1)].id);
+  if (mi.alt && mi.altDev && !altPhone) {
     if (mi.altDev === 'k1') assign = ['k1', 'k2'];
     else assign = [mi.altDev + 'L', mi.altDev + 'R'];
     SFX.ok(); joinT = 0;
@@ -3867,11 +3929,14 @@ function renderJoin(t) {
   ctx.fillText(`Controllers connected: ${nPads}   ·   B / E: back`, W / 2, 668);
   if (assign[0] && assign[1]) { ctx.fillStyle = '#ffd27a'; ctx.font = 'italic 26px ' + FONT_B; ctx.fillText('Here we go…', W / 2, 730); }
 }
+let pauseOpts = false;
 function pauseItems() {
+  if (pauseOpts) return optionItems(() => { pauseOpts = false; menuSel = 3; });
   return [
     { label: 'Resume', act: () => { gstate = 'play'; } },
     { label: (CH_ROOMS[CH_NUM[lv.idx]] || 1) > 1 ? 'Restart room' : 'Restart chapter', act: () => { startLevel(lv.idx, { quietIntro: true }); } },
     { label: lv && lv.def.challenge ? 'Back to challenges' : 'Skip chapter', act: () => { narr.clear(); if (lv.def.challenge) { gstate = 'title'; menuMode = 'challenges'; menuSel = 0; return; } narr.say(LINES.skip); lv.exitKind = 'E'; nextLevel(); } },
+    { label: 'Options', act: () => { pauseOpts = true; menuSel = 0; } },
     { label: 'Swap Wick and Shade', act: () => { assign = [assign[1], assign[0]]; if (splitMode() === false && assign[0] && /R$/.test(assign[0])) { /* keep halves sane */ } narr.say(LINES.swap, { front: true }); gstate = 'play'; } },
     ...(NATIVE ? [] : [{ label: 'Fullscreen', act: toggleFullscreen }]),
     { label: 'Quit to title', act: () => { gstate = 'title'; menuMode = 'main'; menuSel = 0; narr.clear(); } },
@@ -3879,6 +3944,7 @@ function pauseItems() {
 }
 function updatePause(dt) {
   const mi = menuInput();
+  if (pauseOpts && (mi.pause || mi.back)) { pauseOpts = false; menuSel = 3; SFX.menu(); return; }
   if (mi.pause || mi.back) { gstate = 'play'; SFX.menu(); return; }
   runMenu(pauseItems(), mi);
 }
@@ -3888,9 +3954,9 @@ function renderPause(t) {
   const ph = 120 + pauseItems().length * 46;
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 40; ctx.fillStyle = 'rgba(14,10,28,0.92)'; roundRect(W / 2 - 300, 110, 600, ph + 40, 18); ctx.fill(); ctx.restore();
   ctx.strokeStyle = 'rgba(255,210,122,0.22)'; ctx.lineWidth = 1.5; roundRect(W / 2 - 300, 110, 600, ph + 40, 18); ctx.stroke();
-  ctx.textAlign = 'center'; ctx.fillStyle = '#f6ecd6'; ctx.font = 'italic 48px ' + FONT_D; ctx.fillText('Paused', W / 2, 180);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#f6ecd6'; ctx.font = 'italic 48px ' + FONT_D; ctx.fillText(pauseOpts ? 'Options' : 'Paused', W / 2, 180);
   ctx.font = 'italic 18px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.6)';
-  ctx.fillText('The narrator is also paused. Enjoy the silence.', W / 2, 214);
+  ctx.fillText(pauseOpts ? 'Left and right to change. Saved on this device.' : 'The narrator is also paused. Enjoy the silence.', W / 2, 214);
   drawMenuList(pauseItems(), W / 2, 290);
   ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.6)';
   const ct = controlsText(); ctx.fillText(ct[0], W / 2, H - 70); ctx.fillText(ct[1], W / 2, H - 46);
