@@ -361,7 +361,8 @@ function updatePlayer(w, p, inp, dt) {
       o.vel.x = nx * h; o.vel.z = nz * h; o.vel.y = v; o.grounded = false; o.ground = null;
       return true;
     };
-    if (grounded && other.alive && push(other, C.launchV, C.launchH)) { other.launched = true; other.coyote = 0; hit = true; w.stats.launches++; emit(w, 'launch', { who: other.id }); }
+    // no launching the robot you are standing on (stops a mid-air push-ladder)
+    if (grounded && p.ground !== other && other.alive && push(other, C.launchV, C.launchH)) { other.launched = true; other.coyote = 0; hit = true; w.stats.launches++; emit(w, 'launch', { who: other.id }); }
     for (const c of w.crates) if (c.alive && !c.wood && push(c, C.crateLaunchV, C.crateLaunchH)) { hit = true; emit(w, 'crate-launch'); }
     for (const sw of w.switches) if (Math.hypot(sw.x - p.pos.x, sw.top + 0.6 - p.pos.y, sw.z - p.pos.z) < C.pushR + 0.4) { sw.on = !sw.on; hit = true; emit(w, 'switch', { on: sw.on, ch: sw.ch }); }
     emit(w, 'push', { x: p.pos.x, y: p.pos.y, z: p.pos.z, hit });
