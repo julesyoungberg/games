@@ -1,7 +1,7 @@
 {
   "name": "wick-and-shade",
   "productName": "Wick and Shade",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "description": "A two-player couch co-op about light, shadow and a narrator who will not stop talking",
   "main": "main.js",
   "author": "Wick and Shade",

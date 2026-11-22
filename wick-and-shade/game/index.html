@@ -90,6 +90,7 @@ const SFX = {
   ok() { tone(520, 0.08, 'triangle', 0.08); tone(780, 0.12, 'triangle', 0.08, null, 0.06); },
   float() { tone(300 + Math.random() * 200, 0.2, 'sine', 0.025, 600); },
   well() { tone(180, 0.25, 'sine', 0.12, 520); tone(90, 0.2, 'sine', 0.08, 60, 0.05); },
+  step(shade) { shade ? tone(95 + Math.random() * 20, 0.05, 'sine', 0.035, 70) : tone(150 + Math.random() * 40, 0.035, 'triangle', 0.03, 110); },
   drum() { tone(110, 0.22, 'sine', 0.16, 55); tone(220, 0.08, 'triangle', 0.05, 160); },
 };
 function startMusic() {
@@ -3138,6 +3139,8 @@ function updatePlayer(p, inp, dt, i) {
   }
   if (p.onGround && !wasGround && vyBefore > 300) { p.landT = 1; SFX.land(); dust(p); }
   if (!p.onGround) p.airT += dt; else p.airT = 0;
+  // soft footsteps
+  if (p.onGround && Math.abs(p.vx) > 60 && !(shade && p.embedded)) { p.stepT = (p.stepT || 0) - dt; if (p.stepT <= 0) { p.stepT = shade ? 0.34 : 0.27; SFX.step(shade); } } else p.stepT = 0.08;
   // hazards
   if (p.y > H + 40) { killPlayer(p, i); return; }
   const hx0 = p.x + 4, hx1 = p.x + p.w - 4, hy0 = p.y + 6, hy1 = p.y + p.h;
@@ -3813,7 +3816,7 @@ function renderPlay(t) {
   }
   drawMotes(t);
   drawParticles();
-  drawHUD(t);
+  if (gstate !== 'pause') drawHUD(t);
   drawNarrator();
   const fade = Math.max(lv.fadeIn, lv.complete ? clamp((lv.completeT - 1.2) / 1, 0, 1) : 0);
   if (fade > 0) { ctx.fillStyle = `rgba(7,6,15,${fade})`; ctx.fillRect(0, 0, W, H); }
@@ -4118,13 +4121,20 @@ function updatePause(dt) {
 function renderPause(t) {
   renderPlay(t);
   ctx.fillStyle = 'rgba(7,6,15,0.72)'; ctx.fillRect(0, 0, W, H);
-  const ph = 120 + pauseItems().length * 46;
+  const ph = 130 + pauseItems().length * 46;
   ctx.save(); ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 40; ctx.fillStyle = 'rgba(14,10,28,0.92)'; roundRect(W / 2 - 300, 110, 600, ph + 40, 18); ctx.fill(); ctx.restore();
   ctx.strokeStyle = 'rgba(255,210,122,0.22)'; ctx.lineWidth = 1.5; roundRect(W / 2 - 300, 110, 600, ph + 40, 18); ctx.stroke();
-  ctx.textAlign = 'center'; ctx.fillStyle = '#f6ecd6'; ctx.font = 'italic 48px ' + FONT_D; ctx.fillText(pauseOpts ? 'Options' : 'Paused', W / 2, 180);
+  ctx.textAlign = 'center'; ctx.fillStyle = '#f6ecd6'; ctx.font = 'italic 48px ' + FONT_D; ctx.fillText(pauseOpts ? 'Options' : 'Paused', W / 2, 196);
   ctx.font = 'italic 18px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.6)';
-  ctx.fillText(pauseOpts ? 'Left and right to change. Saved on this device.' : 'The narrator is also paused. Enjoy the silence.', W / 2, 214);
-  drawMenuList(pauseItems(), W / 2, 290);
+  if (!pauseOpts && lv) {
+    // where you are: chapter, room and name, the same wording as the title card
+    const ci = CHALLENGES.indexOf(lv.idx), cn = CH_NUM[lv.idx], rooms = CH_ROOMS[cn] || 1;
+    const where = lv.def.secret ? 'Chapter ???' : ci >= 0 ? 'Challenge ' + (ci + 1) : rooms > 1 ? 'Chapter ' + cn + ', room ' + ROOM_NUM[lv.idx] + ' of ' + rooms : 'Chapter ' + cn;
+    ctx.font = 'bold 13px ' + FONT_B; ctx.fillStyle = '#d9b77a'; ctx.fillText((where + '  \u00b7  ' + lv.def.name).toUpperCase().split('').join(' '), W / 2, 146);
+  }
+  ctx.font = 'italic 18px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.6)';
+  ctx.fillText(pauseOpts ? 'Left and right to change. Saved on this device.' : 'The narrator is also paused. Enjoy the silence.', W / 2, 230);
+  drawMenuList(pauseItems(), W / 2, 300);
   ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.6)';
   const ct = controlsText(); ctx.fillText(ct[0], W / 2, H - 70); ctx.fillText(ct[1], W / 2, H - 46);
   ctx.fillText(`Wick: ${devName(assign[0])}   ·   Shade: ${devName(assign[1])}`, W / 2, H - 20);
