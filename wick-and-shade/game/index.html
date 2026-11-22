@@ -92,9 +92,15 @@ const SFX = {
   ding() { tone(1046, 0.5, 'sine', 0.05); tone(784, 0.7, 'sine', 0.045, null, 0.16); },
   liftGo() { tone(70, 0.3, 'triangle', 0.05, 95); },
   well() { tone(180, 0.25, 'sine', 0.12, 520); tone(90, 0.2, 'sine', 0.08, 60, 0.05); },
-  step(shade) { shade ? tone(95 + Math.random() * 20, 0.05, 'sine', 0.035, 70) : tone(150 + Math.random() * 40, 0.035, 'triangle', 0.03, 110); },
+  step(shade, surf) {
+    if (surf === 'glass') return tone(1500 + Math.random() * 300, 0.04, 'sine', shade ? 0.012 : 0.018, 1200);
+    if (surf === 'brass') return tone(230 + Math.random() * 30, 0.06, 'square', 0.012, 180);
+    if (surf === 'belt') return tone(120 + Math.random() * 20, 0.03, 'square', 0.012, 90);
+    shade ? tone(95 + Math.random() * 20, 0.05, 'sine', 0.035, 70) : tone(150 + Math.random() * 40, 0.035, 'triangle', 0.03, 110);
+  },
   candle() { tone(240, 0.28, 'sine', 0.07, 520); tone(1320, 0.4, 'sine', 0.025, 1180, 0.08); },
   mirror(on) { on ? (tone(1568, 0.3, 'sine', 0.022), tone(2093, 0.35, 'sine', 0.016, null, 0.05)) : tone(1175, 0.12, 'sine', 0.012, 880); },
+  vent() { tone(900, 0.35, 'sawtooth', 0.008, 400); tone(300, 0.3, 'sine', 0.02, 520); },
   drum() { tone(110, 0.22, 'sine', 0.16, 55); tone(220, 0.08, 'triangle', 0.05, 160); },
 };
 function startMusic() {
@@ -133,6 +139,7 @@ const AMB = {
   'The Night Market': { type: 'lowpass', f: 340, q: 0.5, v: 0.025, lfo: 0.2, depth: 0.35 },
   'The Chandlery': { type: 'lowpass', f: 600, q: 0.6, v: 0.018, lfo: 0.4, depth: 0.25 },
   'The Picture House': { type: 'bandpass', f: 420, q: 0.8, v: 0.016, lfo: 0.6, depth: 0.3 },
+  'The Laundry': { type: 'lowpass', f: 900, q: 0.4, v: 0.024, lfo: 0.25, depth: 0.5 },
   'The Library': { type: 'bandpass', f: 2400, q: 0.7, v: 0.012, lfo: 0.03, depth: 0.4 },
   'The Train Station': { type: 'lowpass', f: 90, q: 0.8, v: 0.04, lfo: 0.12, depth: 0.5 },
   'The Department Store': { type: 'bandpass', f: 120, q: 1.2, v: 0.03, lfo: 0.05, depth: 0.3 },
@@ -189,6 +196,7 @@ const MOODS = {
   'The Fairground': { root: -5, mode: 'mixo', busy: 0.45, len: 1.4, wave: 'triangle', chords: [[0, 2, 4], [6, 1, 3], [3, 5, 0], [4, 6, 1]] },
   'The Chandlery': { root: 1, mode: 'minor', busy: 0.24, len: 2.6, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
   'The Picture House': { root: 5, mode: 'major', busy: 0.2, len: 2.8, wave: 'sine', chords: [[0, 2, 4], [3, 5, 0], [1, 3, 5], [4, 6, 1]] },
+  'The Laundry': { root: 7, mode: 'major', busy: 0.26, len: 2.4, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
   'The Library': { root: 3, mode: 'lydian', busy: 0.2, len: 3, wave: 'sine', chords: [[0, 2, 4], [1, 3, 5], [4, 6, 1], [3, 5, 0]] },
   'The Train Station': { root: -3, mode: 'dorian', busy: 0.28, len: 2.4, wave: 'triangle', chords: [[0, 2, 4], [4, 6, 1], [3, 5, 0], [5, 0, 2]] },
   'The Department Store': { root: 0, mode: 'major', busy: 0.3, len: 2.2, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
@@ -397,6 +405,7 @@ const LINES = {
   waveFirst: 'Shade waves. Wick, I believe that is affection. Or a warning. Shade is hard to read.',
   candleFirst: 'A candle. Lit from the lantern, and it will stay lit long after the lantern has gone. Choose carefully where you leave a light behind.',
   wellFirst: 'Shade dove into the ink and came out of the other well. Wick, do not try that. You would just be a wet lantern.',
+  ventFirst: 'A steam vent. Warm air goes up, and so do you. Hold down to sink. The lantern floats too, if you let go of it.',
   drumFirst: 'A drum. Land on it and up you go. Hold down if you would rather just stand there and be normal.',
   skip: "Skipping, are we? Fine. I'll tell everyone you solved it brilliantly.",
   swap: "Oh, you've swapped. That's allowed. Nobody here is defined by their lantern.",
@@ -3230,7 +3239,109 @@ const LEVELS = [
       [120, "Now Wick stands under the ink block. The crate hides the lantern from the mirror ball, the shadow holds, and Shade floats up to the balcony."],
       [200, "Shade, stand on the pink plate. Wick, ride the lift up past the gate. The door is on the balcony."],
     ],
-    outro: "The credits roll for nobody. The lantern gets top billing. One door left.",
+    outro: "The credits roll for nobody. The lantern gets top billing. Next door, the laundry is still steaming.",
+  },
+  { name: "Wash Day", sub: "Everything in here is warm, damp and slightly floral.", ambient: 0.6, chapter: "The Laundry",
+    map: [
+      '################################',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#.....o.............#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#.......E..#',
+      '#...................#..#########',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................P..........#',
+      '#...................P..........#',
+      '#.WS................P..........#',
+      '######f###############f#########',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "A laundry, closed for the night but still steaming. The grates in the floor are steam vents: stand over one and it carries you up to the top of the steam.",
+      "Hold down to sink. And if Wick sets the lantern down on a grate, the lantern goes up instead.",
+    ],
+    hints: [
+      [40, "Wick, stand on the first grate, hold down so you stay put, and set the lantern down. Watch where it ends up."],
+      [110, "The floating lantern can see the sun-eye up high. The teal door is open. Both of you through, and ride the second vent up to the door."],
+    ],
+    outro: "The lantern is still up there, bobbing about like a happy balloon. The narrator will fetch it. Later. Possibly.",
+  },
+  { name: "Drying Room", sub: "Hang it up to dry. Not you. The lantern.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#.......B......................#',
+      '#.......................p......#',
+      '#.................########.....#',
+      '#..............................#',
+      '#..............................#',
+      '#..........rrrrrrr.............#',
+      '#.W.S......^^^^^^^..........E..#',
+      '#######f########################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Thorns under the drying lines, an ink block beside the vent, and a plate on the far ledge.",
+      "A lantern floating at the top of the steam throws a long shadow off that ink block. Long enough to walk on, if you are Shade.",
+    ],
+    hints: [
+      [40, "Wick, put the lantern down on the grate so it floats up beside the ink block."],
+      [110, "Shade, ride the steam up, step onto the ink block and walk down the shadow to the ledge. The plate there makes a bridge for Wick."],
+      [190, "Wick, hop onto the bridge and cross. Then both of you to the door."],
+    ],
+    onPlate: (n, by, ch) => by === 'shade' ? 'Bridge out. Wick, over the thorns, please.' : null,
+    outro: "Nobody fell in the thorns. The narrator had a speech ready for that. It will keep.",
+  },
+  { name: "Press and Fold", sub: "Last load of the night.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#.....o...................##...#',
+      '#..............................#',
+      '#.................E............#',
+      '#................##====###.....#',
+      '#..............m...............#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#.........................PP...#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#.....C..W..S..................#',
+      '######f###################ll####',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The last room. A basket of washing is sitting on the vent, so the vent is off. A crate on a grate stops the steam.",
+      "The lift gate opens for the sun-eye, and the gold glass up top needs light. The lantern will have to do both from down here.",
+    ],
+    hints: [
+      [40, "Wick, push the crate off the grate. Then hold down on the grate and set the lantern down."],
+      [110, "From up there the lantern sees the sun-eye and the mirror ball. The mirror ball holds the gold glass. Ride the lift up together."],
+      [200, "Wick, hold down on the lift until Shade is on it too, or it will go without them."],
+    ],
+    outro: "Washed, dried, pressed and folded. So are you, a bit. One door left.",
   },
   { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
     map: [
@@ -4126,6 +4237,7 @@ function loadLevel(idx, opts = {}) {
     else if (c === 'L') { lanSpawn = [x, y]; grid[y][x] = '.'; }
     else if (c === 'H') { lv.hooks.push({ tx: x, ty: y }); grid[y][x] = '.'; }
     else if (c === 'k') { (lv.wells = lv.wells || []).push({ tx: x, ty: y }); }
+    else if (c === 'f') { (lv.vents = lv.vents || []).push({ tx: x, ty: y, top: 0 }); }
     else if (c === 'm') { (lv.mirrors = lv.mirrors || []).push({ tx: x, ty: y, on: false }); }
     else if (c === 'n') { (lv.candles = lv.candles || []).push({ tx: x, ty: y, lit: false, litT: 0 }); }
     else if (c === 'E' || c === 'F') { lv.exits.push({ tx: x, ty: y, kind: c }); grid[y][x] = '.'; }
@@ -4171,7 +4283,7 @@ function tileAt(tx, ty) { if (tx < 0 || tx >= COLS || ty < 0) return '#'; if (ty
 function isLit(tx, ty) { return tx >= 0 && tx < COLS && ty >= 0 && ty < ROWS && lv.lit[ty * COLS + tx] === 1; }
 function tileSolid(c, tx, ty) {
   switch (c) {
-    case '#': case 'B': case 'v': case 'j': case '<': case '>': case 'k': case 'm': return true;
+    case '#': case 'B': case 'v': case 'j': case '<': case '>': case 'k': case 'm': case 'f': return true;
     case '=': return isLit(tx, ty);
     case 'x': return !isLit(tx, ty);
     case 'P': return !lv.pressed.p;
@@ -4389,6 +4501,7 @@ function updateLantern(dt) {
   lantern.spin *= 0.95;
   const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
   lantern.vy = Math.min(lantern.vy + 1900 * dt, 900);
+  { const v = ventPush(lantern, dt); if (v) { const c = v.tx * T + T / 2 - lantern.w / 2; lantern.vx += ((c - lantern.x) * 6 - lantern.vx * 3) * dt; } }
   computeIgnore(lantern);
   lantern.onGround = false; lantern.onDrum = 0;
   const vyb = lantern.vy;
@@ -4506,6 +4619,40 @@ function respawn(p) {
   p.x = p.sx; p.y = p.sy; p.vx = p.vy = 0; p.embedded = false; p.dead = 0;
   burst(p.x + p.w / 2, p.y + p.h / 2, p.kind === 'wick' ? '#ffd27a' : '#b89cff', 12);
 }
+// what a player is walking on, for the sound of their steps
+function surfaceUnder(p) {
+  const ty = Math.floor((p.y + p.h + 2) / T), tx = Math.floor((p.x + p.w / 2) / T), c = tileAt(tx, ty);
+  if (c === '=' || c === 'x') return 'glass';
+  if (c === '<' || c === '>') return 'belt';
+  for (const k of lv.crates) if (k.lift && p.x + p.w > k.x && p.x < k.x + k.w && Math.abs(p.y + p.h - k.y) < 3) return 'brass';
+  return '';
+}
+// steam vents: a grate that blows straight up; whoever (or whatever lantern) is over one rises to the top of the column
+const VENT_REACH = 7;
+function ventTops() {
+  for (const v of lv.vents) {
+    let r = v.ty - 1;
+    while (r > 0 && v.ty - r <= VENT_REACH && !'#Bj<>kmf'.includes(tileAt(v.tx, r))) r--;
+    v.top = (r + 1) * T;
+  }
+}
+const ventBlocked = v => lv.crates.some(c => !c.lift && c.x < v.tx * T + T - 6 && c.x + c.w > v.tx * T + 6 && Math.abs(c.y + c.h - v.ty * T) < 4);
+function ventAt(e) {
+  if (!lv.vents) return null;
+  if (!lv.vents[0].top) ventTops();
+  const cx = e.x + e.w / 2;
+  for (const v of lv.vents) if (!ventBlocked(v) && cx > v.tx * T - 3 && cx < v.tx * T + T + 3 && e.y + e.h > v.top && e.y < v.ty * T) return v;
+  return null;
+}
+function ventPush(e, dt) {
+  const v = ventAt(e); if (!v) return null;
+  // rise fast from low down, ease off near the top of the steam so things bob there gently
+  const d = e.y + e.h - v.top, tv = -Math.min(330, 20 + d * 4);
+  e.vy -= 1900 * dt; // the steam carries your weight
+  if (e.vy > tv) e.vy += (tv - e.vy) * Math.min(1, 10 * dt);
+  e.onGround = false;
+  return v;
+}
 function updatePlayer(p, inp, dt, i) {
   if (p.dead > 0) { p.dead -= dt; if (p.dead <= 0) respawn(p); return; }
   const shade = p.kind === 'shade';
@@ -4525,7 +4672,7 @@ function updatePlayer(p, inp, dt, i) {
   // floating up through shadow) still happens
   if (inp && inp.jumpP) p.jbuf = shade && p.embedded ? 0.4 : 0.16;
   p.jbuf -= dt; p.jumpT = (p.jumpT || 0) + dt;
-  p.coyote = p.onGround ? 0.12 : p.coyote - dt;
+  p.coyote = p.onGround || p.inVent ? 0.12 : p.coyote - dt; // you can jump off the top of the steam too
   if (p.jbuf > 0 && p.coyote > 0 && !p.embedded) {
     p.vy = -720; p.jbuf = 0; p.coyote = 0; p.onGround = false; p.jumpHeld = true; p.jumpT = 0;
     shade ? SFX.sjump() : SFX.jump();
@@ -4536,6 +4683,9 @@ function updatePlayer(p, inp, dt, i) {
   // gravity / buoyancy
   if (shade && p.embedded) { p.vy += (-250 - p.vy) * Math.min(1, 7 * dt); if (Math.random() < dt * 12) bubble(p); }
   else p.vy = Math.min(p.vy + 1900 * dt, 950);
+  const inV = !p.downHeld && ventPush(p, dt);
+  if (inV && !p.inVent) { SFX.vent(); if (!flags.vent) { flags.vent = true; narr.say(LINES.ventFirst, { ifQuiet: true }); } }
+  p.inVent = !!inV;
   // wick: lantern + raise
   if (!shade) {
     const target = my < -0.5 ? 46 : my > 0.5 ? -12 : 0;
@@ -4581,7 +4731,7 @@ function updatePlayer(p, inp, dt, i) {
   if (p.onGround && !wasGround && vyBefore > 300) { p.landT = 1; SFX.land(); dust(p); if (vyBefore > 700) rumble(players.indexOf(p), 0.25, 0.15, 70); }
   if (!p.onGround) p.airT += dt; else p.airT = 0;
   // soft footsteps
-  if (p.onGround && Math.abs(p.vx) > 60 && !(shade && p.embedded)) { p.stepT = (p.stepT || 0) - dt; if (p.stepT <= 0) { p.stepT = shade ? 0.34 : 0.27; SFX.step(shade); } } else p.stepT = 0.08;
+  if (p.onGround && Math.abs(p.vx) > 60 && !(shade && p.embedded)) { p.stepT = (p.stepT || 0) - dt; if (p.stepT <= 0) { p.stepT = shade ? 0.34 : 0.27; SFX.step(shade, surfaceUnder(p)); } } else p.stepT = 0.08;
   // hazards
   if (p.y > H + 40) { killPlayer(p, i); return; }
   const hx0 = p.x + 4, hx1 = p.x + p.w - 4, hy0 = p.y + 6, hy1 = p.y + p.h;
@@ -4803,7 +4953,7 @@ function chapterOf(idx) { for (let i = idx; i >= 0; i--) { const d = LEVELS[i]; 
 // each long chapter's night sky has its own faint colour
 const SKY_TINT = { 'The Stockroom': 'rgba(150,100,50,0.35)', 'The Gallery': 'rgba(170,150,110,0.3)', 'Backstage': 'rgba(170,40,70,0.35)', 'The Observatory': 'rgba(40,60,170,0.4)',
   'The Music Room': 'rgba(150,70,160,0.35)', 'The Print Shop': 'rgba(90,90,100,0.35)', 'The Lighthouse': 'rgba(30,100,170,0.4)', 'The Clocktower': 'rgba(150,120,50,0.35)',
-  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)', 'The Department Store': 'rgba(150,110,180,0.3)', 'The Train Station': 'rgba(90,120,140,0.35)', 'The Library': 'rgba(170,130,80,0.3)', 'The Chandlery': 'rgba(200,140,60,0.32)', 'The Picture House': 'rgba(170,50,70,0.32)' };
+  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)', 'The Department Store': 'rgba(150,110,180,0.3)', 'The Train Station': 'rgba(90,120,140,0.35)', 'The Library': 'rgba(170,130,80,0.3)', 'The Chandlery': 'rgba(200,140,60,0.32)', 'The Picture House': 'rgba(170,50,70,0.32)', 'The Laundry': 'rgba(90,150,170,0.32)' };
 const SIL = '#150f29', GLOW = 'rgba(255,226,170,0.3)';
 const LANDMARKS = {
   'The Stockroom': g => { g.fillStyle = SIL; g.beginPath(); g.moveTo(140, 600); for (let i = 0; i < 5; i++) { g.lineTo(140 + i * 60, 500); g.lineTo(200 + i * 60, 470); g.lineTo(200 + i * 60, 500); } g.lineTo(440, 600); g.fill(); g.fillStyle = GLOW; for (let i = 0; i < 4; i++) g.fillRect(170 + i * 66, 530, 14, 10); },
@@ -4817,6 +4967,7 @@ const LANDMARKS = {
   'The Greenhouse': g => { g.fillStyle = SIL; g.beginPath(); g.moveTo(170, 600); g.lineTo(170, 500); g.arc(300, 500, 130, Math.PI, TAU); g.lineTo(430, 600); g.fill(); g.strokeStyle = 'rgba(255,226,170,0.10)'; g.lineWidth = 2; for (let i = 1; i < 6; i++) { const a = Math.PI + i * Math.PI / 6; g.beginPath(); g.moveTo(300, 600); g.lineTo(300 + Math.cos(a) * 130, 500 + Math.sin(a) * 130); g.stroke(); } g.beginPath(); g.arc(300, 500, 130, Math.PI, TAU); g.stroke(); },
   'The Chandlery': g => { g.fillStyle = SIL; g.fillRect(150, 470, 300, 130); g.beginPath(); g.moveTo(140, 470); g.lineTo(300, 420); g.lineTo(460, 470); g.fill(); g.fillRect(380, 400, 22, 50); g.fillRect(290, 500, 2, 30); g.fillRect(270, 530, 42, 3); g.fillStyle = GLOW; for (let k = 0; k < 4; k++) { g.fillRect(186 + k * 64, 520, 28, 40); } },
   'The Picture House': g => { g.fillStyle = SIL; g.fillRect(140, 440, 340, 160); g.fillRect(170, 400, 280, 44); g.fillRect(290, 300, 40, 100); g.beginPath(); g.moveTo(120, 500); g.lineTo(500, 500); g.lineTo(480, 520); g.lineTo(140, 520); g.fill(); g.fillStyle = GLOW; for (let k = 0; k < 4; k++) g.fillRect(301, 312 + k * 22, 18, 14); for (let k = 0; k < 12; k++) g.fillRect(150 + k * 30, 504, 8, 6); g.fillRect(210, 540, 60, 60); g.fillRect(350, 540, 60, 60); },
+  'The Laundry': g => { g.fillStyle = SIL; g.fillRect(120, 470, 380, 130); g.fillRect(380, 360, 40, 110); g.fillRect(372, 352, 56, 12); g.fillStyle = GLOW; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(170 + k * 66, 520, 20, 0, TAU); g.fill(); } g.fillStyle = 'rgba(230,230,245,0.08)'; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(400 + Math.sin(k * 1.7) * 14, 330 - k * 34, 16 + k * 6, 0, TAU); g.fill(); } },
   'The Library': g => { g.fillStyle = SIL; g.fillRect(140, 450, 380, 150); g.beginPath(); g.moveTo(130, 450); g.lineTo(330, 390); g.lineTo(530, 450); g.fill(); for (let k = 0; k < 6; k++) g.fillRect(160 + k * 66, 460, 16, 140); g.beginPath(); g.arc(330, 340, 40, Math.PI, 0); g.fill(); g.fillRect(290, 340, 80, 50); g.fillStyle = GLOW; g.fillRect(300, 530, 60, 70); g.beginPath(); g.arc(330, 352, 10, 0, TAU); g.fill(); },
   'The Train Station': g => { g.fillStyle = SIL; g.fillRect(120, 470, 400, 130); g.beginPath(); g.moveTo(120, 470); g.quadraticCurveTo(320, 380, 520, 470); g.fill(); g.fillRect(300, 400, 40, 70); g.fillStyle = GLOW; g.beginPath(); g.arc(320, 422, 12, 0, TAU); g.fill(); g.fillStyle = SIL; g.fillRect(319, 412, 2, 10); g.fillRect(320, 421, 7, 2); g.fillStyle = GLOW; for (let k = 0; k < 6; k++) g.fillRect(150 + k * 60, 500, 30, 18); },
   'The Department Store': g => { g.fillStyle = SIL; g.fillRect(140, 400, 320, 200); g.fillRect(170, 380, 260, 20); g.fillRect(290, 340, 3, 40); g.fillStyle = GLOW; for (const [k, r] of [[1, 0], [4, 1], [2, 2], [5, 2], [0, 3]]) g.fillRect(166 + k * 42, 424 + r * 42, 14, 12); g.fillRect(282, 572, 36, 28); },
@@ -4959,6 +5110,24 @@ function drawDynamicTiles(t) {
         g.addColorStop(0, `rgba(255,210,130,${0.5 * a})`); g.addColorStop(1, 'rgba(255,180,90,0)'); ctx.fillStyle = g; ctx.fillRect(cx - 22, py - 11, 44, 44); ctx.restore();
         ctx.fillStyle = '#ffd27a'; ctx.beginPath(); ctx.ellipse(cx, py + 11, 2.6, 5 + fl, 0, 0, TAU); ctx.fill();
         ctx.fillStyle = '#fff8e0'; ctx.beginPath(); ctx.ellipse(cx, py + 12, 1.2, 2.5, 0, 0, TAU); ctx.fill();
+      }
+      continue;
+    }
+    if (c === 'f') {
+      // steam vent: an iron grate with warm air pouring up out of it
+      ctx.fillStyle = '#5b5148'; ctx.fillRect(px, py, T, T); ctx.fillStyle = '#2a231e';
+      for (let k = 0; k < 5; k++) ctx.fillRect(px + 4 + k * 7, py + 3, 4, 10);
+      ctx.fillStyle = '#857565'; ctx.fillRect(px, py, T, 2);
+      const v = lv.vents && lv.vents.find(q => q.tx === tx && q.ty === ty);
+      if (v && !ventBlocked(v)) {
+        if (!v.top) ventTops();
+        const hgt = py - v.top; ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        for (let k = 0; k < 9; k++) {
+          const ph = (lv.time * 0.9 + k / 9 + hash(tx, k, 3)) % 1, y = py - ph * hgt, x = px + T / 2 + Math.sin(lv.time * 2.3 + k * 1.7) * (6 + ph * 8);
+          ctx.fillStyle = `rgba(235,230,250,${(0.13 * Math.sin(ph * Math.PI)).toFixed(3)})`;
+          ctx.beginPath(); ctx.arc(x, y, 5 + ph * 9, 0, TAU); ctx.fill();
+        }
+        ctx.restore();
       }
       continue;
     }
@@ -5323,7 +5492,7 @@ function drawHUD(t) {
 const MOTES = Array.from({ length: 70 }, () => ({ x: Math.random() * 1280, y: Math.random() * 800, s: 0.6 + Math.random() * 1.4, vx: (Math.random() - 0.5) * 6, vy: -2 - Math.random() * 5, ph: Math.random() * 6.28 }));
 // a little weather per chapter, drawn over the sky and never over chalk
 const WX = Array.from({ length: 70 }, () => ({ x: Math.random() * W, y: Math.random() * H, p: Math.random() * TAU, s: Math.random() }));
-const WEATHER = { 'The Chandlery': 'embers', 'The Lighthouse': 'rain', 'The Rooftops': 'rain', 'The Greenhouse': 'pollen', 'The Night Market': 'embers', 'The Fairground': 'confetti', 'The Observatory': 'stars' };
+const WEATHER = { 'The Laundry': 'suds', 'The Chandlery': 'embers', 'The Lighthouse': 'rain', 'The Rooftops': 'rain', 'The Greenhouse': 'pollen', 'The Night Market': 'embers', 'The Fairground': 'confetti', 'The Observatory': 'stars' };
 const CONFETTI = ['255,210,122', '230,96,154', '79,199,184', '184,156,255'];
 function drawWeather(t) {
   const k = lv.weather; if (!k) return;
@@ -5345,6 +5514,7 @@ function drawWeather(t) {
   for (let i = 0; i < WX.length; i += k === 'confetti' ? 2 : 1) {
     const w = WX[i];
     let x, y, col, a, r = 1.5;
+    if (k === 'suds') { if (i % 2) continue; x = ((w.x + Math.sin(t * 0.6 + w.p) * 20) % W + W) % W; y = ((w.y - t * (14 + w.s * 12)) % H + H) % H; if (!open(x, y)) continue; ctx.strokeStyle = `rgba(220,235,255,${(0.16 + 0.08 * Math.sin(t * 2 + w.p)).toFixed(3)})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, 2 + w.s * 3, 0, TAU); ctx.stroke(); continue; }
     if (k === 'pollen') { x = ((w.x + Math.sin(t * 0.4 + w.p) * 30 + t * 6) % W + W) % W; y = ((w.y - t * (8 + w.s * 10)) % H + H) % H; col = '200,240,150'; a = 0.12 + 0.12 * Math.sin(t * 1.5 + w.p); r = 1.5 + w.s; }
     else if (k === 'embers') { if (i % 3) continue; x = ((w.x + Math.sin(t * 0.9 + w.p) * 18) % W + W) % W; y = ((w.y - t * (24 + w.s * 30)) % H + H) % H; col = '255,170,90'; a = 0.4 * (0.5 + 0.5 * Math.sin(t * 3 + w.p)); r = 1.6; }
     else { x = ((w.x + Math.sin(t * 0.7 + w.p) * 22) % W + W) % W; y = ((w.y + t * (30 + w.s * 20)) % H + H) % H; col = CONFETTI[i % 4]; a = 0.35; r = 0; }
@@ -5534,7 +5704,7 @@ function renderTitle(t) {
 /* ---------------- chapter select: list on the left, a little map of the room on the right ---------------- */
 const thumbCache = {};
 const THUMB_COL = { '#': '#d9cfbd', B: '#2a1748', '=': '#e9b860', x: '#6b4fb0', P: '#4fc7b8', Q: '#e6609a', r: 'rgba(79,199,184,0.35)', s: 'rgba(230,96,154,0.35)',
-  j: '#a8433a', '<': '#8d8577', '>': '#8d8577', k: '#140a24', m: '#f3e9ff', v: 'rgba(123,86,201,0.55)', w: 'rgba(255,214,140,0.45)', H: '#8a6a3a' };
+  j: '#a8433a', '<': '#8d8577', '>': '#8d8577', k: '#140a24', f: '#5b5148', m: '#f3e9ff', v: 'rgba(123,86,201,0.55)', w: 'rgba(255,214,140,0.45)', H: '#8a6a3a' };
 function levelThumb(i, cell) {
   const key = i + ':' + cell;
   if (thumbCache[key]) return thumbCache[key];
@@ -5584,6 +5754,7 @@ const GUIDE = [
   ['j', 'Drums', 'Throw whoever lands on them high. Hold down to stand on one.', ['...', '...', '#j#']],
   ['>', 'Belts', 'Carry whatever stands on them: you, crates, the lantern.', ['...', '...', '>>>']],
   ['k', 'Ink wells', 'Shade only: stand on one and press down to come out of its partner. They pair left to right.', ['...', '...', '#k#']],
+  ['f', 'Steam vents', 'Lift you to the top of the steam (hold down to sink). A lantern set down on one floats up. A crate shuts them off.', ['...', '...', '#f#']],
   ['l', 'Lifts', 'Rise while anything stands on them: you, a crate, the lantern. Step off, or hold down, and they sink back down.', ['...', '...', '#ll']],
   ['n', 'Candles', 'Touch one with the lantern and it stays lit for good: a small light of its own.', ['...', '.n.', '###']],
   ['m', 'Mirror balls', 'Shine too while the lantern can see them, a bit less far.', ['...', '.m.', '...']],
@@ -5753,7 +5924,7 @@ function pauseItems() {
     { label: 'Field guide', act: () => { pauseGuide = true; SFX.menu(); } },
     { label: 'Ask for a hint', act: askHint },
     { label: (CH_ROOMS[CH_NUM[lv.idx]] || 1) > 1 ? 'Restart room' : 'Restart chapter', act: () => { startLevel(lv.idx, { quietIntro: true }); } },
-    { label: lv && lv.def.challenge ? 'Back to challenges' : 'Skip chapter', act: () => { narr.clear(); if (lv.def.challenge) { gstate = 'title'; menuMode = 'challenges'; menuSel = 0; return; } narr.say(LINES.skip); lv.exitKind = 'E'; nextLevel(); } },
+    { label: lv && lv.def.challenge ? 'Back to challenges' : (CH_ROOMS[CH_NUM[lv.idx]] || 1) > 1 ? 'Skip room' : 'Skip chapter', act: () => { narr.clear(); if (lv.def.challenge) { gstate = 'title'; menuMode = 'challenges'; menuSel = 0; return; } narr.say(LINES.skip); lv.exitKind = 'E'; nextLevel(); } },
     { label: 'Options', act: () => { pauseOpts = true; menuSel = 0; } },
     { label: 'Swap Wick and Shade', act: () => { assign = [assign[1], assign[0]]; if (splitMode() === false && assign[0] && /R$/.test(assign[0])) { /* keep halves sane */ } narr.say(LINES.swap, { front: true }); gstate = 'play'; } },
     ...(NATIVE ? [] : [{ label: 'Fullscreen', act: toggleFullscreen }]),
