@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.80'; // keep in step with package.json
+const GAME_VERSION = '1.0.81'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -5388,6 +5388,38 @@ const LEVELS = [
       [150, "Start running the moment the crate rolls onto the plate, and don't stop for anything. Jump the thorns at a run."],
     ],
     outro: "Tick, tock. The narrator wound the crate up specially. Nobody said thank you, but the narrator is used to that.",
+  },
+  { name: "Express Lift", sub: "Five seconds to the top. The lift takes four.", ambient: 0.6, challenge: true, unlockAt: 82,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#............###...............#',
+      '#..............................#',
+      '#............................E.#',
+      '#...............################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#############PPP...............#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#WtS...........................#',
+      '#######^^####lll################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The timer plate is at one end of the lobby, and the lift is at the other, with thorns in between.",
+      "The door across the shaft gives you five seconds. The lift is not quick.",
+    ],
+    hints: [
+      [150, "Both of you run for the lift as soon as Wick steps off the plate. Shade gets there first and holds down, and lets go the instant Wick is on."],
+    ],
+    outro: "Ding. The narrator has always wanted to say that. Ding.",
   },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
