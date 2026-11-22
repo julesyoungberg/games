@@ -2,7 +2,7 @@
 const BW = (L, x0, x1, top, h = 3) => L.box(x0, -9.5, x1, -8, top - 6, top + h, 'backwall');
 
 export default {
-  name: 'Inventory Day', sub: 'Overtime 3. Count everything. Then lift it.', theme: 4, after: 11,
+  name: 'Inventory Day', sub: 'Overtime. Count everything. Then lift it.', theme: 4, after: 11,
   intro: [
     'Inventory Day. Every crate must be counted, moved, and placed on a plate. In that order. Mostly.',
   ],

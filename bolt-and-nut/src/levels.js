@@ -31,6 +31,9 @@ import OT14 from './lv/ot14.js';
 import OT15 from './lv/ot15.js';
 import OT16 from './lv/ot16.js';
 import OT17 from './lv/ot17.js';
+import OT18 from './lv/ot18.js';
+import OT19 from './lv/ot19.js';
+import OT20 from './lv/ot20.js';
 
 const BW = (L, x0, x1, top, h = 3) => L.box(x0, -9.5, x1, -8, top - 6, top + h, 'backwall');
 
@@ -611,7 +614,9 @@ export const LEVELS = [
 ];
 
 // Overtime: short, harder bonus puzzles. Each unlocks when the main shift `after` (0-based) is done.
-export const OVERTIME = [OT1, OT2, OT3, OT4, OT5, OT6, OT7, OT8, OT9, OT10, OT11, OT12, OT13, OT14, OT15, OT16, OT17];
+export const OVERTIME = [OT1, OT2, OT3, OT4, OT5, OT6, OT7, OT8, OT9, OT10, OT11, OT12, OT13, OT14, OT15, OT16, OT17, OT18, OT19, OT20];
+// shown in the order they unlock (saves use names, so the order can change freely)
+OVERTIME.sort((a, b) => a.after - b.after);
 OVERTIME.forEach((L, k) => { L.ot = k + 1; });
 
 export const ALL = [...LEVELS, ...OVERTIME];

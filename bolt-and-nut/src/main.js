@@ -132,9 +132,9 @@ function goTitle() {
   const cont = save.unlocked > 0;
   openMenu({
     cls: 'title', items: [
-      { label: cont ? `Continue: Shift ${Math.min(save.unlocked, LEVELS.length - 1) + 1}` : 'Start orientation', act: () => goJoin(Math.min(save.unlocked, LEVELS.length - 1)) },
+      { label: cont ? `Continue: ${LEVELS[Math.min(save.unlocked, LEVELS.length - 1)].name}` : 'Start orientation', act: () => goJoin(Math.min(save.unlocked, LEVELS.length - 1)) },
       { label: 'Choose a shift', act: chooseShift },
-      { label: 'Overtime (bonus puzzles)', act: overtimeMenu },
+      { label: 'Overtime (bonus puzzles)', badges: (() => { const n = save.done.filter(i => i >= NMAIN).length; return n ? `<b class="bd todo">${n}/${OVERTIME.length}</b>` : ''; })(), act: overtimeMenu },
       { label: 'Options', act: () => optionsMenu(goTitle) },
       { label: 'Quit', hidden: !APP, act: () => APP.quit() },
     ],

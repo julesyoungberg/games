@@ -2,7 +2,7 @@
 const BW = (L, x0, x1, top, h = 3) => L.box(x0, -9.5, x1, -8, top - 6, top + h, 'backwall');
 
 export default {
-  name: 'Unpaid Internship', sub: 'Overtime 1. The experience is the payment.', theme: 2, after: 3,
+  name: 'Unpaid Internship', sub: 'Overtime. The experience is the payment.', theme: 2, after: 3,
   intro: [
     'Overtime! Short, hard, and unpaid. Think of it as an investment in your future. Somebody\'s future.',
   ],

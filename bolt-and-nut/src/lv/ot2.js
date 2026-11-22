@@ -2,7 +2,7 @@
 const BW = (L, x0, x1, top, h = 3) => L.box(x0, -9.5, x1, -8, top - 6, top + h, 'backwall');
 
 export default {
-  name: 'Mandatory Fun', sub: 'Overtime 2. Attendance is optional. Fun is not.', theme: 6, after: 7,
+  name: 'Mandatory Fun', sub: 'Overtime. Attendance is optional. Fun is not.', theme: 6, after: 7,
   intro: [
     'Welcome to the team building exercise. Participation is voluntary, and has been recorded.',
   ],

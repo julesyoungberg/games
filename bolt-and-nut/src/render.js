@@ -543,7 +543,7 @@ export class View {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
       m.position.set(s.x, s.y, s.z + 0.02); this.level.add(m);
     }
-    this.camPos.set(w.players[0].pos.x + 2, 10, 18); this.camLook.set(w.players[0].pos.x + 2, 1, -4); this.lead = 0; this.camY = undefined;
+    this.camPos.set(w.players[0].pos.x - 3, 17, 30); this.camLook.set(w.players[0].pos.x + 2, 1, -4); // starts wide and eases in: a short establishing shot this.lead = 0; this.camY = undefined;
     this.pl = []; this.parts.count = 0;
     if (F) this.level.traverse(o => {
       if (!o.isMesh) return; const m = o.material;
