@@ -4049,6 +4049,37 @@ const LEVELS = [
     ],
     outro: "One candle left burning on a shelf for nobody. The narrator will blow it out later. The narrator will forget.",
   },
+  { name: "Double Feature", sub: "Two mirror balls, one crate, and a very particular place to stand.", ambient: 0.6, challenge: true, unlockAt: 79,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#.........................##...#',
+      '#..............................#',
+      '#.................q...E........#',
+      '#................#########.....#',
+      '#..............................#',
+      '#..............................#',
+      '#....................m.........#',
+      '#..............................#',
+      '#.........................QQ...#',
+      '#..............................#',
+      '#.............BB...............#',
+      '#..............................#',
+      '#........m.WS.........C........#',
+      '##########################ll####',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Two mirror balls this time: one on the floor, one hanging by the balcony. While the lantern can see either of them, the shadow over the ink block won't hold.",
+    ],
+    hints: [
+      [150, "The crate can hide the floor mirror. For the high one, the ink block itself is in the way, if Wick stands under its left half and not its right."],
+    ],
+    outro: "Two showings, one ticket, and the narrator slept through both. The narrator says the second one was better.",
+  },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
 // Challenge levels (challenge:true) live after the story and have their own menu.
@@ -5046,7 +5077,7 @@ function drawWick(p, t) {
   const moving = p.onGround && Math.abs(p.vx) > 20;
   const bob = moving ? Math.sin(p.anim * 16) * 1.2 : 0;
   const sq = p.landT * 0.18, st = !p.onGround && p.vy < -100 ? 0.06 : 0;
-  ctx.save(); ctx.translate(p.x + p.w / 2, p.y + p.h); ctx.scale(1 + sq - st, 1 - sq + st);
+  ctx.save(); ctx.translate(p.x + p.w / 2, p.y + p.h); ctx.rotate(clamp((p.vx || 0) * 0.00028, -0.07, 0.07)); ctx.scale(1 + sq - st, 1 - sq + st);
   ctx.fillStyle = '#3a2a1a';
   const l1 = moving ? Math.sin(p.anim * 16) * 3 : 0;
   ctx.fillRect(-7 + l1, -6, 5, 6); ctx.fillRect(2 - l1, -6, 5, 6);
@@ -5054,7 +5085,8 @@ function drawWick(p, t) {
   rr(ctx, -12, -34 + bob, 24, 30, 9); ctx.fill(); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0, -34 + bob); ctx.quadraticCurveTo(3, -39 + bob, 1, -42 + bob); ctx.stroke();
   ctx.fillStyle = '#e0663a'; ctx.fillRect(-12, -17 + bob, 24, 5);
-  const sw = Math.sin(t * 9) * 2;
+  p.scarf = (p.scarf || 0) + (clamp((p.vy || 0) * -0.012, -7, 6) - (p.scarf || 0)) * 0.15;
+  const sw = Math.sin(t * 9) * (1.2 + Math.min(2, Math.abs(p.vx) * 0.008)) + p.scarf;
   ctx.beginPath(); ctx.moveTo(-p.face * 10, -16 + bob); ctx.lineTo(-p.face * (19 + Math.abs(p.vx) * 0.02), -12 + sw + bob); ctx.lineTo(-p.face * 9, -11 + bob); ctx.fill();
   ctx.fillStyle = '#2a1d12';
   const eh = p.blink < 0 ? 1 : 5;
@@ -5064,7 +5096,7 @@ function drawWick(p, t) {
 }
 function drawShade(p, t) {
   if (p.dead > 0) return;
-  ctx.save(); ctx.translate(p.x + p.w / 2, p.y + p.h);
+  ctx.save(); ctx.translate(p.x + p.w / 2, p.y + p.h); ctx.rotate(clamp((p.vx || 0) * 0.0003, -0.08, 0.08));
   const sq = p.landT * 0.2; ctx.scale(1 + sq, 1 - sq);
   ctx.shadowColor = '#8a5cff'; ctx.shadowBlur = p.embedded ? 26 : 16;
   ctx.beginPath(); ctx.moveTo(-12, -6); ctx.lineTo(-12, -22); ctx.arc(0, -22, 12, Math.PI, 0); ctx.lineTo(12, -4);
