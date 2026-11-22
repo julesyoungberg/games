@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.67'; // keep in step with package.json
+const GAME_VERSION = '1.0.68'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -6009,15 +6009,16 @@ function drawHUD(t) {
     ctx.globalAlpha = a; ctx.textAlign = 'center';
     // a soft dark band so the title reads over busy rooms
     const band = ctx.createRadialGradient(W / 2, H / 2 - 10, 0, W / 2, H / 2 - 10, 420);
-    band.addColorStop(0, 'rgba(8,5,16,0.62)'); band.addColorStop(1, 'rgba(8,5,16,0)');
+    band.addColorStop(0, 'rgba(8,5,16,0.74)'); band.addColorStop(0.6, 'rgba(8,5,16,0.4)'); band.addColorStop(1, 'rgba(8,5,16,0)');
     ctx.save(); ctx.translate(W / 2, H / 2 - 10); ctx.scale(1, 0.32); ctx.translate(-W / 2, -(H / 2 - 10)); ctx.fillStyle = band; ctx.fillRect(0, 0, W, H); ctx.restore();
+    ctx.save(); ctx.shadowColor = 'rgba(6,4,12,0.85)'; ctx.shadowBlur = 10;
     ctx.fillStyle = '#d9b77a'; ctx.font = 'bold 15px ' + FONT_B;
     const ci = CHALLENGES.indexOf(lv.idx), cn = CH_NUM[lv.idx], rooms = CH_ROOMS[cn] || 1;
     const ch = lv.def.secret ? 'CHAPTER ???' : ci >= 0 ? 'CHALLENGE ' + (ci + 1) : rooms > 1 ? 'CHAPTER ' + cn + '  ·  ROOM ' + ROOM_NUM[lv.idx] + ' OF ' + rooms : 'CHAPTER ' + cn;
     ctx.fillText(ch.split('').join(' '), W / 2, H / 2 - 50);
     ctx.fillStyle = '#fff4dc'; ctx.font = 'italic 46px ' + FONT_D; ctx.fillText(lv.def.name, W / 2, H / 2);
     ctx.fillStyle = 'rgba(244,234,216,0.75)'; ctx.font = 'italic 19px ' + FONT_B; ctx.fillText(lv.def.sub || '', W / 2, H / 2 + 34);
-    ctx.globalAlpha = 1;
+    ctx.restore(); ctx.globalAlpha = 1;
   }
   if (lv.idx <= 1 && !lv.def.secret) {
     ctx.font = '14px ' + FONT_B; ctx.textAlign = 'left';
