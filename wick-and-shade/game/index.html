@@ -3787,7 +3787,28 @@ function nextLevel() {
   if (d.final) { startCredits(); return; }
   startLevel(d.next != null ? d.next : lv.idx + 1);
 }
-function startLevel(idx, opts) { loadLevel(idx, opts); gstate = 'play'; flagsLevelReset(); }
+function startLevel(idx, opts) {
+  const ch = CH_NUM[idx];
+  if (ch && (!chStat || chStat.ch !== ch)) chStat = { ch, t: performance.now(), d: run.deaths.slice(), full: ROOM_NUM[idx] === 1 };
+  loadLevel(idx, opts); gstate = 'play'; flagsLevelReset();
+}
+// a little card at the end of every long chapter: how long it took, and who fell how often
+let chStat = null;
+const chapterEnds = () => { const i = lv.idx, c = CH_NUM[i]; return !!c && CH_ROOMS[c] > 1 && ROOM_NUM[i] === CH_ROOMS[c] && !lv.def.final; };
+function drawChapterCard() {
+  const a = clamp((lv.completeT - 2.1) / 0.6, 0, 1); if (a <= 0) return;
+  const c = CH_NUM[lv.idx], name = chapterOf(lv.idx) || lv.def.name;
+  ctx.globalAlpha = a; ctx.textAlign = 'center';
+  ctx.font = '600 15px ' + FONT_B; ctx.fillStyle = '#ffd27a'; ctx.letterSpacing = '4px'; ctx.fillText('CHAPTER ' + c + ' COMPLETE', W / 2, 330); ctx.letterSpacing = '0px';
+  ctx.font = 'italic 56px ' + FONT_D; ctx.fillStyle = '#f6ecd6'; ctx.fillText(name, W / 2, 392);
+  ctx.fillStyle = 'rgba(255,210,122,0.5)'; ctx.fillRect(W / 2 - 40, 418, 80, 1.5);
+  const st = chStat && chStat.ch === c ? chStat : null, bits = [CH_ROOMS[c] + ' rooms'];
+  if (st && st.full) { const m = Math.max(1, Math.round((performance.now() - st.t) / 60000)); bits.push('about ' + m + ' minute' + (m === 1 ? '' : 's')); }
+  ctx.font = 'italic 21px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.8)'; ctx.fillText(bits.join('  ·  '), W / 2, 456);
+  if (st) { const f = k => { const n = run.deaths[k] - st.d[k]; return n === 0 ? 'never fell' : 'fell ' + (n === 1 ? 'once' : n === 2 ? 'twice' : n + ' times'); };
+    ctx.fillText('Wick ' + f(0) + '. Shade ' + f(1) + '.', W / 2, 490); }
+  ctx.globalAlpha = 1;
+}
 function flagsLevelReset() { }
 
 /* ------------------------------ particles ------------------------------ */
@@ -3824,7 +3845,11 @@ function updatePlay(dt) {
   lv.seen = lv.seen || new Set();
   for (const p of players) if (p.dead <= 0) { const k = clamp(Math.floor((p.x + p.w / 2) / (W / 4)), 0, 3) + 4 * clamp(Math.floor((p.y + p.h / 2) / (H / 4)), 0, 3); if (!lv.seen.has(k)) { const first = lv.seen.size < 2; lv.seen.add(k); if (!first) narrProgress(); } }
   updateParticles(dt);
-  if (lv.complete) { lv.completeT += dt; if (lv.completeT > 2.2) nextLevel(); }
+  if (lv.complete) {
+    lv.completeT += dt;
+    const hold = chapterEnds() ? 6 : 2.2, skip = lv.completeT > 3.2 && [0, 1].some(i => { const q = getInp(i); return q && q.jumpP; });
+    if (lv.completeT > hold || (hold > 2.2 && skip)) nextLevel();
+  }
 }
 
 /* ------------------------------ static drawing ------------------------------ */
@@ -4351,9 +4376,11 @@ function renderPlay(t) {
   drawMotes(t);
   drawParticles();
   if (gstate !== 'pause') drawHUD(t);
-  drawNarrator();
+  const card = lv.complete && chapterEnds();
+  if (!card) drawNarrator();
   const fade = Math.max(lv.fadeIn, lv.complete ? clamp((lv.completeT - 1.2) / 1, 0, 1) : 0);
   if (fade > 0) { ctx.fillStyle = `rgba(7,6,15,${fade})`; ctx.fillRect(0, 0, W, H); }
+  if (card) { drawChapterCard(); drawNarrator(); }
 }
 
 /* ------------------------------ menus ------------------------------ */
