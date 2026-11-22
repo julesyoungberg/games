@@ -3968,7 +3968,18 @@ function returnLantern(say = true) {
 }
 function updateLantern(dt) {
   const wk = players[0];
-  if (lantern.held) { placeHeldLantern(wk); return; }
+  if (lantern.held) {
+    // a held lantern swings a little on its handle when Wick starts, stops and turns
+    const sw = lantern.sw || 0, sv = lantern.sv || 0;
+    if (dt > 0) {
+      const ax = (wk.vx - (lantern.pvx || 0)) / dt;
+      lantern.sv = sv + (-60 * sw - 4 * sv + ax * 0.006) * dt;
+      lantern.sw = clamp(sw + lantern.sv * dt, -0.5, 0.5);
+    }
+    lantern.pvx = wk.vx;
+    placeHeldLantern(wk); return;
+  }
+  lantern.sw = lantern.sv = 0;
   if (lantern.hung) { lantern.spin = 0; return; }
   lantern.spin *= 0.95;
   const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
@@ -4669,6 +4680,7 @@ function drawShade(p, t) {
 function drawLanternBody(t) {
   const x = lantern.x, y = lantern.y;
   ctx.save();
+  if (lantern.held && lantern.sw) { ctx.translate(x + 7, y - 1); ctx.rotate(lantern.sw); ctx.translate(-x - 7, -y + 1); }
   if (!lantern.held && lantern.spin) { ctx.translate(x + 7, y + 9); ctx.rotate(Math.sin(t * 20) * 0.2 * Math.min(1, Math.abs(lantern.spin))); ctx.translate(-x - 7, -y - 9); }
   ctx.strokeStyle = '#8a6326'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x + 7, y - 1, 4, Math.PI, 0); ctx.stroke();
   ctx.fillStyle = '#6b4a1f'; ctx.fillRect(x + 2, y, 10, 3); ctx.fillRect(x + 1, y + 15, 12, 3);
