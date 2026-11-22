@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.64'; // keep in step with package.json
+const GAME_VERSION = '1.0.65'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -4623,6 +4623,37 @@ const LEVELS = [
       [150, "Shade, stand on the plate as soon as Wick pushes the crate off it. Wick, fill the first hole with that crate and the second with the one in the tunnel. Shade, the ink well by the start comes out past the tunnel."],
     ],
     outro: "Two crates, two holes, no thorns stepped on. The council would like to hire you both.",
+  },
+  { name: "Curling", sub: "Two stones, two targets, one very still Wick.", ambient: 0.6, challenge: true, unlockAt: 82,
+    map: [
+      '################################',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................#.#....#',
+      '#.......................P.Q....#',
+      '#.......................P.Q....#',
+      '#....CS.C..W..qp........P.Q..E.#',
+      '##iiiiiiiiiiiiiiiiiiiiii########',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Two plates side by side in the middle of the ice, two crates, and two doors that each want their own plate.",
+    ],
+    hints: [
+      [150, "Wick, stand just past the two plates. Shade, slide the nearer crate first so it stops against Wick, then hop back and slide the other one so it stops against the first."],
+    ],
+    outro: "Sweeping not required. The narrator swept anyway, out of habit.",
   },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
