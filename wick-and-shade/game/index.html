@@ -4845,6 +4845,9 @@ function renderCredits(t) {
     ctx.globalAlpha = a; ctx.fillStyle = i === credits.lines.length - 1 ? '#ffd27a' : '#f4ead8';
     ctx.fillText(ln, W / 2, 200 + i * 52);
   });
+  const fa = clamp((credits.t - credits.lines.length * 2.6 - 1) / 1.5, 0, 1);
+  if (fa > 0) { ctx.globalAlpha = fa * 0.6; ctx.font = '14px ' + FONT_B; ctx.fillStyle = '#f4ead8';
+    ctx.fillText('Made for one couch and two people.  ·  Type: Fraunces and Lora (SIL Open Font License)  ·  Every room solved at least once by a very patient robot.', W / 2, 610); }
   ctx.globalAlpha = 1;
   const wx = W / 2 - 40 + Math.sin(t) * 10;
   const a = mkPlayer('wick'); a.x = wx - 30; a.y = 690 - 34; a.onGround = true; a.anim = 0; a.blink = 1;
