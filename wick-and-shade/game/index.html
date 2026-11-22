@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.56'; // keep in step with package.json
+const GAME_VERSION = '1.0.57'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -4191,6 +4191,37 @@ const LEVELS = [
       [150, "The crate can hide the floor mirror. For the high one, the ink block itself is in the way, if Wick stands under its left half and not its right."],
     ],
     outro: "Two showings, one ticket, and the narrator slept through both. The narrator says the second one was better.",
+  },
+  { name: "Pressure Valve", sub: "The pink door is already open. That should worry you.", ambient: 0.6, challenge: true, unlockAt: 82,
+    map: [
+      '################################',
+      '#....................#.........#',
+      '#....................#.........#',
+      '#....................#.........#',
+      '#....................#.........#',
+      '#....................#.........#',
+      '#....................#.........#',
+      '#....................Q.........#',
+      '#....................Q.........#',
+      '#....................Q..q...E..#',
+      '#...............################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............C...............#',
+      '#.......S.W....q...............#',
+      '###############f################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "A pink plate on a steam vent, and a crate sitting on both. The door upstairs is open, but nothing is getting up there while the steam is off.",
+    ],
+    hints: [
+      [150, "Shade, stand on the grate and hold down: you keep the plate pressed without floating away. Wick rides the steam up, through the door, and onto the far pink plate. Then Shade can let go and come up."],
+    ],
+    outro: "Somebody had to stay behind and hold the valve, and somebody had to go first. Very grown up. The narrator nearly cried. Steam, probably.",
   },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
