@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.12.0)
+## What's in this version (1.13.0)
+Two more Overtime puzzles: Airlock (only one door may be open at a time) and Severance Package (one crate, two jobs; unlocks after the finale). 36 in all.
+
+## 1.12.0
 Two more Overtime puzzles: Elevator Pitch (a lift that only carries whoever didn't call it) and Reverse Psychology (a door that opens when the switch is off). 34 in all.
 
 ## 1.11.0
