@@ -89,6 +89,8 @@ const SFX = {
   menu() { tone(720, 0.05, 'triangle', 0.06); },
   ok() { tone(520, 0.08, 'triangle', 0.08); tone(780, 0.12, 'triangle', 0.08, null, 0.06); },
   float() { tone(300 + Math.random() * 200, 0.2, 'sine', 0.025, 600); },
+  ding() { tone(1046, 0.5, 'sine', 0.05); tone(784, 0.7, 'sine', 0.045, null, 0.16); },
+  liftGo() { tone(70, 0.3, 'triangle', 0.05, 95); },
   well() { tone(180, 0.25, 'sine', 0.12, 520); tone(90, 0.2, 'sine', 0.08, 60, 0.05); },
   step(shade) { shade ? tone(95 + Math.random() * 20, 0.05, 'sine', 0.035, 70) : tone(150 + Math.random() * 40, 0.035, 'triangle', 0.03, 110); },
   drum() { tone(110, 0.22, 'sine', 0.16, 55); tone(220, 0.08, 'triangle', 0.05, 160); },
@@ -127,6 +129,7 @@ const AMB = {
   'The Lighthouse': { type: 'lowpass', f: 420, q: 0.7, v: 0.05, lfo: 0.11, depth: 0.8 },
   'The Rooftops': { type: 'bandpass', f: 700, q: 0.5, v: 0.03, lfo: 0.07, depth: 0.7 },
   'The Night Market': { type: 'lowpass', f: 340, q: 0.5, v: 0.025, lfo: 0.2, depth: 0.35 },
+  'The Department Store': { type: 'bandpass', f: 120, q: 1.2, v: 0.03, lfo: 0.05, depth: 0.3 },
   'The Fairground': { type: 'lowpass', f: 260, q: 0.5, v: 0.03, lfo: 0.3, depth: 0.3 },
   'The Greenhouse': { type: 'highpass', f: 3500, q: 0.5, v: 0.006, drip: true },
   'The Clocktower': { type: 'lowpass', f: 200, q: 0.5, v: 0.012, tick: 1 },
@@ -178,6 +181,7 @@ const MOODS = {
   'The Clocktower': { root: 3, mode: 'minor', busy: 0.36, len: 1.3, wave: 'triangle', chords: [[0, 2, 4], [6, 1, 3], [5, 0, 2], [4, 6, 1]] },
   'The Greenhouse': { root: 4, mode: 'lydian', busy: 0.28, len: 2.6, wave: 'sine', chords: [[0, 2, 4], [1, 3, 5], [4, 6, 1], [0, 2, 4]] },
   'The Fairground': { root: -5, mode: 'mixo', busy: 0.45, len: 1.4, wave: 'triangle', chords: [[0, 2, 4], [6, 1, 3], [3, 5, 0], [4, 6, 1]] },
+  'The Department Store': { root: 0, mode: 'major', busy: 0.3, len: 2.2, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
   'The Night Market': { root: 2, mode: 'mixo', busy: 0.34, len: 1.8, wave: 'triangle', chords: [[0, 2, 4], [3, 5, 0], [6, 1, 3], [4, 6, 1]] },
   'The Rooftops': { root: -1, mode: 'dorian', busy: 0.26, len: 2.6, wave: 'sine', chords: [[0, 2, 4], [3, 5, 0], [6, 1, 3], [4, 6, 1]] },
 };
@@ -2668,7 +2672,138 @@ const LEVELS = [
       [100, "Shade, onto the post, onto the block, and up. The pink plate on the roof opens Wick's second door."],
     ],
     onPlate: (n, by, ch) => ch === 'q' ? 'Second door open. Wick, mind the gold glass. It is fine. It is lit.' : null,
-    outro: "The market is closed, the stalls are dark, and the lantern did three jobs at once. One door left.",
+    outro: "The market is closed, the stalls are dark, and the lantern did three jobs at once. Next door: a department store, open late.",
+  },
+  { name: "Ground Floor", sub: "Going up. Please hold on to your lantern.", ambient: 0.5, chapter: "The Department Store",
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#...........##.................#',
+      '#..............................#',
+      '#............................E.#',
+      '#.............##################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#WS.........ll.................#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "A department store after hours. Everything is closed except the lift. Lifts never close. They just wait.",
+      "Stand on it and it goes up. Step off and it comes back down to wait for the next customer.",
+    ],
+    hints: [
+      [40, "Both of you, hop onto the lift. It rises while anyone is standing on it."],
+      [100, "At the top, step off onto the upper floor and walk to the door."],
+    ],
+    outro: "First floor. Lanterns, shadows, and a narrator, slightly used.",
+  },
+  { name: "Lighting Department", sub: "Everything here is a lamp. One of them is a lantern.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#...........o...........#......#',
+      '#...##..................#......#',
+      '#..........BBB..........#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................#......#',
+      '#.......................P......#',
+      '#.......................P......#',
+      '#.......................P......#',
+      '#WS.ll..................P....E.#',
+      '################xxxx############',
+      '################^^^^############',
+      '################################',
+    ],
+    intro: [
+      "A sun-eye near the ceiling, a door that wants it open, and a floor of dark glass that only holds in the dark.",
+      "The lift goes up for anyone. Even a lantern on its own.",
+    ],
+    hints: [
+      [40, "Wick, ride the lift up, set the lantern down on it, and step off. The lift stays up while the lantern is on it."],
+      [100, "Up there the lantern sees the sun-eye, and down here the dark glass stays dark and solid. Walk across together."],
+    ],
+    outro: "The lantern is on display on the top shelf. It looks expensive. It is not for sale.",
+  },
+  { name: "Fitting Rooms", sub: "One at a time, please. The lift is very particular.", ambient: 0.55, cont: true,
+    map: [
+      '################################',
+      '#.............#................#',
+      '#.............#................#',
+      '#.............P................#',
+      '#.....##......P................#',
+      '#.............P................#',
+      '#.............P..p...........E.#',
+      '#.......########################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#WS...ll........p..............#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "A teal door upstairs, a teal plate downstairs, and another teal plate behind the door. The lift takes whoever asks.",
+    ],
+    hints: [
+      [40, "Shade, hold the plate on the ground floor. Wick, ride the lift up and through the door."],
+      [100, "Wick, stand on the plate behind the door so it stays open. Then Shade can take the lift up. Wick, wait until Shade is through."],
+    ],
+    outro: "Both of you fit. The narrator recommends a size up in lanterns.",
+  },
+  { name: "Top Floor", sub: "Two lifts. One of them is staff only.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#.##...................##......#',
+      '#..............................#',
+      '#............................E.#',
+      '#...####xxxxx###=======..#######',
+      '#.....................w..w.....#',
+      '#.....................w..w.....#',
+      '#.....................w..w.....#',
+      '#.....................w..w.....#',
+      '#.....................w..w.....#',
+      '#.....................w..w.....#',
+      '#.....................w..w.....#',
+      '#.....................w..w.....#',
+      '#.ll.WS...............wllw.....#',
+      '################################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Two lifts. The one on the right is behind glow curtains, so it is Wick's. Up top, dark glass first, then gold glass, then the door.",
+      "Dark glass melts in the light, gold glass needs it. The lantern can't be in both places. It can be on a lift.",
+    ],
+    hints: [
+      [40, "Wick, take the lantern up the lift on the right, set it down on the lift, and step off toward the door."],
+      [100, "Shade, take the lift on the left. The dark glass is far from the lantern and holds, the gold glass is close and holds too."],
+    ],
+    outro: "The store is closed. The lifts are back on the ground floor, waiting. They always wait. One door left.",
   },
   { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
     map: [
@@ -3475,6 +3610,19 @@ function loadLevel(idx, opts = {}) {
     else if (c === 'p' || c === 'q') { lv.plates.push({ tx: x, ty: y, ch: c, down: false }); grid[y][x] = '.'; }
     else if (c === 'o' || c === 'u') { lv.plates.push({ tx: x, ty: y, ch: c === 'o' ? 'p' : 'q', down: false, sensor: true }); grid[y][x] = '.'; }
     else if (c === 'C') { lv.crates.push({ crate: true, x: x * T, y: y * T, w: T, h: T, vx: 0, vy: 0, sx: x * T, sy: y * T, onGround: false, ign: null }); grid[y][x] = '.'; }
+    else if (c === 'l') {
+      // lifts: a row of 'l' is one platform that rises while anything stands on it and sinks back when empty
+      const last = lv.crates[lv.crates.length - 1];
+      if (last && last.lift && last.sy === y * T && last.x + last.w === x * T) last.w += T;
+      else lv.crates.push({ crate: true, lift: true, x: x * T, y: y * T, w: T, h: T, vx: 0, vy: 0, sx: x * T, sy: y * T, onGround: true, ign: null, moving: 0 });
+      grid[y][x] = '.';
+    }
+  }
+  for (const c of lv.crates) if (c.lift) {
+    // a lift stops two tiles under the first chalk above it, so there is headroom at the top
+    let r = c.sy / T - 1;
+    while (r > 0 && ![...Array(c.w / T)].some((_, k) => grid[r][c.x / T + k] === '#')) r--;
+    c.top = Math.min(c.sy, (r + 3) * T);
   }
   players[1].face = 1;
   for (let y = 0; y < ROWS; y++) {
@@ -3547,7 +3695,7 @@ function cratePush(e, c, dx) {
 function carryStack(c, moved) {
   // crates stacked on this crate slide along with it (and whatever is on them)
   for (const t of lv.crates) {
-    if (t === c || Math.abs(t.y + t.h - c.y) > 1.5 || t.x + t.w <= c.x - moved || t.x >= c.x - moved + c.w) continue;
+    if (t === c || t.lift || Math.abs(t.y + t.h - c.y) > 1.5 || t.x + t.w <= c.x - moved || t.x >= c.x - moved + c.w) continue;
     const riders = players.filter(p => p.dead <= 0 && Math.abs(p.y + p.h - t.y) < 1.5 && p.x + p.w > t.x && p.x < t.x + t.w);
     const ox = t.x; t.ignC = new Set([c]); moveX(t, moved); t.ignC = null;
     const m = t.x - ox; if (m) { for (const r of riders) moveX(r, m); t.slide = 0.15; carryStack(t, m); }
@@ -3561,7 +3709,7 @@ function moveX(e, dx) {
   });
   for (const c of lv.crates) {
     if (!crateFor(e, c) || !overl(e.x, e.y, e.w, e.h, c.x, c.y, c.w, c.h)) continue;
-    if (e.kind && e.y + e.h > c.y + 6 && e.y < c.y + c.h - 2) cratePush(e, c, dx);
+    if (e.kind && !c.lift && e.y + e.h > c.y + 6 && e.y < c.y + c.h - 2) cratePush(e, c, dx);
     if (!overl(e.x, e.y, e.w, e.h, c.x, c.y, c.w, c.h)) continue;
     if (dx > 0) e.x = Math.min(e.x, c.x - e.w); else e.x = Math.max(e.x, c.x + c.w); hit = true;
   }
@@ -3706,9 +3854,50 @@ function updateLantern(dt) {
   if (thorn) { burst(lantern.x + 7, lantern.y + 9, '#ffcf70', 14); returnLantern(); }
 }
 
+/* ------------------------------ lifts ------------------------------ */
+const LIFT = 95;
+function liftRiders(c, below, centre) {
+  // whatever stands on the lift: players, the lantern, crates (below: how far under the top still counts;
+  // centre: only things standing mostly on it, so a toe over the edge doesn't call the lift)
+  const on = e => e.y + e.h >= c.y - 2 && e.y + e.h <= c.y + below && (centre ? e.x + e.w / 2 > c.x && e.x + e.w / 2 < c.x + c.w : e.x + e.w > c.x + 1 && e.x < c.x + c.w - 1);
+  const r = players.filter(p => p.dead <= 0 && on(p));
+  if (!lantern.held && !lantern.hung && on(lantern)) r.push(lantern);
+  for (const k of lv.crates) if (k !== c && !k.lift && on(k)) r.push(k);
+  return r;
+}
+function hitsTiles(e) { let h = false; forEachTile(e, (tx, ty) => { if (solidFor(e, tx, ty)) h = true; }); return h; }
+function updateLift(c, dt) {
+  c.loaded = liftRiders(c, 2, true).length > 0;
+  const was = c.moving;
+  let dy = c.loaded ? -LIFT * dt : Math.min(LIFT * dt, c.sy - c.y);
+  c.moving = 0;
+  if (Math.abs(dy) < 0.01 || (dy < 0 && c.y <= c.top + 0.01)) { if (was < 0 && c.y <= c.top + 0.01) SFX.ding(); return; }
+  if (dy < 0) dy = Math.max(dy, c.top - c.y);
+  const riders = dy < 0 ? liftRiders(c, 5) : liftRiders(c, 2), oy = c.y;
+  c.y += dy;
+  // going down, it stops for anyone underneath it
+  if (dy > 0 && (hitsTiles(c) || players.some(p => p.dead <= 0 && !riders.includes(p) && overl(p.x, p.y, p.w, p.h, c.x, c.y, c.w, c.h)))) { c.y = oy; return; }
+  // going up it carries its riders; going down they just follow it (so someone half on a ledge stays there)
+  if (dy < 0) for (const r of riders) { r.y = c.y - r.h; if (r.vy > 0) r.vy = 0; }
+  if (dy < 0 && riders.some(r => hitsTiles(r))) { c.y = oy; for (const r of riders) r.y = c.y - r.h; c.moving = was; return; }
+  c.moving = Math.sign(dy);
+  if (!was) SFX.liftGo();
+}
+function drawLifts(t) {
+  for (const c of lv.crates) {
+    if (!c.lift) continue;
+    const x = Math.round(c.x), y = Math.round(c.y), w = c.w;
+    ctx.strokeStyle = 'rgba(233,184,96,0.16)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x + 5, c.top - 2 * T); ctx.lineTo(x + 5, c.sy + T); ctx.moveTo(x + w - 5, c.top - 2 * T); ctx.lineTo(x + w - 5, c.sy + T); ctx.stroke();
+    ctx.fillStyle = 'rgba(233,184,96,0.22)';
+    for (let k = 0; k < 2; k++) { const yy = c.top - 2 * T + 3 + k * 4; ctx.fillRect(x + 2, yy, w - 4, 1); }
+  }
+}
+
 /* ------------------------------ crates ------------------------------ */
 function updateCrates(dt) {
   for (const c of lv.crates) {
+    if (c.lift) { updateLift(c, dt); continue; }
     c.slide = Math.max(0, (c.slide || 0) - dt);
     const wasG = c.onGround, vy0 = c.vy;
     c.vy = Math.min(c.vy + 1900 * dt, 900);
@@ -3727,6 +3916,14 @@ function updateCrates(dt) {
 function drawCrates(t) {
   for (const c of lv.crates) {
     const x = Math.round(c.x), y = Math.round(c.y);
+    if (c.lift) {
+      ctx.fillStyle = '#0c0912'; ctx.fillRect(x, y, c.w, 14);
+      ctx.fillStyle = '#1a1230'; ctx.fillRect(x + 6, y + 14, c.w - 12, T - 14);
+      ctx.fillStyle = '#e9b860'; ctx.fillRect(x, y, c.w, 2);
+      ctx.fillStyle = 'rgba(233,184,96,0.35)'; for (let k = 10; k < c.w - 6; k += 12) ctx.fillRect(x + k, y + 6, 4, 2);
+      if (c.moving) { ctx.fillStyle = 'rgba(255,214,140,' + (0.5 + 0.4 * Math.sin(t * 10)) + ')'; const ay = y + 24, ax = x + c.w / 2; ctx.beginPath(); ctx.moveTo(ax - 5, ay + (c.moving < 0 ? 3 : -3)); ctx.lineTo(ax + 5, ay + (c.moving < 0 ? 3 : -3)); ctx.lineTo(ax, ay + (c.moving < 0 ? -3 : 3)); ctx.fill(); }
+      continue;
+    }
     ctx.fillStyle = '#0c0912'; ctx.fillRect(x, y, T, T);
     ctx.strokeStyle = '#7b56c9'; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 1, T - 2, T - 2);
     ctx.beginPath(); ctx.moveTo(x + 6, y + 6); ctx.lineTo(x + T - 6, y + T - 6); ctx.moveTo(x + T - 6, y + 6); ctx.lineTo(x + 6, y + T - 6);
@@ -3913,7 +4110,7 @@ function updatePlates() {
     }
     players.forEach(p => { if (p.dead <= 0 && overl(p.x, p.y, p.w, p.h + 1, rx, ry, rw, rh)) { d = true; who = p.kind; } });
     if (!lantern.held && overl(lantern.x, lantern.y, lantern.w, lantern.h + 1, rx, ry, rw, rh)) { d = true; who = who || 'lantern'; }
-    for (const c of lv.crates) if (overl(c.x, c.y, c.w, c.h + 1, rx, ry, rw, rh)) { d = true; who = who || 'crate'; }
+    for (const c of lv.crates) if (!c.lift && overl(c.x, c.y, c.w, c.h + 1, rx, ry, rw, rh)) { d = true; who = who || 'crate'; }
     if (d && !pl.down) { SFX.plate(true); by = who; }
     if (!d && pl.down) SFX.plate(false);
     pl.down = d; if (d) any[pl.ch] = true;
@@ -4047,7 +4244,7 @@ function chapterOf(idx) { for (let i = idx; i >= 0; i--) { const d = LEVELS[i]; 
 // each long chapter's night sky has its own faint colour
 const SKY_TINT = { 'The Stockroom': 'rgba(150,100,50,0.35)', 'The Gallery': 'rgba(170,150,110,0.3)', 'Backstage': 'rgba(170,40,70,0.35)', 'The Observatory': 'rgba(40,60,170,0.4)',
   'The Music Room': 'rgba(150,70,160,0.35)', 'The Print Shop': 'rgba(90,90,100,0.35)', 'The Lighthouse': 'rgba(30,100,170,0.4)', 'The Clocktower': 'rgba(150,120,50,0.35)',
-  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)' };
+  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)', 'The Department Store': 'rgba(150,110,180,0.3)' };
 const SIL = '#150f29', GLOW = 'rgba(255,226,170,0.3)';
 const LANDMARKS = {
   'The Stockroom': g => { g.fillStyle = SIL; g.beginPath(); g.moveTo(140, 600); for (let i = 0; i < 5; i++) { g.lineTo(140 + i * 60, 500); g.lineTo(200 + i * 60, 470); g.lineTo(200 + i * 60, 500); } g.lineTo(440, 600); g.fill(); g.fillStyle = GLOW; for (let i = 0; i < 4; i++) g.fillRect(170 + i * 66, 530, 14, 10); },
@@ -4059,6 +4256,7 @@ const LANDMARKS = {
   'The Lighthouse': g => { g.fillStyle = 'rgba(255,230,170,0.05)'; g.beginPath(); g.moveTo(300, 360); g.lineTo(820, 300); g.lineTo(820, 420); g.fill(); g.fillStyle = SIL; g.beginPath(); g.moveTo(270, 600); g.lineTo(285, 380); g.lineTo(315, 380); g.lineTo(330, 600); g.fill(); g.fillRect(278, 368, 44, 12); g.beginPath(); g.moveTo(282, 340); g.lineTo(300, 322); g.lineTo(318, 340); g.fill(); g.fillStyle = GLOW; g.fillRect(288, 342, 24, 24); },
   'The Clocktower': g => { g.fillStyle = SIL; g.fillRect(260, 380, 80, 220); g.beginPath(); g.moveTo(250, 380); g.lineTo(300, 300); g.lineTo(350, 380); g.fill(); g.fillStyle = GLOW; g.beginPath(); g.arc(300, 420, 22, 0, TAU); g.fill(); g.strokeStyle = SIL; g.lineWidth = 3; g.beginPath(); g.moveTo(300, 420); g.lineTo(300, 404); g.moveTo(300, 420); g.lineTo(312, 426); g.stroke(); },
   'The Greenhouse': g => { g.fillStyle = SIL; g.beginPath(); g.moveTo(170, 600); g.lineTo(170, 500); g.arc(300, 500, 130, Math.PI, TAU); g.lineTo(430, 600); g.fill(); g.strokeStyle = 'rgba(255,226,170,0.10)'; g.lineWidth = 2; for (let i = 1; i < 6; i++) { const a = Math.PI + i * Math.PI / 6; g.beginPath(); g.moveTo(300, 600); g.lineTo(300 + Math.cos(a) * 130, 500 + Math.sin(a) * 130); g.stroke(); } g.beginPath(); g.arc(300, 500, 130, Math.PI, TAU); g.stroke(); },
+  'The Department Store': g => { g.fillStyle = SIL; g.fillRect(140, 400, 320, 200); g.fillRect(170, 380, 260, 20); g.fillRect(290, 340, 3, 40); g.fillStyle = GLOW; for (const [k, r] of [[1, 0], [4, 1], [2, 2], [5, 2], [0, 3]]) g.fillRect(166 + k * 42, 424 + r * 42, 14, 12); g.fillRect(282, 572, 36, 28); },
   'The Rooftops': g => { g.fillStyle = SIL; g.fillRect(120, 500, 180, 100); g.beginPath(); g.moveTo(110, 500); g.lineTo(210, 450); g.lineTo(310, 500); g.fill(); g.fillRect(250, 440, 18, 40); g.fillRect(330, 470, 160, 130); g.fillRect(360, 440, 14, 30); g.fillRect(420, 446, 14, 24); g.fillRect(452, 400, 3, 70); g.fillRect(436, 410, 36, 3); g.fillRect(442, 422, 24, 3); g.fillStyle = GLOW; g.fillRect(160, 530, 14, 12); g.fillRect(370, 500, 14, 12); g.fillRect(430, 530, 14, 12); },
   'The Night Market': g => { g.fillStyle = SIL; for (let i = 0; i < 4; i++) { const x = 120 + i * 110; g.fillRect(x, 520, 90, 80); g.beginPath(); g.moveTo(x - 10, 520); g.lineTo(x + 45, 488); g.lineTo(x + 100, 520); g.fill(); } g.strokeStyle = 'rgba(255,226,170,0.25)'; g.lineWidth = 1; g.beginPath(); g.moveTo(100, 470); g.quadraticCurveTo(320, 520, 560, 470); g.stroke(); g.fillStyle = GLOW; for (let i = 0; i <= 12; i++) { const u = i / 12, x = 100 + u * 460, y = 470 + 4 * u * (1 - u) * 25; g.beginPath(); g.arc(x, y + 2, 2.5, 0, TAU); g.fill(); } },
   'The Fairground': g => { g.strokeStyle = SIL; g.lineWidth = 4; g.beginPath(); g.arc(300, 440, 110, 0, TAU); g.stroke(); g.lineWidth = 2; for (let i = 0; i < 12; i++) { const a = i * TAU / 12; g.beginPath(); g.moveTo(300, 440); g.lineTo(300 + Math.cos(a) * 110, 440 + Math.sin(a) * 110); g.stroke(); } g.fillStyle = SIL; g.beginPath(); g.moveTo(240, 600); g.lineTo(300, 440); g.lineTo(360, 600); g.fill(); g.fillStyle = GLOW; for (let i = 0; i < 12; i++) { const a = i * TAU / 12; g.beginPath(); g.arc(300 + Math.cos(a) * 110, 440 + Math.sin(a) * 110, 3, 0, TAU); g.fill(); } g.fillStyle = SIL; g.beginPath(); g.moveTo(470, 600); g.lineTo(530, 500); g.lineTo(590, 600); g.fill(); },
@@ -4543,6 +4741,7 @@ function renderPlay(t) {
   drawDarkness(t);
   drawShadows(t);
   ctx.drawImage(inkCanvas, 0, 0);
+  drawLifts(t);
   drawCrates(t);
   drawShade(players[1], t);
   if (lv.ambient > 0.8) drawWick(players[0], t); // in the dark, still show Wick faintly lit by lantern
@@ -4722,6 +4921,7 @@ function thumbTile(c, map, x, y, cell) {
     if (ch === '#') { const edge = y === 0 || x === 0 || x === cols - 1 || y === rows - 1 || (map[y - 1] && map[y - 1][x] !== '#'); c.fillStyle = edge ? '#e6dcc8' : '#b9ae99'; c.fillRect(px, py, cell, cell); }
     else if (ch === '^') { c.fillStyle = '#b8304a'; c.beginPath(); c.moveTo(px, py + cell); c.lineTo(px + cell / 2, py + cell * 0.35); c.lineTo(px + cell, py + cell); c.fill(); }
     else if (ch === 'p' || ch === 'q' || ch === 'o' || ch === 'u') { c.fillStyle = ch === 'p' || ch === 'o' ? '#4fc7b8' : '#e6609a'; if (ch === 'o' || ch === 'u') { c.beginPath(); c.arc(px + cell / 2, py + cell / 2, cell * 0.3, 0, TAU); c.fill(); } else c.fillRect(px + 2, py + cell - 4, cell - 4, 4); }
+    else if (ch === 'l') { c.fillStyle = '#0c0912'; c.fillRect(px, py, cell, cell * 0.45); c.fillStyle = '#e9b860'; c.fillRect(px, py, cell, Math.max(1, cell / 10)); }
     else if (ch === 'C') { c.fillStyle = '#0c0912'; c.fillRect(px + 1, py + 1, cell - 2, cell - 2); c.strokeStyle = '#7b56c9'; c.lineWidth = Math.max(1, cell / 10); c.strokeRect(px + 1.5, py + 1.5, cell - 3, cell - 3); }
     else if (ch === 'E' || ch === 'F') { c.fillStyle = '#ffd27a'; c.fillRect(px + cell * 0.2, py - cell * 0.4, cell * 0.6, cell * 1.4); }
     else if (ch === 'k') { c.fillStyle = '#05020c'; c.beginPath(); c.ellipse(px + cell / 2, py + cell * 0.25, cell * 0.45, cell * 0.2, 0, 0, TAU); c.fill(); c.fillStyle = '#b9ae99'; c.fillRect(px, py + cell * 0.35, cell, cell * 0.65); }
@@ -4743,6 +4943,7 @@ const GUIDE = [
   ['j', 'Drums', 'Throw whoever lands on them high. Hold down to stand on one.', ['...', '...', '#j#']],
   ['>', 'Belts', 'Carry whatever stands on them: you, crates, the lantern.', ['...', '...', '>>>']],
   ['k', 'Ink wells', 'Shade only: stand on one and press down to come out of its partner. They pair left to right.', ['...', '...', '#k#']],
+  ['l', 'Lifts', 'Rise while anything stands on them: you, a crate, the lantern. Step off and they sink back down.', ['...', '...', '#ll']],
   ['m', 'Mirror balls', 'Shine too while the lantern can see them, a bit less far.', ['...', '.m.', '...']],
 ];
 const guideIcons = {};
