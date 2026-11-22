@@ -4760,10 +4760,11 @@ function renderJoin(t) {
 }
 let pauseOpts = false, pauseGuide = false;
 function pauseItems() {
-  if (pauseOpts) return optionItems(() => { pauseOpts = false; menuSel = 4; });
+  if (pauseOpts) return optionItems(() => { pauseOpts = false; menuSel = 5; });
   return [
     { label: 'Resume', act: () => { gstate = 'play'; } },
     { label: 'Field guide', act: () => { pauseGuide = true; SFX.menu(); } },
+    { label: 'Ask for a hint', act: askHint },
     { label: (CH_ROOMS[CH_NUM[lv.idx]] || 1) > 1 ? 'Restart room' : 'Restart chapter', act: () => { startLevel(lv.idx, { quietIntro: true }); } },
     { label: lv && lv.def.challenge ? 'Back to challenges' : 'Skip chapter', act: () => { narr.clear(); if (lv.def.challenge) { gstate = 'title'; menuMode = 'challenges'; menuSel = 0; return; } narr.say(LINES.skip); lv.exitKind = 'E'; nextLevel(); } },
     { label: 'Options', act: () => { pauseOpts = true; menuSel = 0; } },
@@ -4772,10 +4773,19 @@ function pauseItems() {
     { label: 'Quit to title', act: () => { gstate = 'title'; menuMode = 'main'; menuSel = 0; narr.clear(); } },
   ];
 }
+// the next hint the room has not given yet (or the hints again, in order), straight away
+function askHint() {
+  const hs = lv.def.hints || [];
+  gstate = 'play'; narr.cur = null; narr.q = narr.q.filter(e => e.kind !== 'hint');
+  if (!hs.length) { narr.say(lv.def.challenge ? 'No hints in the challenges. That is what makes them challenges. I believe in you. Mostly.' : 'No hints for this one. You are closer than you think.', { front: true, kind: 'quip' }); return; }
+  let k = hs.findIndex((h, j) => !lv.hintsFired.has(j));
+  if (k < 0) { k = lv.hintNext || 0; lv.hintNext = (k + 1) % hs.length; } else lv.hintsFired.add(k);
+  narr.say(hs[k][1], { front: true, kind: 'hint' });
+}
 function updatePause(dt) {
   const mi = menuInput();
   if (pauseGuide) { if (mi.pause || mi.back || mi.ok) { pauseGuide = false; SFX.menu(); } return; }
-  if (pauseOpts && (mi.pause || mi.back)) { pauseOpts = false; menuSel = 4; SFX.menu(); return; }
+  if (pauseOpts && (mi.pause || mi.back)) { pauseOpts = false; menuSel = 5; SFX.menu(); return; }
   if (mi.pause || mi.back) { gstate = 'play'; SFX.menu(); return; }
   runMenu(pauseItems(), mi);
 }
