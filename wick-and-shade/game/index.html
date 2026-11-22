@@ -149,7 +149,19 @@ function pollInput() {
     devState[d] = s; prevIn[d] = { jump: r.jump, act: r.act, pause: r.pause, alt: r.alt, dx, dy };
   }
   if (any) initAudio();
+  // a controller that drops out and comes back (Bluetooth sleep, low battery) can return under a different
+  // index: follow it by its name so the player keeps their character
+  for (let i = 0; i < 2; i++) {
+    const m = assign[i] && /^g(\d+)([LR]?)$/.exec(assign[i]); if (!m) continue;
+    const p = pads[+m[1]];
+    if (p && p.connected) { padIdOf[i] = p.id; continue; }
+    if (!padIdOf[i]) continue;
+    const om = assign[1 - i] && /^g(\d+)/.exec(assign[1 - i]);
+    const j = pads.findIndex((q, k) => q && q.connected && q.id === padIdOf[i] && (m[2] || !om || +om[1] !== k));
+    if (j >= 0) assign[i] = 'g' + j + m[2];
+  }
 }
+const padIdOf = [null, null];
 function menuInput() {
   const o = { navX: 0, navY: 0, ok: false, back: false, pause: false, alt: false, dev: null, altDev: null };
   for (const d in devState) {
@@ -176,18 +188,33 @@ const splitMode = () => assign[0] && /L$/.test(assign[0]);
 
 /* ------------------------------ narrator ------------------------------ */
 const narr = {
-  q: [], cur: null, shown: 0, hold: 0, alpha: 0, deathCd: 0,
+  // Each line has a kind. 'guide' lines (intros, hints) wait for Y/Tab. 'quip' lines (reactions, deaths, outros)
+  // close by themselves after a while. Any line that has gone stale, because the players moved on before reading it,
+  // is dropped instead of being shown late.
+  q: [], cur: null, meta: null, shown: 0, hold: 0, alpha: 0, deathCd: 0,
   say(t, opt = {}) {
     if (opt.ifQuiet && (this.cur || this.q.length)) return false;
-    if (opt.front) this.q.unshift(t); else this.q.push(t);
+    const e = { t, kind: opt.kind || (opt.ifQuiet ? 'quip' : 'guide'), at: lv ? lv.time : 0, prog: lv ? lv.prog || 0 : 0, lvl: lv ? lv.idx : -1, ttl: opt.ttl };
+    if (opt.front) this.q.unshift(e); else this.q.push(e);
     return true;
   },
-  clear() { this.q = []; this.cur = null; },
+  clear() { this.q = []; this.cur = null; this.meta = null; },
+  stale(e, showing) {
+    if (!lv) return false;
+    if (e.lvl !== lv.idx) return e.kind !== 'outro' || !showing;
+    const moved = (lv.prog || 0) - e.prog;
+    if (e.kind === 'intro') return moved >= (showing ? 2 : 1);
+    if (e.kind === 'hint') return moved >= 2;
+    if (e.kind === 'quip' && !showing) return lv.time - e.at > (e.ttl || 6);
+    return false;
+  },
   update(dt) {
     this.deathCd -= dt;
+    this.q = this.q.filter(e => !this.stale(e, false));
+    if (this.cur && this.stale(this.meta, true) && this.shown >= this.cur.length && this.hold > 1.2) this.cur = null;
     if (!this.cur) {
       this.alpha = Math.max(0, this.alpha - dt * 3);
-      if (this.q.length) { this.cur = this.q.shift(); this.shown = 0; this.hold = 0; }
+      if (this.q.length) { this.meta = this.q.shift(); this.cur = this.meta.t; this.shown = 0; this.hold = 0; }
       else return;
     }
     this.alpha = Math.min(1, this.alpha + dt * 4);
@@ -196,7 +223,8 @@ const narr = {
       const b = Math.floor(this.shown); if (b !== a && b % 2 === 0 && this.cur[b] && this.cur[b] !== ' ') SFX.tick();
     } else {
       this.hold += dt;
-      if (this.autoAdvance && this.hold > Math.max(2.2, this.cur.length * 0.042)) this.cur = null;
+      const auto = this.autoAdvance || this.meta.kind === 'quip' || this.meta.kind === 'outro';
+      if (auto && this.hold > Math.max(3, this.cur.length * 0.06)) this.cur = null;
     }
   },
   // Y (controller) / Tab or N (keyboard): finish the line if it's still typing, otherwise move to the next one
@@ -206,6 +234,9 @@ const narr = {
     this.cur = null; SFX.menu();
   },
 };
+// Players did something that moves the room along (a plate, a well, a hook, a new part of the room).
+// Lines queued before enough of these are stale.
+function narrProgress() { if (lv) lv.prog = (lv.prog || 0) + 1; }
 const LINES = {
   death: [
     '{name} has discovered the thorns. Thoroughly.',
@@ -2593,7 +2624,7 @@ function loadLevel(idx, opts = {}) {
   else placeHeldLantern(players[0]);
   computeLight();
   buildStatic();
-  if (!opts.quietIntro) (def.intro || []).forEach(t => narr.say(t));
+  if (!opts.quietIntro) (def.intro || []).forEach(t => narr.say(t, { kind: 'intro' }));
   if (!def.secret && !def.challenge) { save.unlocked = Math.max(save.unlocked, idx); writeSave(); }
 }
 
@@ -2867,14 +2898,17 @@ function updatePlayer(p, inp, dt, i) {
   else { const f = (p.onGround ? 3000 : 700) * dt; p.vx = Math.abs(p.vx) <= f ? 0 : p.vx - Math.sign(p.vx) * f; }
   p.vx = clamp(p.vx, -maxS, maxS);
   // jump
-  if (inp && inp.jumpP) p.jbuf = 0.13;
-  p.jbuf -= dt;
-  p.coyote = p.onGround ? 0.1 : p.coyote - dt;
+  // a press is remembered for a moment, so a jump pressed just before landing (or while Shade is still
+  // floating up through shadow) still happens
+  if (inp && inp.jumpP) p.jbuf = shade && p.embedded ? 0.4 : 0.16;
+  p.jbuf -= dt; p.jumpT = (p.jumpT || 0) + dt;
+  p.coyote = p.onGround ? 0.12 : p.coyote - dt;
   if (p.jbuf > 0 && p.coyote > 0 && !p.embedded) {
-    p.vy = -720; p.jbuf = 0; p.coyote = 0; p.onGround = false; p.jumpHeld = true;
+    p.vy = -720; p.jbuf = 0; p.coyote = 0; p.onGround = false; p.jumpHeld = true; p.jumpT = 0;
     shade ? SFX.sjump() : SFX.jump();
   }
-  if (p.jumpHeld && (!inp || !inp.jump) && p.vy < 0) { p.vy *= 0.45; p.jumpHeld = false; }
+  // letting go early makes a shorter hop, but even a very quick tap gives a proper little jump
+  if (p.jumpHeld && (!inp || !inp.jump) && p.vy < 0 && p.jumpT > 0.09) { p.vy *= 0.5; p.jumpHeld = false; }
   if (p.vy >= 0) p.jumpHeld = false;
   // gravity / buoyancy
   if (shade && p.embedded) { p.vy += (-250 - p.vy) * Math.min(1, 7 * dt); if (Math.random() < dt * 12) bubble(p); }
@@ -2911,7 +2945,7 @@ function updatePlayer(p, inp, dt, i) {
       burst(p.x + p.w / 2, p.y + p.h, '#b89cff', 14);
       p.x = to.tx * T + (T - p.w) / 2; p.y = to.ty * T - p.h; p.vx = p.vy = 0; p.wellLock = true; p.landT = 1;
       burst(p.x + p.w / 2, p.y + p.h, '#b89cff', 18); SFX.well();
-      lv.wellT = lv.time; lv.wellAt = [wi, lv.wells.indexOf(to)];
+      lv.wellT = lv.time; lv.wellAt = [wi, lv.wells.indexOf(to)]; narrProgress();
       if (!flags.well) { flags.well = true; narr.say(LINES.wellFirst, { ifQuiet: true }); }
     }
   }
@@ -2949,7 +2983,7 @@ function shadeContact(p, adx = 0, ady = 0) {
       let blocked = false; forEachTile(p, (tx, ty) => { if (solidFor(p, tx, ty)) blocked = true; });
       if (blocked) { p.y = oy; return; }
       p.vy = 0; p.onGround = true; p.onShadow = true;
-      if (!flags.shadow) { flags.shadow = true; narr.say(LINES.shadowFirst, { ifQuiet: false }); }
+      if (!flags.shadow) { flags.shadow = true; narr.say(LINES.shadowFirst, { kind: 'quip' }); }
       return;
     }
   }
@@ -2967,7 +3001,7 @@ function hangLantern(h) { lantern.held = false; lantern.hung = h; lantern.vx = l
 function wickInteract(p, inp) {
   const hk = lantern.held ? hookNear(p) : null;
   if (hk && Math.abs(inp.mx) <= 0.3) {
-    hangLantern(hk); SFX.drop(); run.abandon++;
+    hangLantern(hk); SFX.drop(); run.abandon++; narrProgress();
     if (!flags.hook) { flags.hook = true; narr.say(LINES.hookFirst, { ifQuiet: true }); }
     return;
   }
@@ -3019,9 +3053,9 @@ function updatePlates() {
       lv.pressed[ch] = any[ch];
       SFX.door();
       if (any[ch]) {
-        lv.plateCount++;
+        lv.plateCount++; narrProgress();
         const line = lv.def.onPlate ? lv.def.onPlate(lv.plateCount, by, ch) : null;
-        if (line && !lv.saidPlate.has(line)) { lv.saidPlate.add(line); narr.say(line, { front: true }); }
+        if (line && !lv.saidPlate.has(line)) { lv.saidPlate.add(line); narr.say(line, { front: true, kind: 'quip', ttl: 4 }); }
         if (lv.def.secret && lv.plateCount >= 5) confetti();
       }
     }
@@ -3039,7 +3073,7 @@ function updateExits(dt) {
     if (ins[0] && ins[1]) {
       lv.complete = true; lv.exitKind = ex.kind; lv.completeT = 0; SFX.win();
       const line = ex.kind === 'F' ? lv.def.outroF : lv.def.outro;
-            if (line) narr.say(line);
+            if (line) narr.say(line, { kind: 'outro' });
       for (let k = 0; k < 40; k++) lv.particles.push({ x: r.x + T / 2, y: r.y + T, vx: rand(-140, 140), vy: rand(-260, -40), life: rand(0.6, 1.4), max: 1.4, c: pick(['#ffd27a', '#b89cff', '#fff']), s: rand(2, 4) });
       return;
     }
@@ -3079,7 +3113,7 @@ function updatePlay(dt) {
   lv.idle = active ? 0 : lv.idle + dt;
   if (lv.idle > 32) { lv.idle = -40; narr.say(pick(LINES.idle), { ifQuiet: true }); }
   (lv.def.hints || []).forEach(([t, txt], k) => {
-    if (lv.time > t && !lv.hintsFired.has(k) && !lv.complete) { lv.hintsFired.add(k); narr.say(txt); }
+    if (lv.time > t && !lv.hintsFired.has(k) && !lv.complete) { lv.hintsFired.add(k); narr.say(txt, { kind: 'hint' }); }
   });
   updatePlates();
   updateCrates(dt);
@@ -3088,6 +3122,9 @@ function updatePlay(dt) {
   computeLight();
   if (!lv.complete) updatePlayer(players[1], inps[1], dt, 1);
   updateExits(dt);
+  // reaching a new part of the room counts as progress for the narrator (rooms split into 4 x 4 areas)
+  lv.seen = lv.seen || new Set();
+  for (const p of players) if (p.dead <= 0) { const k = clamp(Math.floor((p.x + p.w / 2) / (W / 4)), 0, 3) + 4 * clamp(Math.floor((p.y + p.h / 2) / (H / 4)), 0, 3); if (!lv.seen.has(k)) { const first = lv.seen.size < 2; lv.seen.add(k); if (!first) narrProgress(); } }
   updateParticles(dt);
   if (lv.complete) { lv.completeT += dt; if (lv.completeT > 2.2) nextLevel(); }
 }

@@ -25,9 +25,9 @@ Wick & Shade comes as one Linux app file: **`WickAndShade.AppImage`** (about 100
 |---|---|---|
 | Move | Left stick / D-pad | Left stick / D-pad |
 | Jump | A | A |
-| X | Lantern: set down (standing still), throw (while moving), pick up | Wave |
+| X (or B) | Lantern: set down (standing still), throw (while moving), pick up | Wave |
 | Up (hold) | Raise the lantern | — |
-| Y | Next narrator line (the narrator waits for you) | Next narrator line |
+| Y | Next narrator line (instructions wait for you; quick remarks fade on their own, and lines you have already moved past are skipped) | Next narrator line |
 | Start | Pause menu | Pause menu |
 
 Progress saves automatically, and **Continue** picks up where you left off. **Chapter Select** on the title screen lets you jump to any chapter at any time, and for the long chapters, to any room inside them, with a little map of each room and a gold check on everything you have finished. A lost save never costs you anything. **Challenges** are all open from the start too. To quit: **Quit** on the title screen, or the Steam button → **Exit game**.
