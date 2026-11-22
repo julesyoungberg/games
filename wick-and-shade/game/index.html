@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.69'; // keep in step with package.json
+const GAME_VERSION = '1.0.70'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -79,6 +79,7 @@ const SFX = {
   jump() { tone(380, 0.13, 'triangle', 0.1, 640); },
   sjump() { tone(200, 0.16, 'sine', 0.14, 300); },
   land() { tone(150, 0.07, 'sine', 0.07, 90); },
+  tick(hi) { tone(hi ? 1500 : 1150, 0.035, 'square', 0.025); },
   plate(on) { tone(on ? 620 : 420, 0.12, 'square', 0.04, on ? 880 : 300); },
   door() { tone(160, 0.35, 'sawtooth', 0.025, 110); },
   die() { tone(520, 0.45, 'sawtooth', 0.06, 70); },
@@ -4688,6 +4689,38 @@ const LEVELS = [
     ],
     outro: "Top corner. The narrator is on their feet. The narrator does not have feet. Still.",
   },
+  { name: "Rush Hour", sub: "Five seconds. Starting now. Well, starting when you step off.", ambient: 0.6, challenge: true, unlockAt: 82,
+    map: [
+      '################################',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............#..........#.....#',
+      '#.............Q..........P.....#',
+      '#.............Q..........P.....#',
+      '#..t.WS....q..Q..........P...E.#',
+      '#########k#######^^##^^#####k###',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "New plate: a timer plate, with a ring round it. Its door stays open for five seconds after you step off, ticking the whole time.",
+      "The teal door is a long way from its plate, and there's a pink door in between.",
+    ],
+    hints: [
+      [150, "Shade, hold the pink plate. Wick, step on the timer plate and run for it, jumping the thorns. Shade, the ink well by you comes out past the teal door."],
+    ],
+    outro: "Four point something seconds. The narrator timed it. The narrator always times it.",
+  },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
 // Challenge levels (challenge:true) live after the story and have their own menu.
@@ -4739,6 +4772,7 @@ function loadLevel(idx, opts = {}) {
     else if (c === 'n') { (lv.candles = lv.candles || []).push({ tx: x, ty: y, lit: false, litT: 0 }); }
     else if (c === 'E' || c === 'F') { lv.exits.push({ tx: x, ty: y, kind: c }); grid[y][x] = '.'; }
     else if (c === 'p' || c === 'q') { lv.plates.push({ tx: x, ty: y, ch: c, down: false }); grid[y][x] = '.'; }
+    else if (c === 't' || c === 'y') { lv.plates.push({ tx: x, ty: y, ch: c === 't' ? 'p' : 'q', down: false, timer: true, relT: -99, on: false }); grid[y][x] = '.'; }
     else if (c === 'o' || c === 'u') { lv.plates.push({ tx: x, ty: y, ch: c === 'o' ? 'p' : 'q', down: false, sensor: true }); grid[y][x] = '.'; }
     else if (c === 'C') { lv.crates.push({ crate: true, x: x * T, y: y * T, w: T, h: T, vx: 0, vy: 0, sx: x * T, sy: y * T, onGround: false, ign: null }); grid[y][x] = '.'; }
     else if (c === 'l') {
@@ -5321,6 +5355,7 @@ let flags = {};
 
 /* ------------------------------ plates, exits ------------------------------ */
 function overl(ax, ay, aw, ah, bx, by, bw, bh) { return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by; }
+const TIMER_S = 5;
 function updatePlates() {
   const any = { p: false, q: false }; let by = null;
   for (const pl of lv.plates) {
@@ -5338,7 +5373,17 @@ function updatePlates() {
     if (!lantern.held && overl(lantern.x, lantern.y, lantern.w, lantern.h + 1, rx, ry, rw, rh)) { d = true; who = who || 'lantern'; }
     for (const c of lv.crates) if (!c.lift && overl(c.x, c.y, c.w, c.h + 1, rx, ry, rw, rh)) { d = true; who = who || 'crate'; }
     if (d && !pl.down) { SFX.plate(true); by = who; }
-    if (!d && pl.down) SFX.plate(false);
+    if (!d && pl.down && !pl.timer) SFX.plate(false);
+    if (pl.timer) {
+      // timer plate: keeps its doors open for a few seconds after it is let go
+      if (d) pl.relT = lv.time;
+      const left = TIMER_S - (lv.time - pl.relT), on = d || left > 0;
+      if (!d && on && lv.time - (pl.tickT || -9) > (left < 1.6 ? 0.25 : 0.5)) { pl.tickT = lv.time; SFX.tick(left < 1.6); }
+      if (pl.on && !on) SFX.plate(false);
+      pl.on = on; pl.left = d ? TIMER_S : Math.max(0, left);
+      pl.down = d; if (on) any[pl.ch] = true;
+      continue;
+    }
     pl.down = d; if (d) any[pl.ch] = true;
   }
   for (const ch of ['p', 'q']) {
@@ -5748,6 +5793,11 @@ function drawDynamicTiles(t) {
     ctx.fillStyle = col[2]; ctx.fillRect(px + 2, py + T - 5, T - 4, 5);
     ctx.fillStyle = col[0]; ctx.globalAlpha = pl.down ? 0.6 : 1; ctx.fillRect(px + 5, py + T - (pl.down ? 7 : 11), T - 10, pl.down ? 3 : 6); ctx.globalAlpha = 1;
     colourGlyph(pl.ch, px + T / 2, py + T - 21, 4, pl.down ? col[0] : 'rgba(244,234,216,0.35)');
+    if (pl.timer) {
+      const f = (pl.left || 0) / TIMER_S, cx = px + T / 2, cy = py + T - 21;
+      ctx.strokeStyle = 'rgba(244,234,216,0.18)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, TAU); ctx.stroke();
+      if (f > 0) { ctx.strokeStyle = col[0]; ctx.beginPath(); ctx.arc(cx, cy, 10, -Math.PI / 2, -Math.PI / 2 + f * TAU); ctx.stroke(); }
+    }
   }
 }
 function drawExits(t) {
@@ -6291,7 +6341,7 @@ function thumbTile(c, map, x, y, cell) {
     const ch = map[y][x], px = x * cell, py = y * cell, rows = map.length, cols = map[0].length;
     if (ch === '#') { const edge = y === 0 || x === 0 || x === cols - 1 || y === rows - 1 || (map[y - 1] && map[y - 1][x] !== '#'); c.fillStyle = edge ? '#e6dcc8' : '#b9ae99'; c.fillRect(px, py, cell, cell); }
     else if (ch === '^') { c.fillStyle = '#b8304a'; c.beginPath(); c.moveTo(px, py + cell); c.lineTo(px + cell / 2, py + cell * 0.35); c.lineTo(px + cell, py + cell); c.fill(); }
-    else if (ch === 'p' || ch === 'q' || ch === 'o' || ch === 'u') { c.fillStyle = ch === 'p' || ch === 'o' ? '#4fc7b8' : '#e6609a'; if (ch === 'o' || ch === 'u') { c.beginPath(); c.arc(px + cell / 2, py + cell / 2, cell * 0.3, 0, TAU); c.fill(); } else c.fillRect(px + 2, py + cell - 4, cell - 4, 4); }
+    else if (ch === 'p' || ch === 'q' || ch === 'o' || ch === 'u' || ch === 't' || ch === 'y') { c.fillStyle = ch === 'p' || ch === 'o' || ch === 't' ? '#4fc7b8' : '#e6609a'; if (ch === 't' || ch === 'y') { c.strokeStyle = c.fillStyle; c.lineWidth = Math.max(1, cell * 0.08); c.beginPath(); c.arc(px + cell / 2, py + cell * 0.45, cell * 0.25, 0, TAU); c.stroke(); } if (ch === 'o' || ch === 'u') { c.beginPath(); c.arc(px + cell / 2, py + cell / 2, cell * 0.3, 0, TAU); c.fill(); } else c.fillRect(px + 2, py + cell - 4, cell - 4, 4); }
     else if (ch === 'n') { c.fillStyle = '#efe5c8'; c.fillRect(px + cell * 0.4, py + cell * 0.35, cell * 0.2, cell * 0.65); c.fillStyle = '#ffd27a'; c.fillRect(px + cell * 0.42, py + cell * 0.12, cell * 0.16, cell * 0.2); }
     else if (ch === 'l') { c.fillStyle = '#4a3a2c'; c.fillRect(px, py, cell, cell * 0.45); c.fillStyle = '#e9b860'; c.fillRect(px, py, cell, Math.max(1, cell / 10)); }
     else if (ch === 'C') { c.fillStyle = '#0c0912'; c.fillRect(px + 1, py + 1, cell - 2, cell - 2); c.strokeStyle = '#7b56c9'; c.lineWidth = Math.max(1, cell / 10); c.strokeRect(px + 1.5, py + 1.5, cell - 3, cell - 3); }
@@ -6316,6 +6366,7 @@ const GUIDE = [
   ['>', 'Belts', 'Carry whatever stands on them: you, crates, the lantern.', ['...', '...', '>>>']],
   ['k', 'Ink wells', 'Shade only: stand on one and press down to come out of its partner. They pair left to right.', ['...', '...', '#k#']],
   ['f', 'Steam vents', 'Lift you to the top of the steam (hold down to sink). A lantern set down on one floats up. A crate shuts them off.', ['...', '...', '#f#']],
+  ['t', 'Timer plates', 'Keep their doors open for a few seconds after you step off. Then they tick. Then they close.', ['...', '.t.', '###']],
   ['i', 'Ice', 'Slippery underfoot. A crate pushed on ice slides until it hits something. So does a thrown lantern.', ['...', '...', '#ii']],
   ['l', 'Lifts', 'Rise while anything stands on them: you, a crate, the lantern. Step off, or hold down, and they sink back down.', ['...', '...', '#ll']],
   ['n', 'Candles', 'Touch one with the lantern and it stays lit for good: a small light of its own.', ['...', '.n.', '###']],
@@ -6332,7 +6383,7 @@ function guideIcon(k) {
 function guideSeen() {
   const upto = lv && !lv.def.challenge && !lv.def.secret ? lv.idx : LEVELS.length - 1, seen = new Set();
   for (let i = 0; i <= upto; i++) { const d = LEVELS[i]; if (d.challenge && upto !== LEVELS.length - 1) continue; for (const row of d.map) for (const ch of row) seen.add(ch); }
-  if (seen.has('q')) seen.add('p'); if (seen.has('u')) seen.add('o'); if (seen.has('<')) seen.add('>');
+  if (seen.has('q')) seen.add('p'); if (seen.has('u')) seen.add('o'); if (seen.has('y')) seen.add('t'); if (seen.has('<')) seen.add('>');
   return GUIDE.map((g, k) => k).filter(k => seen.has(GUIDE[k][0]));
 }
 function drawFieldGuide() {
