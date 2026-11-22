@@ -246,6 +246,7 @@ function pollInput() {
     });
     s.any = s.jumpP || s.actP || s.pauseP || s.navX || s.navY || s.altP;
     if (s.any) any = true;
+    if (s.any && d[0] === 'g' && pads[parseInt(d.slice(1))]) uiFam = padFamily(pads[parseInt(d.slice(1))].id);
     devState[d] = s; prevIn[d] = { jump: r.jump, act: r.act, pause: r.pause, alt: r.alt, dx, dy };
   }
   if (any) initAudio();
@@ -262,6 +263,18 @@ function pollInput() {
   }
 }
 const padIdOf = [null, null];
+// button names follow the controller in use: Xbox letters (and the Deck), PlayStation shapes, Nintendo letters by position
+function padFamily(id) { id = id || ''; if (/054c|playstation|dualsense|dualshock|^wireless controller/i.test(id)) return 'ps'; if (/057e|nintendo|pro controller|joy-con/i.test(id)) return 'nin'; return 'xb'; }
+const GLYPHS = {
+  xb: { A: 'A', B: 'B', X: 'X', Y: 'Y', LB: 'LB', RB: 'RB', LT: 'LT', RT: 'RT', Start: 'Start' },
+  ps: { A: 'Cross', B: 'Circle', X: 'Square', Y: 'Triangle', LB: 'L1', RB: 'R1', LT: 'L2', RT: 'R2', Start: 'Options' },
+  nin: { A: 'B', B: 'A', X: 'Y', Y: 'X', LB: 'L', RB: 'R', LT: 'ZL', RT: 'ZR', Start: '+' },
+};
+let uiFam = null;
+function bn(k) {
+  if (!uiFam) { const p = pads.find(q => q && q.connected); if (p) uiFam = padFamily(p.id); }
+  return GLYPHS[uiFam || 'xb'][k];
+}
 function menuInput() {
   const o = { navX: 0, navY: 0, ok: false, back: false, pause: false, alt: false, dev: null, altDev: null };
   for (const d in devState) {
@@ -281,7 +294,8 @@ function devName(d) {
   if (!d) return '';
   if (d === 'k1') return 'Keyboard (WASD)'; if (d === 'k2') return 'Keyboard (Arrows)';
   const m = /^g(\d+)([LR]?)$/.exec(d); const p = pads[+m[1]];
-  const nm = p ? (p.id || 'Controller').replace(/\(.*?\)/g, '').trim().slice(0, 28) : 'Controller';
+  let nm = p ? (p.id || 'Controller').replace(/\(.*?\)/g, '').replace(/^[0-9a-f]{4}-[0-9a-f]{4}-/i, '').trim() : 'Controller';
+  if (nm.length > 28) nm = nm.slice(0, 28).replace(/\s+\S*$/, '');
   return (m[2] === 'L' ? 'Left half of ' : m[2] === 'R' ? 'Right half of ' : '') + (nm || 'Controller ' + (+m[1] + 1));
 }
 const splitMode = () => assign[0] && /L$/.test(assign[0]);
@@ -5223,14 +5237,15 @@ function drawNarrator() {
     ctx.font = 'bold 14px ' + FONT_B; ctx.textAlign = 'right';
     ctx.fillStyle = `rgba(255,210,122,${pulse})`;
     const more = narr.q.length ? `  (${narr.q.length} more)` : '';
-    ctx.fillText('Y / Tab ▸ ' + (narr.q.length ? 'next' : 'close') + more, x + w - 20, y + h - 12);
+    ctx.fillText(bn('Y') + ' / Tab ▸ ' + (narr.q.length ? 'next' : 'close') + more, x + w - 20, y + h - 12);
     ctx.textAlign = 'left';
   }
   ctx.globalAlpha = 1;
 }
 function controlsText() {
-  if (splitMode()) return ['Wick: left stick · LB jump · LT lantern (drop / throw / pick up) · stick up to raise it', 'Shade: right stick · RB jump · RT wave · Y: next narrator line'];
-  return ['Wick: move · A jump · X lantern (drop, throw while moving, pick up) · hold up to raise it', 'Shade: move · A jump · X wave · Y: next narrator line · Start: menu'];
+  const b = bn;
+  if (splitMode()) return [`Wick: left stick · ${b('LB')} jump · ${b('LT')} lantern (drop / throw / pick up) · stick up to raise it`, `Shade: right stick · ${b('RB')} jump · ${b('RT')} wave · ${b('Y')}: next narrator line`];
+  return [`Wick: move · ${b('A')} jump · ${b('X')} lantern (drop, throw while moving, pick up) · hold up to raise it`, `Shade: move · ${b('A')} jump · ${b('X')} wave · ${b('Y')}: next narrator line · ${b('Start')}: menu`];
 }
 function drawHUD(t) {
   const [wk, sh] = players;
@@ -5451,7 +5466,7 @@ function renderTitle(t) {
     ctx.textAlign = 'center'; ctx.font = 'italic 64px ' + FONT_D; ctx.fillStyle = '#f6ecd6'; ctx.fillText('Options', W / 2, 220);
     ctx.font = 'italic 20px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.6)'; ctx.fillText('Left and right to change. Saved on this device.', W / 2, 262);
     drawMenuList(menuItemsFor(), W / 2, 360);
-    ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.5)'; ctx.fillText('A / Space to choose  ·  D-pad / stick / arrows to move  ·  B / E to go back', W / 2, H - 30);
+    ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.5)'; ctx.fillText(`${bn('A')} / Space to choose  ·  D-pad / stick / arrows to move  ·  ${bn('B')} / E to go back`, W / 2, H - 30);
     return;
   }
   if (menuMode !== 'main') { drawBrowse(menuItemsFor(), t); return; }
@@ -5476,7 +5491,7 @@ function renderTitle(t) {
   const items = menuItemsFor();
   drawMenuList(items, W / 2, 420);
   ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.5)';
-  ctx.fillText('A / Space to choose  ·  D-pad / stick / arrows to move  ·  B / E to go back', W / 2, H - 30);
+  ctx.fillText(`${bn('A')} / Space to choose  ·  D-pad / stick / arrows to move  ·  ${bn('B')} / E to go back`, W / 2, H - 30);
   if (Object.keys(devState).filter(d => /^g\d+$/.test(d)).length === 0) {
     ctx.fillStyle = 'rgba(255,210,122,0.6)'; ctx.fillText('No controllers seen yet: press any button on one to wake it up.', W / 2, H - 54);
   }
@@ -5527,7 +5542,7 @@ const GUIDE = [
   ['p', 'Plates and doors', 'Hold a plate down and its doors open and its bridges appear. Teal for teal, pink for pink.', ['.P.', 'pP.', '###']],
   ['C', 'Crates', 'Anyone can push one. They hold plates, stack, make steps and throw shadows.', ['...', '.C.', '###']],
   ['^', 'Thorns', 'Best avoided. You come back at the start of the room.', ['...', '...', '^^^']],
-  ['H', 'Hooks', 'Wick can hang the lantern here with X, and take it back the same way.', ['.H.', '...', '###']],
+  ['H', 'Hooks', 'Wick can hang the lantern here with the lantern button, and take it back the same way.', ['.H.', '...', '###']],
   ['v', 'Ink curtains', 'Shade slips through. Wick cannot. Light shines through.', ['.v.', '.v.', '###']],
   ['w', 'Glow curtains', 'Wick walks through. Shade cannot. Light shines through.', ['.w.', '.w.', '###']],
   ['o', 'Sun-eyes', 'Count as a plate held down while the light reaches them unblocked.', ['...', '.o.', '###']],
@@ -5567,7 +5582,7 @@ function drawFieldGuide() {
     ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.82)'; wrapText(GUIDE[k][2], x + 64, y + 37, colW - 90, 19, 2);
   });
   ctx.textAlign = 'center'; ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.5)';
-  ctx.fillText('Both of you have to be in the door to finish a room.   ·   A, B or Start to close', W / 2, H - 98);
+  ctx.fillText(`Both of you have to be in the door to finish a room.   ·   ${bn('A')}, ${bn('B')} or ${bn('Start')} to close`, W / 2, H - 98);
 }
 function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function wrapText(str, x, y, maxW, lh, maxLines = 2) {
@@ -5649,7 +5664,7 @@ function drawBrowse(items, t) {
     ctx.restore();
   }
   ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.5)'; ctx.textAlign = 'center';
-  ctx.fillText('A / Space to choose  ·  D-pad / stick / arrows to move  ·  B / E to go back', W / 2, H - 30);
+  ctx.fillText(`${bn('A')} / Space to choose  ·  D-pad / stick / arrows to move  ·  ${bn('B')} / E to go back`, W / 2, H - 30);
 }
 function updateJoin(dt) {
   joinT += dt;
@@ -5672,7 +5687,7 @@ function renderJoin(t) {
   ctx.textAlign = 'center'; ctx.fillStyle = '#f6ecd6'; ctx.font = 'italic 44px ' + FONT_D;
   ctx.fillText('Who is who?', W / 2, 140);
   ctx.font = 'italic 20px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.75)';
-  ctx.fillText('Press A on a controller (or Space / Enter on a keyboard) to join. First in is Wick.', W / 2, 180);
+  ctx.fillText(`Press ${bn('A')} on a controller (or Space / Enter on a keyboard) to join. First in is Wick.`, W / 2, 180);
   const cards = [['WICK', 'Carries the lantern. Lights the gold glass.', '#ffd27a'], ['SHADE', 'Stands on shadows. Floats up through them.', '#c4adff']];
   cards.forEach(([nm, desc, c], i) => {
     const x = W / 2 - 370 + i * 400, y = 230;
@@ -5686,13 +5701,13 @@ function renderJoin(t) {
     ctx.fillStyle = c; ctx.font = 'bold 26px ' + FONT_B; ctx.letterSpacing = '3px'; ctx.fillText(nm, x + 170, y + 210); ctx.letterSpacing = '0px';
     ctx.fillStyle = 'rgba(244,234,216,0.8)'; ctx.font = 'italic 16px ' + FONT_B; ctx.fillText(desc, x + 170, y + 240);
     ctx.font = 'bold 16px ' + FONT_B; ctx.fillStyle = assign[i] ? '#a8f0d0' : 'rgba(244,234,216,0.5)';
-    ctx.fillText(assign[i] ? devName(assign[i]) : (Math.sin(t * 4) > 0 ? 'press A to join' : ''), x + 170, y + 274);
+    ctx.fillText(assign[i] ? devName(assign[i]) : (Math.sin(t * 4) > 0 ? 'press ' + bn('A') + ' to join' : ''), x + 170, y + 274);
   });
   ctx.font = '17px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.65)';
-  ctx.fillText('Only one controller? Press Y on it to split it in half: left side plays Wick, right side plays Shade.', W / 2, 600);
+  ctx.fillText('Only one controller? Press ' + bn('Y') + ' on it to split it in half: left side plays Wick, right side plays Shade.', W / 2, 600);
   ctx.fillText('One keyboard for two? Press Y: Wick uses WASD + Space + E, Shade uses the arrows + Enter + period.', W / 2, 628);
   const nPads = Object.keys(devState).filter(d => /^g\d+$/.test(d)).length;
-  ctx.fillText(`Controllers connected: ${nPads}   ·   B / E: back`, W / 2, 668);
+  ctx.fillText(`Controllers connected: ${nPads}   ·   ${bn('B')} / E: back`, W / 2, 668);
   if (assign[0] && assign[1]) { ctx.fillStyle = '#ffd27a'; ctx.font = 'italic 26px ' + FONT_B; ctx.fillText('Here we go…', W / 2, 730); }
 }
 let pauseOpts = false, pauseGuide = false;
@@ -5790,7 +5805,7 @@ function renderCredits(t) {
   const a = mkPlayer('wick'); a.x = wx - 30; a.y = 690 - 34; a.onGround = true; a.anim = 0; a.blink = 1;
   const b = mkPlayer('shade'); b.x = wx + 30; b.y = 690 - 34; b.face = -1; b.blink = 1;
   drawWick(a, t); drawShade(b, t); drawMiniLantern(wx - 1, 655);
-  if (credits.t > 3) { ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.5)'; ctx.fillText('Press A to return to the title', W / 2, H - 24); }
+  if (credits.t > 3) { ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.5)'; ctx.fillText('Press ' + bn('A') + ' to return to the title', W / 2, H - 24); }
 }
 
 /* ------------------------------ main loop ------------------------------ */

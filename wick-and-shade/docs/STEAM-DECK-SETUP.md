@@ -19,6 +19,7 @@ Wick & Shade comes as one Linux app file: **`WickAndShade.AppImage`** (about 100
 - **Only one controller?** Press **Y** on it at the join screen to split it: left stick + LB/LT play Wick, right stick + RB/RT play Shade.
 - If a controller does nothing: press any button on it once (it may have gone to sleep), and check that the game's **Controller settings** in Steam use the **Gamepad** layout. That's Steam's default for non-Steam games.
 - **Pause menu → Swap Wick and Shade** switches characters without rejoining.
+- Button names on screen follow the controller you last pressed: letters for Xbox pads and the Deck, Cross/Circle/Square/Triangle for PlayStation, and the Nintendo letters for a Switch Pro controller. (When Steam Input is on, every controller looks like an Xbox pad to the game, so you'll see letters.)
 
 ## Controls
 | | Wick | Shade |
