@@ -49,7 +49,7 @@ Download the new `WickAndShade.AppImage` and replace the old file in `/home/deck
 - **Mirror balls** light up when the lantern can see them and shine too, a bit less far. They can open sun-eyes, hold up gold glass, melt dark glass and wipe out shadows. Hide one from the lantern (behind a crate or an ink block) to switch it off.
 - Both of you have to be in the door to finish a chapter.
 
-19 chapters, plus one you have to find. Chapters 11 to 18 (The Stockroom, The Gallery, Backstage, The Observatory, The Music Room, The Print Shop, The Lighthouse, The Clocktower) are long ones with five rooms in a row; the game shows which room you're in. Separate from the story there are 20 **Challenges**: short, tough rooms with no story. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
+20 chapters, plus one you have to find. Chapters 11 to 19 (The Stockroom, The Gallery, Backstage, The Observatory, The Music Room, The Print Shop, The Lighthouse, The Clocktower, The Greenhouse) are long ones with four or five rooms in a row; the game shows which room you're in. Separate from the story there are 20 **Challenges**: short, tough rooms with no story. More long chapters and challenges are coming in later versions. If you get badly stuck, **Restart room** (or **Restart chapter**) is in the pause menu.
 
 ## Other files
 - `index.html` is the same game as a single web page, for playing on any computer in a browser.
