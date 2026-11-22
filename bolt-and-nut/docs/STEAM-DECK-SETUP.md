@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.6.0)
+## What's in this version (1.7.0)
+Three more Overtime puzzles for the late shifts: Org Chart, Carry Over and Sleigh Ride (23 in all). Two skips are closed: Nut can't launch Bolt while standing on him, and a robot that jumps off a belt keeps moving with it, so fast belts can't be hopped up.
+
+## 1.6.0
 Four more shifts before the finale: Interdepartmental, Outlook Unsettled, Last Posting Date and Staff Reunion. 32 shifts in all. Wall signs use the game's font, and picking up a golden cog shows how many you have.
 
 ## 1.5.0
@@ -66,6 +69,6 @@ Fixes from playtesting: button presses are never dropped any more (jump, pull an
 
 Also **Overtime**: short, harder bonus puzzles on the title screen. They unlock as you finish shifts.
 
-Toys added since 0.1.0: conveyor belts (some flip direction while their plate or switch is on), switches that Nut flips with a push (they stay on until pushed again), wooden crates that magnets can't move (walk into them to shove them), springs that bounce anything that lands on them, pneumatic tubes that shoot robots and crates to the other end, anchor rings that glide along overhead rails, slippery oil floors, and magnet plates on walls that Bolt can cling to. There are 20 Overtime bonus puzzles.
+Toys added since 0.1.0: conveyor belts (some flip direction while their plate or switch is on), switches that Nut flips with a push (they stay on until pushed again), wooden crates that magnets can't move (walk into them to shove them), springs that bounce anything that lands on them, pneumatic tubes that shoot robots and crates to the other end, anchor rings that glide along overhead rails, slippery oil floors, and magnet plates on walls that Bolt can cling to. There are 23 Overtime bonus puzzles.
 
 Every shift also hides one **golden cog** off the main path (usually needs a boost, a launch, or Nut's rocket). **Choose a shift** shows which ones you've found. Progress saves automatically. **Choose a shift** and **Overtime** on the title screen let you jump to any level at any time, so a lost save never matters. Every shift has been finished start to end by scripted test robots.
