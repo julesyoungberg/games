@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.9.0)
+## What's in this version (1.10.0)
+Two more Overtime puzzles: Lost Property (fetch a crate off a shelf too tall to reach) and Trust Exercise (a pneumatic tube and a leap of faith). 30 in all. Bright tiled floors are toned down so lit rooms and the exit no longer look washed out.
+
+## 1.9.0
 Two more Overtime puzzles: Job Share (a gentle one that opens after the first shift) and Upward Mobility. 28 in all. When Bolt's pull finds nothing in range, a small spark shows the press registered.
 
 ## 1.8.2
