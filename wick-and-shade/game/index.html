@@ -4461,6 +4461,12 @@ function renderTitle(t) {
   ctx.font = 'italic 22px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.75)';
   ctx.fillText('a couch co-op about light, shadow, and a narrator who will not stop talking', W / 2, 288);
   drawMiniLantern(lx - 6, ly - 9);
+  // the two of them, sitting this one out on the hill and watching the light drift about
+  const hy = x => HILLS[2][1] + Math.sin(x * HILLS[2][3] + HILLS[2][1]) * HILLS[2][2] + Math.sin(x * HILLS[2][3] * 2.7) * HILLS[2][2] * 0.3;
+  const tw = mkPlayer('wick'), ts = mkPlayer('shade');
+  tw.x = 966 - tw.w / 2; tw.y = hy(966) - tw.h + 2; tw.onGround = true; tw.anim = 0; tw.face = lx > 966 ? 1 : -1; tw.blink = (t % 4.3) < 0.12 ? -1 : 1;
+  ts.x = 1010 - ts.w / 2; ts.y = hy(1010) - ts.h + 2 + Math.sin(t * 1.7) * 1.5; ts.face = lx > 1010 ? 1 : -1; ts.blink = ((t + 1.9) % 5.1) < 0.12 ? -1 : 1;
+  drawWick(tw, t); drawShade(ts, t);
   const items = menuItemsFor();
   drawMenuList(items, W / 2, 420);
   ctx.font = '15px ' + FONT_B; ctx.fillStyle = 'rgba(244,234,216,0.5)';
