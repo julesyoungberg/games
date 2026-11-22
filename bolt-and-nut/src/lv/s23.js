@@ -3,9 +3,9 @@
 const BW = (L, x0, x1, top, h = 5.5) => L.box(x0, -9.5, x1, -8, top - 6, top + h, 'backwall');
 
 export default {
-  name: 'Open Plan Office', sub: 'Shift 27. No walls. Just lasers. Very modern.', theme: 8,
+  name: 'Open Plan Office', sub: 'Shift 31. No walls. Just lasers. Very modern.', theme: 8,
   intro: [
-    'Shift twenty seven. Open Plan Office. Management has removed all the walls to help everyone communicate.',
+    'Shift thirty one. Open Plan Office. Management has removed all the walls to help everyone communicate.',
     'They replaced them with lasers. Communication is now mostly shouting. Please shout responsibly.',
   ],
   build(L) {
@@ -65,5 +65,5 @@ export default {
     door: { say: ['A revolving door. The switch opens one door and closes the other. Never both. Someone is always stuck in the middle.', 'The far door has a plate behind it as well. Either one opens it. Remember that. I will not say it again. I might.'], hint: 'Bolt walks between the doors. Nut flips the purple switch: the near door shuts and the far door opens. Bolt goes through and stands on the orange plate. Nut flips the switch back. The near door opens and the far door stays open for Bolt\'s plate. Nut walks through.' },
     end: { say: ['You made it across the open plan office. Communication was excellent. There were only three lasers involved.'] },
   },
-  outro: 'Shift twenty seven complete. Management is delighted with the open plan. Next quarter they are removing the floor.',
+  outro: 'Shift thirty one complete. Management is delighted with the open plan. Next quarter they are removing the floor.',
 };

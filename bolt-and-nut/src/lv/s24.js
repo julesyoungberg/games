@@ -3,9 +3,9 @@
 const BW = (L, x0, x1, top, h = 5.5) => L.box(x0, -9.5, x1, -8, top - 6, top + h, 'backwall');
 
 export default {
-  name: 'Closing Time', sub: 'Shift 28. Last one out turns off the lasers.', theme: 10,
+  name: 'Closing Time', sub: 'Shift 32. Last one out turns off the lasers.', theme: 10,
   intro: [
-    'Shift twenty eight. Closing Time. This is the last shift of the season. I have been asked to keep it brief.',
+    'Shift thirty two. Closing Time. This is the last shift of the season. I have been asked to keep it brief.',
     'Everything you have ever used is still switched on. Please go through it one last time and head for the front door. I will be fine.',
   ],
   build(L) {
@@ -88,5 +88,5 @@ export default {
     clock: { say: ['The front door. It opens when you both clock out at the same time. Like a proper team. Or a proper ending.', 'One of you on each plate, please. After that it stays open. I have checked it twice. I checked it a third time just now.'], hint: 'Bolt stands on one plate by the door and Nut stands on the other. The big door opens and stays open. Walk through together.' },
     end: { say: ['That is everything. Every gadget, every floor, every shift. You did all of it. Mostly on purpose.', 'I am not crying. It is the air conditioning. You will remember the air conditioning. It had plates.'] },
   },
-  outro: 'Shift twenty eight complete. That is the end of the season. Please leave your badges in the tray. Keep the cogs. Thank you both. Really. Lights off now.',
+  outro: 'Shift thirty two complete. That is the end of the season. Please leave your badges in the tray. Keep the cogs. Thank you both. Really. Lights off now.',
 };

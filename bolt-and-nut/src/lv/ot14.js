@@ -4,7 +4,7 @@ const BW = (L, x0, x1, top, h = 10) => L.box(x0, -9.5, x1, -8, top - 6, top + h,
 const Y = 6.8; // the shelf
 
 export default {
-  name: 'Parcel Force', sub: 'Overtime. Please do not ride the parcels. Please ride the parcels.', theme: 8, after: 26,
+  name: 'Parcel Force', sub: 'Overtime. Please do not ride the parcels. Please ride the parcels.', theme: 8, after: 30,
   intro: ['Overtime. Shipping has a backlog. The backlog is one crate. It is very important. It needs to go up, then sideways, then through a laser. With a robot on it.'],
   build(L) {
     L.start(2.5, -2, 2.5, -4);
