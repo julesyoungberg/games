@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.81'; // keep in step with package.json
+const GAME_VERSION = '1.0.82'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -148,6 +148,7 @@ const AMB = {
   'The Aquarium': { type: 'lowpass', f: 520, q: 1.4, v: 0.02, lfo: 0.22, depth: 0.5 },
   'The Museum': { type: 'bandpass', f: 700, q: 0.7, v: 0.012, lfo: 0.15, depth: 0.3 },
   'The Hotel': { type: 'lowpass', f: 1200, q: 0.8, v: 0.011, lfo: 0.4, depth: 0.25 },
+  'The Glassworks': { type: 'bandpass', f: 1600, q: 1.0, v: 0.012, lfo: 0.7, depth: 0.35 },
   'The Ice Rink': { type: 'highpass', f: 1800, q: 0.3, v: 0.012, lfo: 0.1, depth: 0.5 },
   'The Post Office': { type: 'bandpass', f: 700, q: 0.6, v: 0.02, lfo: 0.3, depth: 0.45 },
   'The Bakery': { type: 'lowpass', f: 520, q: 0.5, v: 0.022, lfo: 0.12, depth: 0.4 },
@@ -213,6 +214,7 @@ const MOODS = {
   'The Aquarium': { root: 9, mode: 'minor', busy: 0.26, len: 2.6, wave: 'sine', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
   'The Museum': { root: 5, mode: 'minor', busy: 0.22, len: 2.8, wave: 'triangle', chords: [[0, 2, 4], [3, 5, 0], [5, 0, 2], [4, 6, 1]] },
   'The Hotel': { root: 3, mode: 'major', busy: 0.34, len: 2.0, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [1, 3, 5], [4, 6, 1]] },
+  'The Glassworks': { root: 10, mode: 'minor', busy: 0.3, len: 2.2, wave: 'sine', chords: [[0, 2, 4], [4, 6, 1], [5, 0, 2], [3, 5, 0]] },
   'The Ice Rink': { root: 4, mode: 'major', busy: 0.18, len: 3, wave: 'sine', chords: [[0, 2, 4], [3, 5, 0], [5, 0, 2], [4, 6, 1]] },
   'The Post Office': { root: 9, mode: 'minor', busy: 0.3, len: 2.2, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
   'The Bakery': { root: 2, mode: 'major', busy: 0.22, len: 2.6, wave: 'triangle', chords: [[0, 2, 4], [3, 5, 0], [4, 6, 1], [0, 2, 4]] },
@@ -4255,7 +4257,106 @@ const LEVELS = [
       [40, "Shade, stand on the pink plate. Wick, ride the lift up with the lantern and light the candle at the top."],
       [110, "Wick, hold down to come back, then leave the lantern far over on the left. Dark glass only holds in the dark."],
     ],
-    outro: "The lantern waited on the left, patient as a porter, while the two of you checked out. One door left.",
+    outro: "The lantern waited on the left, patient as a porter, while the two of you checked out. Next door, a furnace was still warm.",
+  },
+  { name: "Blowpipe", sub: "Float the light. Bounce the light. Cross.", ambient: 0.6, chapter: "The Glassworks",
+    map: [
+      '################################',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#...o.................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#.....................#........#',
+      '#............m........#........#',
+      '#.....................#........#',
+      '#.....................P........#',
+      '#.....................P........#',
+      '#.....WS..............P......E.#',
+      '####f###============############',
+      '########^^^^^^^^^^^^############',
+      '################################',
+    ],
+    intro: [
+      "A glassworks, with the furnaces banked for the night. The floor over the thorns is gold glass, and it needs light.",
+      "The door needs the sun-eye, up above the vent. And there's a mirror ball over the gold glass.",
+    ],
+    hints: [
+      [40, "Wick, ride the vent up and leave the lantern floating at the top. It opens the door and lights the mirror ball."],
+      [110, "The mirror ball lights the gold glass now. Sink back down and walk across, both of you."],
+    ],
+    outro: "The narrator once tried glassblowing. The narrator would rather not talk about it.",
+  },
+  { name: "Glory Hole", sub: "Leave the lights on for whoever comes next.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....#........................#',
+      '#.....P........................#',
+      '#.....P........................#',
+      '#WSp..P..n...n...n...n....p..E.#',
+      '########================########',
+      '########^^^^^^^^^^^^^^^^########',
+      '################################',
+    ],
+    intro: [
+      "A long gold glass floor, a door with a plate on each side, and a row of candles standing along the glass.",
+      "Candles stay lit once the lantern touches them. They light the glass too, a little.",
+    ],
+    hints: [
+      [40, "Shade, stand on the near plate. Wick, walk across with the lantern. The candles light up as you pass."],
+      [110, "Wick, stand on the far plate so the door stays open. Shade, the candles are holding the glass up for you."],
+    ],
+    outro: "Four candles in a row, burning away over the glass. It looks like a birthday cake for a very long person.",
+  },
+  { name: "Annealing", sub: "Light the way. Then put the lantern down.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#........##..................###',
+      '#..............................#',
+      '#............n....n....n...E...#',
+      '#..........================##..#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..W.S.........................#',
+      '#########ll#xxxxxxxxxxxxxxx##ll#',
+      '############^^^^^^^^^^^^^^^#####',
+      '################################',
+    ],
+    intro: [
+      "The last room. Gold glass up top, which needs light. Dark glass down below, which needs the dark.",
+      "There are candles along the gold glass. And there's a long way back to the start, which might matter.",
+    ],
+    hints: [
+      [40, "Wick, take the lift up and walk the gold glass with the lantern, lighting every candle. Shade, wait at the start for now."],
+      [110, "Now bring the lantern all the way back and leave it at the far left. The candles keep the gold glass up, and the dark glass stays dark. Cross together."],
+    ],
+    outro: "Everything that was glowing has cooled. The narrator has learned a great deal about glass today and would like to share it. Later. One door left.",
   },
   { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
     map: [
@@ -6234,7 +6335,7 @@ function chapterOf(idx) { for (let i = idx; i >= 0; i--) { const d = LEVELS[i]; 
 // each long chapter's night sky has its own faint colour
 const SKY_TINT = { 'The Stockroom': 'rgba(150,100,50,0.35)', 'The Gallery': 'rgba(170,150,110,0.3)', 'Backstage': 'rgba(170,40,70,0.35)', 'The Observatory': 'rgba(40,60,170,0.4)',
   'The Music Room': 'rgba(150,70,160,0.35)', 'The Print Shop': 'rgba(90,90,100,0.35)', 'The Lighthouse': 'rgba(30,100,170,0.4)', 'The Clocktower': 'rgba(150,120,50,0.35)',
-  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)', 'The Department Store': 'rgba(150,110,180,0.3)', 'The Train Station': 'rgba(90,120,140,0.35)', 'The Library': 'rgba(170,130,80,0.3)', 'The Chandlery': 'rgba(200,140,60,0.32)', 'The Picture House': 'rgba(170,50,70,0.32)', 'The Telephone Exchange': 'rgba(120,90,60,0.34)', 'The Ice Rink': 'rgba(90,150,200,0.34)', 'The Post Office': 'rgba(170,60,60,0.32)', 'The Bakery': 'rgba(190,120,60,0.34)', 'The Laundry': 'rgba(90,150,170,0.32)', 'The Toy Shop': 'rgba(200,90,110,0.3)', 'The Ballroom': 'rgba(170,140,90,0.3)', 'The Aquarium': 'rgba(40,130,150,0.36)', 'The Museum': 'rgba(150,120,80,0.3)', 'The Hotel': 'rgba(160,80,90,0.3)' };
+  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)', 'The Department Store': 'rgba(150,110,180,0.3)', 'The Train Station': 'rgba(90,120,140,0.35)', 'The Library': 'rgba(170,130,80,0.3)', 'The Chandlery': 'rgba(200,140,60,0.32)', 'The Picture House': 'rgba(170,50,70,0.32)', 'The Telephone Exchange': 'rgba(120,90,60,0.34)', 'The Ice Rink': 'rgba(90,150,200,0.34)', 'The Post Office': 'rgba(170,60,60,0.32)', 'The Bakery': 'rgba(190,120,60,0.34)', 'The Laundry': 'rgba(90,150,170,0.32)', 'The Toy Shop': 'rgba(200,90,110,0.3)', 'The Ballroom': 'rgba(170,140,90,0.3)', 'The Aquarium': 'rgba(40,130,150,0.36)', 'The Museum': 'rgba(150,120,80,0.3)', 'The Hotel': 'rgba(160,80,90,0.3)', 'The Glassworks': 'rgba(200,110,50,0.32)' };
 const SIL = '#150f29', GLOW = 'rgba(255,226,170,0.3)';
 const LANDMARKS = {
   'The Stockroom': g => { g.fillStyle = SIL; g.beginPath(); g.moveTo(140, 600); for (let i = 0; i < 5; i++) { g.lineTo(140 + i * 60, 500); g.lineTo(200 + i * 60, 470); g.lineTo(200 + i * 60, 500); } g.lineTo(440, 600); g.fill(); g.fillStyle = GLOW; for (let i = 0; i < 4; i++) g.fillRect(170 + i * 66, 530, 14, 10); },
@@ -6254,6 +6355,7 @@ const LANDMARKS = {
   'The Aquarium': g => { g.fillStyle = SIL; g.fillRect(90, 300, 540, 12); g.fillRect(90, 590, 540, 12); g.fillRect(90, 300, 12, 300); g.fillRect(618, 300, 12, 300); g.beginPath(); g.ellipse(330, 440, 90, 44, 0, 0, TAU); g.fill(); g.beginPath(); g.moveTo(410, 440); g.lineTo(470, 400); g.lineTo(470, 480); g.closePath(); g.fill(); for (let k = 0; k < 4; k++) { g.beginPath(); g.moveTo(140 + k * 120, 590); g.quadraticCurveTo(120 + k * 120, 530, 150 + k * 120, 470); g.quadraticCurveTo(170 + k * 120, 530, 160 + k * 120, 590); g.fill(); } g.fillStyle = GLOW; g.beginPath(); g.arc(280, 430, 7, 0, TAU); g.fill(); for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(250 - k * 12, 410 - k * 26, 4 + k, 0, TAU); g.fill(); } },
   'The Museum': g => { g.fillStyle = SIL; g.fillRect(80, 590, 560, 12); for (let k = 0; k < 6; k++) g.fillRect(100 + k * 104, 380, 22, 210); g.beginPath(); g.moveTo(70, 380); g.lineTo(360, 270); g.lineTo(650, 380); g.closePath(); g.fill(); g.fillRect(300, 470, 120, 120); g.beginPath(); g.ellipse(360, 440, 34, 40, 0, 0, TAU); g.fill(); g.fillStyle = GLOW; g.beginPath(); g.arc(360, 330, 6, 0, TAU); g.fill(); },
   'The Hotel': g => { g.fillStyle = SIL; g.fillRect(160, 200, 400, 400); g.fillRect(140, 190, 440, 16); g.fillRect(310, 520, 100, 80); g.fillStyle = GLOW; for (let r = 0; r < 6; r++) for (let k = 0; k < 6; k++) if ((r * 7 + k * 3) % 5 === 1) g.fillRect(190 + k * 60, 230 + r * 48, 26, 22); g.fillRect(300, 150, 120, 26); },
+  'The Glassworks': g => { g.fillStyle = SIL; g.beginPath(); g.moveTo(180, 600); g.lineTo(220, 330); g.lineTo(300, 330); g.lineTo(340, 600); g.closePath(); g.fill(); g.fillRect(235, 150, 50, 180); g.fillRect(420, 420, 240, 180); g.beginPath(); g.arc(540, 420, 120, Math.PI, 0); g.fill(); g.fillStyle = GLOW; g.beginPath(); g.arc(540, 470, 40, Math.PI, 0); g.fill(); g.fillRect(500, 470, 80, 40); },
   'The Ice Rink': g => { g.fillStyle = SIL; g.fillRect(120, 520, 520, 80); g.beginPath(); g.ellipse(380, 520, 260, 40, 0, Math.PI, 0); g.fill(); for (let k = 0; k < 6; k++) g.fillRect(150 + k * 90, 380, 6, 140); g.fillRect(140, 372, 470, 10); g.fillStyle = GLOW; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(153 + k * 90, 372, 7, 0, TAU); g.fill(); } },
   'The Post Office': g => { g.fillStyle = SIL; g.fillRect(150, 400, 92, 200); g.beginPath(); g.arc(196, 400, 46, Math.PI, 0); g.fill(); g.fillRect(300, 330, 260, 270); g.fillStyle = GLOW; g.fillRect(170, 420, 52, 8); for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) g.fillRect(318 + k * 60, 350 + r * 56, 46, 36); },
   'The Bakery': g => { g.fillStyle = SIL; g.fillRect(140, 430, 300, 170); g.beginPath(); g.arc(290, 430, 150, Math.PI, 0); g.fill(); g.fillRect(400, 250, 46, 150); g.fillStyle = GLOW; g.beginPath(); g.arc(290, 500, 56, Math.PI, 0); g.fill(); g.fillRect(234, 500, 112, 30); g.fillStyle = 'rgba(230,220,200,0.07)'; for (let k = 0; k < 4; k++) { g.beginPath(); g.arc(423 + Math.sin(k * 1.9) * 10, 230 - k * 32, 14 + k * 6, 0, TAU); g.fill(); } },
@@ -6805,7 +6907,7 @@ function drawHUD(t) {
 const MOTES = Array.from({ length: 70 }, () => ({ x: Math.random() * 1280, y: Math.random() * 800, s: 0.6 + Math.random() * 1.4, vx: (Math.random() - 0.5) * 6, vy: -2 - Math.random() * 5, ph: Math.random() * 6.28 }));
 // a little weather per chapter, drawn over the sky and never over chalk
 const WX = Array.from({ length: 70 }, () => ({ x: Math.random() * W, y: Math.random() * H, p: Math.random() * TAU, s: Math.random() }));
-const WEATHER = { 'The Aquarium': 'suds', 'The Ballroom': 'stars', 'The Toy Shop': 'pollen', 'The Ice Rink': 'snow', 'The Bakery': 'embers', 'The Laundry': 'suds', 'The Chandlery': 'embers', 'The Lighthouse': 'rain', 'The Rooftops': 'rain', 'The Greenhouse': 'pollen', 'The Night Market': 'embers', 'The Fairground': 'confetti', 'The Observatory': 'stars' };
+const WEATHER = { 'The Glassworks': 'embers', 'The Aquarium': 'suds', 'The Ballroom': 'stars', 'The Toy Shop': 'pollen', 'The Ice Rink': 'snow', 'The Bakery': 'embers', 'The Laundry': 'suds', 'The Chandlery': 'embers', 'The Lighthouse': 'rain', 'The Rooftops': 'rain', 'The Greenhouse': 'pollen', 'The Night Market': 'embers', 'The Fairground': 'confetti', 'The Observatory': 'stars' };
 const CONFETTI = ['255,210,122', '230,96,154', '79,199,184', '184,156,255'];
 function drawWeather(t) {
   const k = lv.weather; if (!k) return;
