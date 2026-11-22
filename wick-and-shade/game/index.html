@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.73'; // keep in step with package.json
+const GAME_VERSION = '1.0.74'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -143,6 +143,7 @@ const AMB = {
   'The Picture House': { type: 'bandpass', f: 420, q: 0.8, v: 0.016, lfo: 0.6, depth: 0.3 },
   'The Laundry': { type: 'lowpass', f: 900, q: 0.4, v: 0.024, lfo: 0.25, depth: 0.5 },
   'The Telephone Exchange': { type: 'bandpass', f: 1100, q: 0.8, v: 0.016, lfo: 0.5, depth: 0.35 },
+  'The Toy Shop': { type: 'bandpass', f: 2400, q: 1.2, v: 0.012, lfo: 1.6, depth: 0.4 },
   'The Ice Rink': { type: 'highpass', f: 1800, q: 0.3, v: 0.012, lfo: 0.1, depth: 0.5 },
   'The Post Office': { type: 'bandpass', f: 700, q: 0.6, v: 0.02, lfo: 0.3, depth: 0.45 },
   'The Bakery': { type: 'lowpass', f: 520, q: 0.5, v: 0.022, lfo: 0.12, depth: 0.4 },
@@ -203,6 +204,7 @@ const MOODS = {
   'The Chandlery': { root: 1, mode: 'minor', busy: 0.24, len: 2.6, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
   'The Picture House': { root: 5, mode: 'major', busy: 0.2, len: 2.8, wave: 'sine', chords: [[0, 2, 4], [3, 5, 0], [1, 3, 5], [4, 6, 1]] },
   'The Telephone Exchange': { root: 0, mode: 'minor', busy: 0.34, len: 2.0, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [6, 1, 3], [4, 6, 1]] },
+  'The Toy Shop': { root: 7, mode: 'major', busy: 0.42, len: 1.6, wave: 'triangle', chords: [[0, 2, 4], [3, 5, 0], [4, 6, 1], [0, 2, 4]] },
   'The Ice Rink': { root: 4, mode: 'major', busy: 0.18, len: 3, wave: 'sine', chords: [[0, 2, 4], [3, 5, 0], [5, 0, 2], [4, 6, 1]] },
   'The Post Office': { root: 9, mode: 'minor', busy: 0.3, len: 2.2, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
   'The Bakery': { root: 2, mode: 'major', busy: 0.22, len: 2.6, wave: 'triangle', chords: [[0, 2, 4], [3, 5, 0], [4, 6, 1], [0, 2, 4]] },
@@ -3751,7 +3753,105 @@ const LEVELS = [
       [40, "Shade, ride the steam up and stand on the timer plate. Wick, take the lantern over the gold glass and through the door, then wait just past it."],
       [110, "Shade, step off and run. Wick's lantern keeps the floor there while you cross."],
     ],
-    outro: "Lines closed. Lights off. One door left.",
+    outro: "Lines closed. Lights off. Next door, something is ticking.",
+  },
+  { name: "Wind-Up", sub: "Turn the key. Then run.", ambient: 0.6, chapter: "The Toy Shop",
+    map: [
+      '################################',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................#..........#',
+      '#...................P..........#',
+      '#...................P..........#',
+      '#...................P.......E..#',
+      '#.........######################',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#.WSt..........................#',
+      '########j#######################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "A toy shop after closing. Everything here has a key in its back, and nothing has been wound in years.",
+      "There's a timer plate, a drum, and a door up on the top shelf.",
+    ],
+    hints: [
+      [40, "Step on the timer plate, then both of you bounce up off the drum and run for the door on the shelf."],
+    ],
+    outro: "Somewhere on a shelf, a tin soldier saluted. The narrator saluted back, to be polite.",
+  },
+  { name: "Jack in the Box", sub: "Pop goes the floor.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#..............................#',
+      '#..............................#',
+      '#...o..........................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#..............................#',
+      '#......WS...................E..#',
+      '####j#######^^rr^^##############',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The island in the thorns is only solid while the sun-eye can see the lantern.",
+      "Set the lantern down on the drum and it bounces. Up, the island's there. Down, it isn't.",
+    ],
+    hints: [
+      [40, "Wick, bounce on the drum and set the lantern down at the top. It keeps bouncing by itself."],
+      [110, "Now watch the island blink. Jump on as it appears, and jump off again before it goes."],
+    ],
+    outro: "The jack in the box would like it known that it was not scared. It was only jumping.",
+  },
+  { name: "Music Box", sub: "A long way home, on a floor that goes the other way.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................P....#',
+      '#.........................P....#',
+      '#WSt......................P.t.E#',
+      '#####^^<<<<<<<<<<<<<<<<<<#######',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The floor is a belt, and it runs back towards the thorns. The door at the far end has a timer plate on each side.",
+      "Five seconds is not long enough to cross. Holding the plate for someone is.",
+    ],
+    hints: [
+      [40, "One of you stands on the first timer plate. The other runs the whole belt, through the door, and onto the plate on the far side."],
+      [110, "Now swap. The one on the far plate holds the door while the other crosses."],
+    ],
+    outro: "The music box played its tune, slowly, then stopped. One door left.",
   },
   { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
     map: [
@@ -5634,7 +5734,7 @@ function chapterOf(idx) { for (let i = idx; i >= 0; i--) { const d = LEVELS[i]; 
 // each long chapter's night sky has its own faint colour
 const SKY_TINT = { 'The Stockroom': 'rgba(150,100,50,0.35)', 'The Gallery': 'rgba(170,150,110,0.3)', 'Backstage': 'rgba(170,40,70,0.35)', 'The Observatory': 'rgba(40,60,170,0.4)',
   'The Music Room': 'rgba(150,70,160,0.35)', 'The Print Shop': 'rgba(90,90,100,0.35)', 'The Lighthouse': 'rgba(30,100,170,0.4)', 'The Clocktower': 'rgba(150,120,50,0.35)',
-  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)', 'The Department Store': 'rgba(150,110,180,0.3)', 'The Train Station': 'rgba(90,120,140,0.35)', 'The Library': 'rgba(170,130,80,0.3)', 'The Chandlery': 'rgba(200,140,60,0.32)', 'The Picture House': 'rgba(170,50,70,0.32)', 'The Telephone Exchange': 'rgba(120,90,60,0.34)', 'The Ice Rink': 'rgba(90,150,200,0.34)', 'The Post Office': 'rgba(170,60,60,0.32)', 'The Bakery': 'rgba(190,120,60,0.34)', 'The Laundry': 'rgba(90,150,170,0.32)' };
+  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)', 'The Department Store': 'rgba(150,110,180,0.3)', 'The Train Station': 'rgba(90,120,140,0.35)', 'The Library': 'rgba(170,130,80,0.3)', 'The Chandlery': 'rgba(200,140,60,0.32)', 'The Picture House': 'rgba(170,50,70,0.32)', 'The Telephone Exchange': 'rgba(120,90,60,0.34)', 'The Ice Rink': 'rgba(90,150,200,0.34)', 'The Post Office': 'rgba(170,60,60,0.32)', 'The Bakery': 'rgba(190,120,60,0.34)', 'The Laundry': 'rgba(90,150,170,0.32)', 'The Toy Shop': 'rgba(200,90,110,0.3)' };
 const SIL = '#150f29', GLOW = 'rgba(255,226,170,0.3)';
 const LANDMARKS = {
   'The Stockroom': g => { g.fillStyle = SIL; g.beginPath(); g.moveTo(140, 600); for (let i = 0; i < 5; i++) { g.lineTo(140 + i * 60, 500); g.lineTo(200 + i * 60, 470); g.lineTo(200 + i * 60, 500); } g.lineTo(440, 600); g.fill(); g.fillStyle = GLOW; for (let i = 0; i < 4; i++) g.fillRect(170 + i * 66, 530, 14, 10); },
@@ -5649,6 +5749,7 @@ const LANDMARKS = {
   'The Chandlery': g => { g.fillStyle = SIL; g.fillRect(150, 470, 300, 130); g.beginPath(); g.moveTo(140, 470); g.lineTo(300, 420); g.lineTo(460, 470); g.fill(); g.fillRect(380, 400, 22, 50); g.fillRect(290, 500, 2, 30); g.fillRect(270, 530, 42, 3); g.fillStyle = GLOW; for (let k = 0; k < 4; k++) { g.fillRect(186 + k * 64, 520, 28, 40); } },
   'The Picture House': g => { g.fillStyle = SIL; g.fillRect(140, 440, 340, 160); g.fillRect(170, 400, 280, 44); g.fillRect(290, 300, 40, 100); g.beginPath(); g.moveTo(120, 500); g.lineTo(500, 500); g.lineTo(480, 520); g.lineTo(140, 520); g.fill(); g.fillStyle = GLOW; for (let k = 0; k < 4; k++) g.fillRect(301, 312 + k * 22, 18, 14); for (let k = 0; k < 12; k++) g.fillRect(150 + k * 30, 504, 8, 6); g.fillRect(210, 540, 60, 60); g.fillRect(350, 540, 60, 60); },
   'The Telephone Exchange': g => { g.fillStyle = SIL; g.fillRect(130, 340, 420, 260); g.fillRect(110, 470, 460, 22); for (let k = 0; k < 3; k++) g.fillRect(170 + k * 140, 492, 40, 108); g.fillStyle = GLOW; for (let r = 0; r < 4; r++) for (let k = 0; k < 8; k++) if ((r * 3 + k * 5) % 4) { g.beginPath(); g.arc(170 + k * 48, 368 + r * 26, 5, 0, TAU); g.fill(); } },
+  'The Toy Shop': g => { g.fillStyle = SIL; g.fillRect(100, 520, 520, 18); g.fillRect(120, 538, 14, 62); g.fillRect(586, 538, 14, 62); g.beginPath(); g.ellipse(250, 470, 70, 34, 0, 0, TAU); g.fill(); g.fillRect(300, 400, 22, 70); g.beginPath(); g.ellipse(330, 398, 34, 18, -0.4, 0, TAU); g.fill(); g.fillRect(200, 490, 12, 30); g.fillRect(290, 490, 12, 30); g.beginPath(); g.arc(470, 440, 46, 0, TAU); g.arc(470, 360, 30, 0, TAU); g.fill(); g.fillStyle = GLOW; g.beginPath(); g.arc(456, 352, 5, 0, TAU); g.arc(484, 352, 5, 0, TAU); g.fill(); g.lineWidth = 8; g.strokeStyle = GLOW; g.beginPath(); g.moveTo(516, 440); g.lineTo(556, 440); g.stroke(); g.beginPath(); g.arc(570, 426, 16, 0, TAU); g.arc(570, 454, 16, 0, TAU); g.stroke(); },
   'The Ice Rink': g => { g.fillStyle = SIL; g.fillRect(120, 520, 520, 80); g.beginPath(); g.ellipse(380, 520, 260, 40, 0, Math.PI, 0); g.fill(); for (let k = 0; k < 6; k++) g.fillRect(150 + k * 90, 380, 6, 140); g.fillRect(140, 372, 470, 10); g.fillStyle = GLOW; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(153 + k * 90, 372, 7, 0, TAU); g.fill(); } },
   'The Post Office': g => { g.fillStyle = SIL; g.fillRect(150, 400, 92, 200); g.beginPath(); g.arc(196, 400, 46, Math.PI, 0); g.fill(); g.fillRect(300, 330, 260, 270); g.fillStyle = GLOW; g.fillRect(170, 420, 52, 8); for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) g.fillRect(318 + k * 60, 350 + r * 56, 46, 36); },
   'The Bakery': g => { g.fillStyle = SIL; g.fillRect(140, 430, 300, 170); g.beginPath(); g.arc(290, 430, 150, Math.PI, 0); g.fill(); g.fillRect(400, 250, 46, 150); g.fillStyle = GLOW; g.beginPath(); g.arc(290, 500, 56, Math.PI, 0); g.fill(); g.fillRect(234, 500, 112, 30); g.fillStyle = 'rgba(230,220,200,0.07)'; for (let k = 0; k < 4; k++) { g.beginPath(); g.arc(423 + Math.sin(k * 1.9) * 10, 230 - k * 32, 14 + k * 6, 0, TAU); g.fill(); } },
@@ -6195,7 +6296,7 @@ function drawHUD(t) {
 const MOTES = Array.from({ length: 70 }, () => ({ x: Math.random() * 1280, y: Math.random() * 800, s: 0.6 + Math.random() * 1.4, vx: (Math.random() - 0.5) * 6, vy: -2 - Math.random() * 5, ph: Math.random() * 6.28 }));
 // a little weather per chapter, drawn over the sky and never over chalk
 const WX = Array.from({ length: 70 }, () => ({ x: Math.random() * W, y: Math.random() * H, p: Math.random() * TAU, s: Math.random() }));
-const WEATHER = { 'The Ice Rink': 'snow', 'The Bakery': 'embers', 'The Laundry': 'suds', 'The Chandlery': 'embers', 'The Lighthouse': 'rain', 'The Rooftops': 'rain', 'The Greenhouse': 'pollen', 'The Night Market': 'embers', 'The Fairground': 'confetti', 'The Observatory': 'stars' };
+const WEATHER = { 'The Toy Shop': 'pollen', 'The Ice Rink': 'snow', 'The Bakery': 'embers', 'The Laundry': 'suds', 'The Chandlery': 'embers', 'The Lighthouse': 'rain', 'The Rooftops': 'rain', 'The Greenhouse': 'pollen', 'The Night Market': 'embers', 'The Fairground': 'confetti', 'The Observatory': 'stars' };
 const CONFETTI = ['255,210,122', '230,96,154', '79,199,184', '184,156,255'];
 function drawWeather(t) {
   const k = lv.weather; if (!k) return;
