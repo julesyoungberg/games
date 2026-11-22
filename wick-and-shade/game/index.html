@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.63'; // keep in step with package.json
+const GAME_VERSION = '1.0.64'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -141,6 +141,7 @@ const AMB = {
   'The Chandlery': { type: 'lowpass', f: 600, q: 0.6, v: 0.018, lfo: 0.4, depth: 0.25 },
   'The Picture House': { type: 'bandpass', f: 420, q: 0.8, v: 0.016, lfo: 0.6, depth: 0.3 },
   'The Laundry': { type: 'lowpass', f: 900, q: 0.4, v: 0.024, lfo: 0.25, depth: 0.5 },
+  'The Ice Rink': { type: 'highpass', f: 1800, q: 0.3, v: 0.012, lfo: 0.1, depth: 0.5 },
   'The Post Office': { type: 'bandpass', f: 700, q: 0.6, v: 0.02, lfo: 0.3, depth: 0.45 },
   'The Bakery': { type: 'lowpass', f: 520, q: 0.5, v: 0.022, lfo: 0.12, depth: 0.4 },
   'The Library': { type: 'bandpass', f: 2400, q: 0.7, v: 0.012, lfo: 0.03, depth: 0.4 },
@@ -199,6 +200,7 @@ const MOODS = {
   'The Fairground': { root: -5, mode: 'mixo', busy: 0.45, len: 1.4, wave: 'triangle', chords: [[0, 2, 4], [6, 1, 3], [3, 5, 0], [4, 6, 1]] },
   'The Chandlery': { root: 1, mode: 'minor', busy: 0.24, len: 2.6, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
   'The Picture House': { root: 5, mode: 'major', busy: 0.2, len: 2.8, wave: 'sine', chords: [[0, 2, 4], [3, 5, 0], [1, 3, 5], [4, 6, 1]] },
+  'The Ice Rink': { root: 4, mode: 'major', busy: 0.18, len: 3, wave: 'sine', chords: [[0, 2, 4], [3, 5, 0], [5, 0, 2], [4, 6, 1]] },
   'The Post Office': { root: 9, mode: 'minor', busy: 0.3, len: 2.2, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
   'The Bakery': { root: 2, mode: 'major', busy: 0.22, len: 2.6, wave: 'triangle', chords: [[0, 2, 4], [3, 5, 0], [4, 6, 1], [0, 2, 4]] },
   'The Laundry': { root: 7, mode: 'major', busy: 0.26, len: 2.4, wave: 'triangle', chords: [[0, 2, 4], [5, 0, 2], [3, 5, 0], [4, 6, 1]] },
@@ -3547,7 +3549,107 @@ const LEVELS = [
       [110, "The belt brings the parcel all the way back over the wall and drops it in the slot on the teal plate. Then the teal door stays open."],
       [190, "Wick, through the door with the lantern, and over the gold glass together."],
     ],
-    outro: "Returned, unopened. Some things are better that way. One door left.",
+    outro: "Returned, unopened. Some things are better that way. Next door, somebody has left the ice rink open.",
+  },
+  { name: "Free Skate", sub: "Nobody here knows how to stop.", ambient: 0.6, chapter: "The Ice Rink",
+    map: [
+      '################################',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................#....#',
+      '#.........................P....#',
+      '#......................#..P....#',
+      '#.WS....C.............p#..P..E.#',
+      '#####iiiiiiiiiiiiiiiiiii########',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "An ice rink, lights down, rink still frozen. Ice is slippery: you'll slide a bit before you stop.",
+      "And a crate pushed on ice keeps going until it hits something.",
+    ],
+    hints: [
+      [40, "Give the crate one good shove and let it go. The bump at the far end stops it right on the plate."],
+      [110, "The plate holds the door. Hop over the bump and through."],
+    ],
+    outro: "Very graceful. The narrator gives it a six. Out of six.",
+  },
+  { name: "Figure Eight", sub: "Someone has to stand very still on very slippery ice.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................#.....#',
+      '#........................P.....#',
+      '#........................P.....#',
+      '#.SW..C.......p..........P...E.#',
+      '###iiiiiiiiiiiiiiiiiiiiiiiii####',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The plate is in the middle of the rink, and there's nothing out there to stop a sliding crate.",
+      "Nothing except one of you. A crate stops when it slides into somebody.",
+    ],
+    hints: [
+      [40, "Wick, stand just past the plate. Shade, push the crate towards Wick."],
+      [110, "It stops against Wick and sits on the plate. Now hop over it, both of you, and through the door."],
+    ],
+    outro: "Caught it. Didn't even wobble. The narrator wobbled, a bit, watching.",
+  },
+  { name: "Last Lap", sub: "Two crates, one hole, one plate. Count them.", ambient: 0.6, cont: true,
+    map: [
+      '################################',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........#......#',
+      '#.........#####.........P......#',
+      '#.........#####.........P......#',
+      '#.SW..C..........C..p...P....E.#',
+      '###iiiiiiiii^iiiiiiiiiiiiii#####',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "The last room. There's a hole full of thorns in the low tunnel, and no room to jump it. A crate that slides over a hole drops in and fills it.",
+      "Past the tunnel, another crate and another plate in the middle of nowhere.",
+    ],
+    hints: [
+      [40, "Slide the first crate into the hole in the tunnel. Then the way is flat."],
+      [110, "Wick, hop over the second crate and stand just past the plate. Shade, give it a shove."],
+      [190, "Over the crate, both of you, and through the door."],
+    ],
+    outro: "Skates off, lights out. One door left.",
   },
   { name: 'The Last Door', sub: 'Light, shadow, and an uncomfortable amount of teamwork.', ambient: 0.6,
     map: [
@@ -4614,7 +4716,7 @@ function tileAt(tx, ty) { if (tx < 0 || tx >= COLS || ty < 0) return '#'; if (ty
 function isLit(tx, ty) { return tx >= 0 && tx < COLS && ty >= 0 && ty < ROWS && lv.lit[ty * COLS + tx] === 1; }
 function tileSolid(c, tx, ty) {
   switch (c) {
-    case '#': case 'B': case 'v': case 'j': case '<': case '>': case 'k': case 'm': case 'f': return true;
+    case '#': case 'B': case 'v': case 'j': case '<': case '>': case 'k': case 'm': case 'f': case 'i': return true;
     case '=': return isLit(tx, ty);
     case 'x': return !isLit(tx, ty);
     case 'P': return !lv.pressed.p;
@@ -4654,6 +4756,7 @@ function cratePush(e, c, dx) {
   const lr = !lantern.held && Math.abs(lantern.y + lantern.h - c.y) < 1.5 && lantern.x + lantern.w > c.x && lantern.x < c.x + c.w;
   const ox = c.x; moveX(c, need);
   const moved = c.x - ox;
+  if (e.kind && moved && iceUnder(c)) c.ivx = Math.sign(moved) * 230;
   if (moved) { for (const r of riders) moveX(r, moved); if (lr) moveX(lantern, moved); c.slide = 0.15; carryStack(c, moved); }
   e.pushT = 0.12;
 }
@@ -4906,6 +5009,15 @@ function updateCrates(dt) {
     const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
     for (let i = 0; i < n; i++) moveY(c, c.vy * sdt);
     if (c.onGround) { const bd = beltUnder(c); if (bd) { const d = bd * BELT * dt; cratePush({ x: bd > 0 ? c.x + d : c.x + c.w + d, w: 0, y: c.y }, c, d); } }
+    if (c.ivx) {
+      if (!c.onGround || !iceUnder(c)) c.ivx = 0;
+      else {
+        // a sliding crate stops against anyone standing in its way
+        const d = c.ivx * dt, ox = c.x, block = players.find(p => p.dead <= 0 && p.y + p.h > c.y + 4 && p.y < c.y + c.h - 2 && (d > 0 ? p.x >= c.x + c.w - 1 && p.x < c.x + c.w + d + 1 : p.x + p.w <= c.x + 1 && p.x + p.w > c.x + d - 1));
+        if (block) { c.ivx = 0; SFX.land(); }
+        else { cratePush({ x: d > 0 ? c.x + d : c.x + c.w + d, w: 0, y: c.y }, c, d); if (Math.abs(c.x - ox) < Math.abs(d) * 0.5) { c.ivx = 0; SFX.land(); } }
+      }
+    }
     if (c.onGround && !beltUnder(c)) {
       // a crate more than half over an edge tips off it
       const ty = Math.floor((c.y + c.h + 1) / T), sup = x => { const tx = Math.floor(x / T); return solidFor(c, tx, ty) || lv.crates.some(o => o !== c && x >= o.x && x < o.x + o.w && Math.abs(o.y - (c.y + c.h)) < 3); };
@@ -4956,9 +5068,10 @@ function respawn(p) {
   burst(p.x + p.w / 2, p.y + p.h / 2, p.kind === 'wick' ? '#ffd27a' : '#b89cff', 12);
 }
 // what a player is walking on, for the sound of their steps
+const iceUnder = e => { const ty = Math.floor((e.y + e.h + 2) / T); return tileAt(Math.floor((e.x + e.w / 2) / T), ty) === 'i'; };
 function surfaceUnder(p) {
   const ty = Math.floor((p.y + p.h + 2) / T), tx = Math.floor((p.x + p.w / 2) / T), c = tileAt(tx, ty);
-  if (c === '=' || c === 'x') return 'glass';
+  if (c === '=' || c === 'x' || c === 'i') return 'glass';
   if (c === '<' || c === '>') return 'belt';
   for (const k of lv.crates) if (k.lift && p.x + p.w > k.x && p.x < k.x + k.w && Math.abs(p.y + p.h - k.y) < 3) return 'brass';
   return '';
@@ -4999,9 +5112,9 @@ function updatePlayer(p, inp, dt, i) {
   // horizontal
   p.pushT = Math.max(0, (p.pushT || 0) - dt);
   const maxS = p.pushT > 0 ? 125 : shade && p.embedded ? 190 : 235;
-  const acc = p.onGround ? 2800 : 1700;
+  const ice = p.onGround && iceUnder(p), acc = ice ? 650 : p.onGround ? 2800 : 1700;
   if (mx) { p.vx += mx * acc * dt; p.face = mx > 0 ? 1 : -1; }
-  else { const f = (p.onGround ? 3000 : 700) * dt; p.vx = Math.abs(p.vx) <= f ? 0 : p.vx - Math.sign(p.vx) * f; }
+  else { const f = (ice ? 420 : p.onGround ? 3000 : 700) * dt; p.vx = Math.abs(p.vx) <= f ? 0 : p.vx - Math.sign(p.vx) * f; }
   p.vx = clamp(p.vx, -maxS, maxS);
   // jump
   // a press is remembered for a moment, so a jump pressed just before landing (or while Shade is still
@@ -5302,7 +5415,7 @@ function chapterOf(idx) { for (let i = idx; i >= 0; i--) { const d = LEVELS[i]; 
 // each long chapter's night sky has its own faint colour
 const SKY_TINT = { 'The Stockroom': 'rgba(150,100,50,0.35)', 'The Gallery': 'rgba(170,150,110,0.3)', 'Backstage': 'rgba(170,40,70,0.35)', 'The Observatory': 'rgba(40,60,170,0.4)',
   'The Music Room': 'rgba(150,70,160,0.35)', 'The Print Shop': 'rgba(90,90,100,0.35)', 'The Lighthouse': 'rgba(30,100,170,0.4)', 'The Clocktower': 'rgba(150,120,50,0.35)',
-  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)', 'The Department Store': 'rgba(150,110,180,0.3)', 'The Train Station': 'rgba(90,120,140,0.35)', 'The Library': 'rgba(170,130,80,0.3)', 'The Chandlery': 'rgba(200,140,60,0.32)', 'The Picture House': 'rgba(170,50,70,0.32)', 'The Post Office': 'rgba(170,60,60,0.32)', 'The Bakery': 'rgba(190,120,60,0.34)', 'The Laundry': 'rgba(90,150,170,0.32)' };
+  'The Greenhouse': 'rgba(40,140,90,0.38)', 'The Fairground': 'rgba(190,60,130,0.35)', 'The Rooftops': 'rgba(60,80,150,0.38)', 'The Night Market': 'rgba(200,120,50,0.35)', 'The Department Store': 'rgba(150,110,180,0.3)', 'The Train Station': 'rgba(90,120,140,0.35)', 'The Library': 'rgba(170,130,80,0.3)', 'The Chandlery': 'rgba(200,140,60,0.32)', 'The Picture House': 'rgba(170,50,70,0.32)', 'The Ice Rink': 'rgba(90,150,200,0.34)', 'The Post Office': 'rgba(170,60,60,0.32)', 'The Bakery': 'rgba(190,120,60,0.34)', 'The Laundry': 'rgba(90,150,170,0.32)' };
 const SIL = '#150f29', GLOW = 'rgba(255,226,170,0.3)';
 const LANDMARKS = {
   'The Stockroom': g => { g.fillStyle = SIL; g.beginPath(); g.moveTo(140, 600); for (let i = 0; i < 5; i++) { g.lineTo(140 + i * 60, 500); g.lineTo(200 + i * 60, 470); g.lineTo(200 + i * 60, 500); } g.lineTo(440, 600); g.fill(); g.fillStyle = GLOW; for (let i = 0; i < 4; i++) g.fillRect(170 + i * 66, 530, 14, 10); },
@@ -5316,6 +5429,7 @@ const LANDMARKS = {
   'The Greenhouse': g => { g.fillStyle = SIL; g.beginPath(); g.moveTo(170, 600); g.lineTo(170, 500); g.arc(300, 500, 130, Math.PI, TAU); g.lineTo(430, 600); g.fill(); g.strokeStyle = 'rgba(255,226,170,0.10)'; g.lineWidth = 2; for (let i = 1; i < 6; i++) { const a = Math.PI + i * Math.PI / 6; g.beginPath(); g.moveTo(300, 600); g.lineTo(300 + Math.cos(a) * 130, 500 + Math.sin(a) * 130); g.stroke(); } g.beginPath(); g.arc(300, 500, 130, Math.PI, TAU); g.stroke(); },
   'The Chandlery': g => { g.fillStyle = SIL; g.fillRect(150, 470, 300, 130); g.beginPath(); g.moveTo(140, 470); g.lineTo(300, 420); g.lineTo(460, 470); g.fill(); g.fillRect(380, 400, 22, 50); g.fillRect(290, 500, 2, 30); g.fillRect(270, 530, 42, 3); g.fillStyle = GLOW; for (let k = 0; k < 4; k++) { g.fillRect(186 + k * 64, 520, 28, 40); } },
   'The Picture House': g => { g.fillStyle = SIL; g.fillRect(140, 440, 340, 160); g.fillRect(170, 400, 280, 44); g.fillRect(290, 300, 40, 100); g.beginPath(); g.moveTo(120, 500); g.lineTo(500, 500); g.lineTo(480, 520); g.lineTo(140, 520); g.fill(); g.fillStyle = GLOW; for (let k = 0; k < 4; k++) g.fillRect(301, 312 + k * 22, 18, 14); for (let k = 0; k < 12; k++) g.fillRect(150 + k * 30, 504, 8, 6); g.fillRect(210, 540, 60, 60); g.fillRect(350, 540, 60, 60); },
+  'The Ice Rink': g => { g.fillStyle = SIL; g.fillRect(120, 520, 520, 80); g.beginPath(); g.ellipse(380, 520, 260, 40, 0, Math.PI, 0); g.fill(); for (let k = 0; k < 6; k++) g.fillRect(150 + k * 90, 380, 6, 140); g.fillRect(140, 372, 470, 10); g.fillStyle = GLOW; for (let k = 0; k < 6; k++) { g.beginPath(); g.arc(153 + k * 90, 372, 7, 0, TAU); g.fill(); } },
   'The Post Office': g => { g.fillStyle = SIL; g.fillRect(150, 400, 92, 200); g.beginPath(); g.arc(196, 400, 46, Math.PI, 0); g.fill(); g.fillRect(300, 330, 260, 270); g.fillStyle = GLOW; g.fillRect(170, 420, 52, 8); for (let r = 0; r < 4; r++) for (let k = 0; k < 4; k++) g.fillRect(318 + k * 60, 350 + r * 56, 46, 36); },
   'The Bakery': g => { g.fillStyle = SIL; g.fillRect(140, 430, 300, 170); g.beginPath(); g.arc(290, 430, 150, Math.PI, 0); g.fill(); g.fillRect(400, 250, 46, 150); g.fillStyle = GLOW; g.beginPath(); g.arc(290, 500, 56, Math.PI, 0); g.fill(); g.fillRect(234, 500, 112, 30); g.fillStyle = 'rgba(230,220,200,0.07)'; for (let k = 0; k < 4; k++) { g.beginPath(); g.arc(423 + Math.sin(k * 1.9) * 10, 230 - k * 32, 14 + k * 6, 0, TAU); g.fill(); } },
   'The Laundry': g => { g.fillStyle = SIL; g.fillRect(120, 470, 380, 130); g.fillRect(380, 360, 40, 110); g.fillRect(372, 352, 56, 12); g.fillStyle = GLOW; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(170 + k * 66, 520, 20, 0, TAU); g.fill(); } g.fillStyle = 'rgba(230,230,245,0.08)'; for (let k = 0; k < 5; k++) { g.beginPath(); g.arc(400 + Math.sin(k * 1.7) * 14, 330 - k * 34, 16 + k * 6, 0, TAU); g.fill(); } },
@@ -5447,6 +5561,14 @@ function drawDynamicTiles(t) {
       ctx.strokeStyle = on ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1;
       for (let k = -1; k <= 1; k++) { ctx.beginPath(); ctx.ellipse(cx, cy - 3, 13, Math.abs(k) * 5 + 1, 0, 0, TAU); ctx.stroke(); }
       ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(cx - 6, cy - 10, 3, 3);
+      continue;
+    }
+    if (c === 'i') {
+      // ice: pale and glassy, with a sheen that drifts along
+      ctx.fillStyle = '#a9c6d8'; ctx.fillRect(px, py, T, T); ctx.fillStyle = '#d9ecf5'; ctx.fillRect(px, py, T, 3);
+      ctx.fillStyle = 'rgba(255,255,255,0.28)'; const sh = ((lv.time * 18 + tx * 13) % (T * 3)) - T;
+      ctx.beginPath(); ctx.moveTo(px + sh, py + T); ctx.lineTo(px + sh + 10, py + 3); ctx.lineTo(px + sh + 16, py + 3); ctx.lineTo(px + sh + 6, py + T); ctx.fill();
+      ctx.strokeStyle = 'rgba(120,150,175,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(px + 6, py + 14); ctx.lineTo(px + 15, py + 22); ctx.lineTo(px + 13, py + 30); ctx.stroke();
       continue;
     }
     if (c === 'n') {
@@ -5845,7 +5967,7 @@ function drawHUD(t) {
 const MOTES = Array.from({ length: 70 }, () => ({ x: Math.random() * 1280, y: Math.random() * 800, s: 0.6 + Math.random() * 1.4, vx: (Math.random() - 0.5) * 6, vy: -2 - Math.random() * 5, ph: Math.random() * 6.28 }));
 // a little weather per chapter, drawn over the sky and never over chalk
 const WX = Array.from({ length: 70 }, () => ({ x: Math.random() * W, y: Math.random() * H, p: Math.random() * TAU, s: Math.random() }));
-const WEATHER = { 'The Bakery': 'embers', 'The Laundry': 'suds', 'The Chandlery': 'embers', 'The Lighthouse': 'rain', 'The Rooftops': 'rain', 'The Greenhouse': 'pollen', 'The Night Market': 'embers', 'The Fairground': 'confetti', 'The Observatory': 'stars' };
+const WEATHER = { 'The Ice Rink': 'snow', 'The Bakery': 'embers', 'The Laundry': 'suds', 'The Chandlery': 'embers', 'The Lighthouse': 'rain', 'The Rooftops': 'rain', 'The Greenhouse': 'pollen', 'The Night Market': 'embers', 'The Fairground': 'confetti', 'The Observatory': 'stars' };
 const CONFETTI = ['255,210,122', '230,96,154', '79,199,184', '184,156,255'];
 function drawWeather(t) {
   const k = lv.weather; if (!k) return;
@@ -5869,6 +5991,7 @@ function drawWeather(t) {
     let x, y, col, a, r = 1.5;
     if (k === 'suds') { if (i % 2) continue; x = ((w.x + Math.sin(t * 0.6 + w.p) * 20) % W + W) % W; y = ((w.y - t * (14 + w.s * 12)) % H + H) % H; if (!open(x, y)) continue; ctx.strokeStyle = `rgba(220,235,255,${(0.16 + 0.08 * Math.sin(t * 2 + w.p)).toFixed(3)})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, 2 + w.s * 3, 0, TAU); ctx.stroke(); continue; }
     if (k === 'pollen') { x = ((w.x + Math.sin(t * 0.4 + w.p) * 30 + t * 6) % W + W) % W; y = ((w.y - t * (8 + w.s * 10)) % H + H) % H; col = '200,240,150'; a = 0.12 + 0.12 * Math.sin(t * 1.5 + w.p); r = 1.5 + w.s; }
+    else if (k === 'snow') { if (i % 2) continue; x = ((w.x + Math.sin(t * 0.5 + w.p) * 26) % W + W) % W; y = ((w.y + t * (18 + w.s * 16)) % H + H) % H; col = '235,242,255'; a = 0.22 + 0.1 * Math.sin(t + w.p); r = 1.2 + w.s * 1.2; }
     else if (k === 'embers') { if (i % 3) continue; x = ((w.x + Math.sin(t * 0.9 + w.p) * 18) % W + W) % W; y = ((w.y - t * (24 + w.s * 30)) % H + H) % H; col = '255,170,90'; a = 0.4 * (0.5 + 0.5 * Math.sin(t * 3 + w.p)); r = 1.6; }
     else { x = ((w.x + Math.sin(t * 0.7 + w.p) * 22) % W + W) % W; y = ((w.y + t * (30 + w.s * 20)) % H + H) % H; col = CONFETTI[i % 4]; a = 0.35; r = 0; }
     if (!open(x, y) || a <= 0.01) continue;
@@ -6058,7 +6181,7 @@ function renderTitle(t) {
 /* ---------------- chapter select: list on the left, a little map of the room on the right ---------------- */
 const thumbCache = {};
 const THUMB_COL = { '#': '#d9cfbd', B: '#2a1748', '=': '#e9b860', x: '#6b4fb0', P: '#4fc7b8', Q: '#e6609a', r: 'rgba(79,199,184,0.35)', s: 'rgba(230,96,154,0.35)',
-  j: '#a8433a', '<': '#8d8577', '>': '#8d8577', k: '#140a24', f: '#5b5148', m: '#f3e9ff', v: 'rgba(123,86,201,0.55)', w: 'rgba(255,214,140,0.45)', H: '#8a6a3a' };
+  j: '#a8433a', '<': '#8d8577', '>': '#8d8577', k: '#140a24', f: '#5b5148', i: '#a9c6d8', m: '#f3e9ff', v: 'rgba(123,86,201,0.55)', w: 'rgba(255,214,140,0.45)', H: '#8a6a3a' };
 function levelThumb(i, cell) {
   const key = i + ':' + cell;
   if (thumbCache[key]) return thumbCache[key];
@@ -6109,6 +6232,7 @@ const GUIDE = [
   ['>', 'Belts', 'Carry whatever stands on them: you, crates, the lantern.', ['...', '...', '>>>']],
   ['k', 'Ink wells', 'Shade only: stand on one and press down to come out of its partner. They pair left to right.', ['...', '...', '#k#']],
   ['f', 'Steam vents', 'Lift you to the top of the steam (hold down to sink). A lantern set down on one floats up. A crate shuts them off.', ['...', '...', '#f#']],
+  ['i', 'Ice', 'Slippery underfoot. A crate pushed on ice keeps sliding until it hits something.', ['...', '...', '#ii']],
   ['l', 'Lifts', 'Rise while anything stands on them: you, a crate, the lantern. Step off, or hold down, and they sink back down.', ['...', '...', '#ll']],
   ['n', 'Candles', 'Touch one with the lantern and it stays lit for good: a small light of its own.', ['...', '.n.', '###']],
   ['m', 'Mirror balls', 'Shine too while the lantern can see them, a bit less far.', ['...', '.m.', '...']],
