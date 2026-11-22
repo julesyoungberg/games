@@ -63,7 +63,7 @@ function initAudio() {
     AC = new (window.AudioContext || window.webkitAudioContext)();
     master = AC.createGain(); master.gain.value = 0.55; master.connect(AC.destination);
     musicBus = AC.createGain(); musicBus.connect(master); sfxBus = AC.createGain(); sfxBus.connect(master); applyOpts();
-    startMusic();
+    startMusic(); startAmbience();
   } catch (e) { AC = null; }
 }
 function tone(f, d, type = 'sine', v = 0.2, f2 = null, delay = 0, bus = null) {
@@ -122,6 +122,40 @@ function startMusic() {
   }, 420);
 }
 let echoIn = null;
+// quiet background sound for each long chapter: waves, wind, a ticking clock, a dripping greenhouse
+const AMB = {
+  'The Lighthouse': { type: 'lowpass', f: 420, q: 0.7, v: 0.05, lfo: 0.11, depth: 0.8 },
+  'The Rooftops': { type: 'bandpass', f: 700, q: 0.5, v: 0.03, lfo: 0.07, depth: 0.7 },
+  'The Fairground': { type: 'lowpass', f: 260, q: 0.5, v: 0.03, lfo: 0.3, depth: 0.3 },
+  'The Greenhouse': { type: 'highpass', f: 3500, q: 0.5, v: 0.006, drip: true },
+  'The Clocktower': { type: 'lowpass', f: 200, q: 0.5, v: 0.012, tick: 1 },
+  'The Print Shop': { type: 'lowpass', f: 180, q: 0.5, v: 0.012, thump: 1.25 },
+  'The Observatory': { type: 'bandpass', f: 1200, q: 3, v: 0.004 },
+};
+function startAmbience() {
+  const n = AC.sampleRate * 2, buf = AC.createBuffer(1, n, AC.sampleRate), d = buf.getChannelData(0);
+  let b = 0; for (let i = 0; i < n; i++) { b = 0.97 * b + 0.03 * (Math.random() * 2 - 1); d[i] = b * 6 + (Math.random() * 2 - 1) * 0.15; }
+  const src = AC.createBufferSource(); src.buffer = buf; src.loop = true;
+  const fl = AC.createBiquadFilter(), g = AC.createGain(), lg = AC.createGain(), lfo = AC.createOscillator(), lfoG = AC.createGain();
+  g.gain.value = 0; lg.gain.value = 1; lfo.frequency.value = 0.1; lfoG.gain.value = 0;
+  lfo.connect(lfoG); lfoG.connect(lg.gain); src.connect(fl); fl.connect(lg); lg.connect(g); g.connect(sfxBus); src.start(); lfo.start();
+  let cur = null, nextTick = 0;
+  setInterval(() => {
+    if (!AC || AC.state !== 'running') return;
+    const ch = gstate === 'play' || gstate === 'pause' ? chapterOf(lv && lv.idx) : null, a = AMB[ch];
+    const t = AC.currentTime;
+    if (ch !== cur) {
+      cur = ch;
+      if (a) { fl.type = a.type; fl.frequency.setTargetAtTime(a.f, t, 0.3); fl.Q.setTargetAtTime(a.q, t, 0.3); lfo.frequency.setTargetAtTime(a.lfo || 0.1, t, 0.3); lfoG.gain.setTargetAtTime(a.depth || 0, t, 0.5); }
+      g.gain.setTargetAtTime(a ? a.v : 0, t, 0.8);
+    }
+    if (!a || gstate !== 'play') return;
+    if (performance.now() < nextTick) return;
+    if (a.tick) { tone(2300, 0.02, 'square', 0.006); tone(1700, 0.02, 'square', 0.004, null, 0.5); nextTick = performance.now() + 1000; }
+    else if (a.thump) { tone(70, 0.18, 'sine', 0.05, 45); tone(140, 0.05, 'triangle', 0.012, 90, 0.18); nextTick = performance.now() + a.thump * 1000; }
+    else if (a.drip) { if (Math.random() < 0.5) tone(1400 + Math.random() * 900, 0.09, 'sine', 0.02, 700); nextTick = performance.now() + 700 + Math.random() * 1800; }
+  }, 100);
+}
 const MODES = { major: [0, 2, 4, 5, 7, 9, 11], dorian: [0, 2, 3, 5, 7, 9, 10], lydian: [0, 2, 4, 6, 7, 9, 11], mixo: [0, 2, 4, 5, 7, 9, 10], minor: [0, 2, 3, 5, 7, 8, 10] };
 function modeSemis(mode, d) { const sc = MODES[mode]; return sc[((d % 7) + 7) % 7] + 12 * Math.floor(d / 7); }
 function musicNote(f, d, type = 'sine', v = 0.028) {
@@ -4183,8 +4217,11 @@ function drawDarkness(t) {
   for (const ex of lv.exits) hole((ex.tx + 0.5) * T, ex.ty * T, 80, 0.7);
   for (const pl of lv.plates) hole((pl.tx + 0.5) * T, (pl.ty + 1) * T, 36, 0.5);
   dctx.globalCompositeOperation = 'source-over';
+  // the flame breathes a little: the warm glow (never the light itself) flickers like a real wick
+  const fl = 0.9 + 0.1 * (Math.sin(t * 11.3) * 0.5 + Math.sin(t * 17.9 + 1.3) * 0.3 + Math.sin(t * 5.1 + 0.4) * 0.2);
+  dctx.globalAlpha = fl;
   if (L) dctx.drawImage(warmGlow, Math.round(L.x - LS), Math.round(L.y - LS));
-  dctx.globalAlpha = 0.6;
+  dctx.globalAlpha = 0.6 * fl;
   for (const S of lv.lights || []) if (S.mirror) dctx.drawImage(warmGlow, S.x - LS * mk, S.y - LS * mk, LS * 2 * mk, LS * 2 * mk);
   dctx.globalAlpha = 1;
   ctx.drawImage(dcv, 0, 0);
