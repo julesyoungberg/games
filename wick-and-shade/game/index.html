@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.85'; // keep in step with package.json
+const GAME_VERSION = '1.0.86'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -5669,6 +5669,38 @@ const LEVELS = [
       [150, "Wick holds the first plate while Shade runs to the second. Then Wick runs all the way to the end, and Shade sprints after."],
     ],
     outro: "Baton passed. Nobody dropped it. There was no baton. Well done anyway.",
+  },
+  { name: "Black Ice", sub: "The relay again, backwards, on ice.", ambient: 0.6, challenge: true, unlockAt: 82,
+    map: [
+      '################################',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.#..................#.........#',
+      '#.Q..................P.........#',
+      '#.Q..................P.........#',
+      '#EQ.................yP......StW#',
+      '###ii^^iii^^iiii^^ii####^^######',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Same rules as the relay. Five seconds a door. This time the last stretch is ice.",
+      "Ice does not care about your five seconds. Start braking early.",
+    ],
+    hints: [
+      [150, "Shade holds the first plate while Wick runs to the second. Then Shade skates for the exit, and Wick follows once Shade is through."],
+    ],
+    outro: "Not a single skid into the thorns. Or several, and you just aren't telling me.",
   },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
