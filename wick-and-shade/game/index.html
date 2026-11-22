@@ -4736,8 +4736,19 @@ function drawLabels() {
     ctx.fillStyle = c; ctx.fillText(text, x, y + 4);
   }
 }
+function contactShadow(p) {
+  // a soft dark patch on whatever is under Wick, smaller and fainter the higher he is
+  if (!lv || gstate === 'title') return;
+  const cx = p.x + p.w / 2; let gy = null;
+  for (let y = p.y + p.h; y < p.y + p.h + 6 * T && y < H; y += 4) if (pointSolidC(cx, y + 1)) { gy = y; break; }
+  if (gy === null) return;
+  const h = gy - (p.y + p.h), k = clamp(1 - h / (6 * T), 0, 1);
+  ctx.fillStyle = `rgba(10,6,20,${(0.35 * k).toFixed(3)})`;
+  ctx.beginPath(); ctx.ellipse(cx, Math.floor(gy / 4) * 4 + 1, 13 * (0.5 + 0.5 * k), 3, 0, 0, TAU); ctx.fill();
+}
 function drawWick(p, t) {
   if (p.dead > 0) return;
+  contactShadow(p);
   const moving = p.onGround && Math.abs(p.vx) > 20;
   const bob = moving ? Math.sin(p.anim * 16) * 1.2 : 0;
   const sq = p.landT * 0.18, st = !p.onGround && p.vy < -100 ? 0.06 : 0;
@@ -5066,7 +5077,7 @@ function renderPlay(t) {
 let menuSel = 0, menuMode = 'main', joinT = 0, titleT = 0, lastJoinAt = -1;
 function titleItems() {
   const it = [];
-  if (save.unlocked > 0) { const ci = Math.min(save.unlocked, MAIN_COUNT - 1); it.push({ label: 'Continue  ·  Chapter ' + CH_NUM[ci] + (CH_ROOMS[CH_NUM[ci]] > 1 ? ', room ' + ROOM_NUM[ci] : ''), act: () => goJoin(ci) }); }
+  if (save.unlocked > 0) { const ci = Math.min(save.unlocked, MAIN_COUNT - 1); it.push({ label: 'Continue  ·  ' + (chapterOf(ci) || LEVELS[ci].name) + (CH_ROOMS[CH_NUM[ci]] > 1 ? ', room ' + ROOM_NUM[ci] : ''), act: () => goJoin(ci) }); }
   it.push({ label: 'New Game', act: () => { run = { deaths: [0, 0], abandon: 0, throws: 0, waves: 0, start: performance.now() }; flags = {}; goJoin(0); } });
   it.push({ label: 'Chapter Select', act: () => { menuMode = 'chapters'; menuSel = 0; } });
   if (CHALLENGES.some(challengeOpen)) it.push({ label: 'Challenges', act: () => { menuMode = 'challenges'; menuSel = 0; } });
