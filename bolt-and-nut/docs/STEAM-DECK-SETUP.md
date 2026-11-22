@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.11.0)
+## What's in this version (1.12.0)
+Two more Overtime puzzles: Elevator Pitch (a lift that only carries whoever didn't call it) and Reverse Psychology (a door that opens when the switch is off). 34 in all.
+
+## 1.11.0
 Two more Overtime puzzles: Escalation (launch Bolt mid-bounce off a spring) and Sliding Scale (throw a crate down an oiled chute). 32 in all. Control hints and the level banner now hide behind the pause and shift-complete cards.
 
 ## 1.10.0
