@@ -416,6 +416,7 @@ function frame(now) {
   }
   narr.update(dt);
   document.body.classList.toggle('paused', mode === 'paused');
+  document.body.classList.toggle('carded', mode === 'paused' || mode === 'complete');
   view.draw(world, dt, { title: mode === 'title' || mode === 'join' || mode === 'credits', showTarget: mode === 'play', cogsFound: save.cogs.includes(levelIdx) });
   view.adapt(dtMs);
 }
