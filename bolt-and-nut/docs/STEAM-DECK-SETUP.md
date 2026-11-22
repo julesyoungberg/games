@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.8.1)
+## What's in this version (1.8.2)
+Jumps are a little more forgiving: a jump pressed just before landing, or just after running off an edge, still counts. Pressure plates look like painted metal with grooves that light up when pressed.
+
+## 1.8.1
 A controller that drops out and reconnects (Bluetooth sleep) is found again automatically, even if it comes back under a new number. On setups that show one controller twice, one press can no longer join both robots. The exit pad is a deeper green with glowing rings.
 
 ## 1.8.0

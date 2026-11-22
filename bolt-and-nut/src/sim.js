@@ -3,7 +3,7 @@
 import { ALL } from './levels.js';
 
 export const C = {
-  g: 32, jumpV: 9.6, run: 6.5, accelG: 70, accelA: 34, coyote: 0.1, buffer: 0.13,
+  g: 32, jumpV: 9.6, run: 6.5, accelG: 70, accelA: 34, coyote: 0.12, buffer: 0.16,
   pullRange: 11, pullSpeed: 11, carryDist: 1.7, grappleSpeed: 13,
   pushR: 3.3, launchV: 16, launchH: 4.5, crateLaunchV: 13, crateLaunchH: 6, rocketV: 16, pushCd: 0.45,
   killY: -14, fanAccel: 75, fanMax: 9, stepUp: 0.36,

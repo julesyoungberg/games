@@ -372,7 +372,8 @@ export class View {
     }
     for (const p of w.plates) {
       const c = CH_COLORS[p.ch];
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(p.r * 0.95, p.r, 0.16, 20), LM({ color: c, emissive: c, emissiveIntensity: 0.15, map: F ? this.surf.plate : null }, { roughness: 0.35, metalness: 0.2 }));
+      // fancy: painted metal with glowing grooves that light up when pressed (not a flat candy disc)
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(p.r * 0.95, p.r, 0.16, 20), LM({ color: F ? col(c).lerp(col(0x2a2e36), 0.35) : c, emissive: c, emissiveIntensity: 0.15, map: F ? this.surf.plate : null, emissiveMap: F ? this.surf.plate : null }, { roughness: 0.35, metalness: 0.35 }));
       m.position.set(p.x, p.top + 0.08, p.z);
       const ring = new THREE.Mesh(new THREE.CylinderGeometry(p.r + 0.12, p.r + 0.12, 0.06, 20), LM({ color: 0x3a3f4b }));
       ring.position.set(p.x, p.top + 0.03, p.z);
@@ -633,7 +634,7 @@ export class View {
       } else if (d.kind === 'mover') {
         const m = d.o; d.m.position.set((m.min.x + m.max.x) / 2, (m.min.y + m.max.y) / 2, (m.min.z + m.max.z) / 2);
       } else if (d.kind === 'plate') {
-        const p = d.o; d.m.position.y = p.top + (p.pressed ? 0.03 : 0.08); d.m.material.emissiveIntensity = p.pressed ? 0.8 : 0.15 + Math.sin(t * 3) * 0.05;
+        const p = d.o; d.m.position.y = p.top + (p.pressed ? 0.03 : 0.08); d.m.material.emissiveIntensity = FANCY ? (p.pressed ? 1.5 : 0.3 + Math.sin(t * 3) * 0.06) : (p.pressed ? 0.8 : 0.15 + Math.sin(t * 3) * 0.05);
       }
     }
     // anchors + target marker
