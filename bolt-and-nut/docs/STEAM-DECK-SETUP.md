@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.10.0)
+## What's in this version (1.11.0)
+Two more Overtime puzzles: Escalation (launch Bolt mid-bounce off a spring) and Sliding Scale (throw a crate down an oiled chute). 32 in all. Control hints and the level banner now hide behind the pause and shift-complete cards.
+
+## 1.10.0
 Two more Overtime puzzles: Lost Property (fetch a crate off a shelf too tall to reach) and Trust Exercise (a pneumatic tube and a leap of faith). 30 in all. Bright tiled floors are toned down so lit rooms and the exit no longer look washed out.
 
 ## 1.9.0
