@@ -347,7 +347,7 @@ export class View {
     }
     for (const p of w.plates) {
       const c = CH_COLORS[p.ch];
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(p.r * 0.95, p.r, 0.16, 20), LM({ color: c, emissive: c, emissiveIntensity: 0.15 }));
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(p.r * 0.95, p.r, 0.16, 20), LM({ color: c, emissive: c, emissiveIntensity: 0.15, map: F ? this.surf.plate : null }, { roughness: 0.35, metalness: 0.2 }));
       m.position.set(p.x, p.top + 0.08, p.z);
       const ring = new THREE.Mesh(new THREE.CylinderGeometry(p.r + 0.12, p.r + 0.12, 0.06, 20), LM({ color: 0x3a3f4b }));
       ring.position.set(p.x, p.top + 0.03, p.z);
@@ -494,9 +494,13 @@ export class View {
       const top = new THREE.Mesh(new THREE.BoxGeometry(sx + 0.6, 0.9, 0.3), frameM); top.position.set(0, 4.2, -sz / 2 + 0.2); g.add(top);
       const label = new THREE.Mesh(new THREE.PlaneGeometry(sx * 0.9, 0.7), new THREE.MeshBasicMaterial({ map: canvasTex(256, 64, (c, W, H) => { c.fillStyle = '#2ec48f'; c.fillRect(0, 0, W, H); c.fillStyle = '#fff'; c.font = 'bold 44px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('EXIT', W / 2, H / 2 + 2); }) }));
       label.position.set(0, 4.2, -sz / 2 + 0.36); g.add(label);
+      // glowing light strips down the inside of the frame
+      const strip = LM({ color: 0x8be9c1, emissive: 0x2ec48f, emissiveIntensity: 1.5 });
+      for (const s of [-1, 1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.6, 0.12), strip); st.position.set(s * (sx / 2 + 0.01), 1.9, -sz / 2 + 0.36); g.add(st); }
+      padMat.map = this.fancy ? this.surf.plate : null; padMat.color.set(this.fancy ? 0x5fcf9f : 0x8be9c1);
       const beam = new THREE.Mesh(new THREE.CylinderGeometry(Math.min(sx, sz) / 2, Math.min(sx, sz) / 2, 3.5, 20, 1, true), new THREE.MeshBasicMaterial({ color: 0x8be9c1, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
       beam.position.y = 1.8; g.add(beam);
-      this.level.add(g); this.exitMesh = { g, padMat, beam };
+      this.level.add(g); this.exitMesh = { g, padMat, beam, strip };
     } else this.exitMesh = null;
     // checkpoint lamps
     this.cpMeshes = w.checkpoints.map(cp => {
@@ -540,6 +544,7 @@ export class View {
       this.pl.push({ x, y, z, vx: Math.cos(a) * s, vy: up * (0.5 + Math.random()), vz: Math.sin(a) * s, t: 0, life: life * (0.6 + Math.random() * 0.6), c: this.fancy && color !== 0xffffff ? col(color).multiplyScalar(2.4) : col(color), s: 0.6 + Math.random() * 0.8 });
     }
   }
+  shake(a) { this.shakeA = Math.max(this.shakeA || 0, a); }
   pushRing(x, y, z) {
     const r = this.pushRings.find(r => r.t >= 1) || this.pushRings[0];
     r.t = 0; r.position.set(x, y, z); r.visible = true;
@@ -561,6 +566,12 @@ export class View {
     const k = Math.min(1, dt * (opts.snap ? 60 : 3.2));
     this.camPos.lerp(want, k); this.camLook.lerp(look, k);
     this.camera.position.copy(this.camPos); this.camera.lookAt(this.camLook);
+    if (this.shakeA > 0.003) { // short, decaying camera shake
+      const a = this.shakeA; this.camera.position.x += (Math.random() - 0.5) * a; this.camera.position.y += (Math.random() - 0.5) * a;
+      this.shakeA *= Math.exp(-dt * 9);
+    }
+    // speed trails behind launched or flung robots
+    [B, N].forEach((p, i) => { const v = Math.hypot(p.vel.x, p.vel.y, p.vel.z); if (v > 9.5 && Math.random() < 0.7) this.burst(p.pos.x, p.pos.y, p.pos.z, i ? 0x8fc4ff : 0xff8c8c, 1, 0.4, 0.2, 0.35); });
     // robots
     this.poseRobot(this.bolt, B, dt, w, 0);
     this.poseRobot(this.nut, N, dt, w, 1);
@@ -576,7 +587,7 @@ export class View {
     for (const d of this.dyn) {
       if (d.kind === 'gate') {
         const g = d.o, sx = g.max.x - g.min.x, sy = g.max.y - g.min.y, sz = g.max.z - g.min.z;
-        d.m.scale.set(sx, sy, sz); if (d.m.material.map) d.m.material.map.repeat.set(Math.max(sx, sz) / 1.6, sy / 1.6); d.m.position.set((g.min.x + g.max.x) / 2, (g.min.y + g.max.y) / 2, (g.min.z + g.max.z) / 2);
+        d.m.scale.set(sx, sy, sz); if (d.m.material.map) d.m.material.map.repeat.set(Math.max(sx, sz) / 2, sy / 1.3); d.m.position.set((g.min.x + g.max.x) / 2, (g.min.y + g.max.y) / 2, (g.min.z + g.max.z) / 2);
         d.stripe.position.y = 0.5 - 0.6 / sy; d.stripe.scale.y = 1 / sy * 1.2;
       } else if (d.kind === 'bridge') {
         const b = d.o; d.m.material.opacity = 0.1 + 0.8 * b.vis; d.m.material.emissiveIntensity = 0.15 + 0.35 * b.vis + (b.vis < 0.5 ? Math.sin(t * 4) * 0.08 : 0);
@@ -650,8 +661,10 @@ export class View {
     // exit glow
     if (this.exitMesh) {
       const inside = w.players.filter(p => p.pos.x > w.exit.min.x && p.pos.x < w.exit.max.x && p.pos.z > w.exit.min.z && p.pos.z < w.exit.max.z && p.pos.y > w.exit.min.y && p.pos.y < w.exit.max.y).length;
-      this.exitMesh.padMat.emissiveIntensity = 0.35 + inside * 0.35 + Math.sin(t * 3) * 0.1;
-      this.exitMesh.beam.material.opacity = 0.08 + inside * 0.1;
+      const F = this.fancy; // with bloom on, keep the exit light subtle so it doesn't wash the area out
+      this.exitMesh.padMat.emissiveIntensity = F ? 0.12 + inside * 0.22 + Math.sin(t * 3) * 0.04 : 0.35 + inside * 0.35 + Math.sin(t * 3) * 0.1;
+      this.exitMesh.beam.material.opacity = F ? 0.025 + inside * 0.03 : 0.08 + inside * 0.1;
+      if (this.exitMesh.strip) this.exitMesh.strip.emissiveIntensity = 1.2 + inside * 1.2 + Math.sin(t * 3) * 0.3;
     }
     for (const c of this.cpMeshes) { c.bulbM.color.set(c.cp.hit ? 0x9dffb0 : 0x777777); c.bulbM.emissive.set(c.cp.hit ? 0x2ec48f : 0x000000); c.bulbM.emissiveIntensity = this.fancy ? 2.5 : 1; }
     if (this.scenery) { // haze starts just behind the action, so the background layers fade with depth

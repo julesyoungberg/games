@@ -8,6 +8,12 @@ export function initAudio() {
   master = ctx.createGain(); master.connect(ctx.destination);
   sfxBus = ctx.createGain(); sfxBus.connect(master);
   musBus = ctx.createGain(); musBus.connect(master);
+  // a big factory-hall reverb: generated impulse, sent from music and effects
+  const L = Math.floor(ctx.sampleRate * 2.2), ir = ctx.createBuffer(2, L, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < L; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / L, 3.2); }
+  const verb = ctx.createConvolver(); verb.buffer = ir; const vg = ctx.createGain(); vg.gain.value = 0.5; verb.connect(vg); vg.connect(master);
+  const ms = ctx.createGain(); ms.gain.value = 0.45; musBus.connect(ms); ms.connect(verb);
+  const ss = ctx.createGain(); ss.gain.value = 0.18; sfxBus.connect(ss); ss.connect(verb);
   noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
   const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
   setVolumes(vol);
@@ -88,6 +94,16 @@ export const SFX = {
   stopAll() { humOff(); },
 };
 
+// soft pad chord under each bar (slow attack, long release)
+function pad(base, when, dur) {
+  if (!ctx) return;
+  const t = ctx.currentTime + when;
+  const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900;
+  const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.01, t + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 1.05);
+  f.connect(g); g.connect(musBus);
+  for (const iv of [0, 4, 7, 12]) { for (const det of [-6, 6]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = base * Math.pow(2, iv / 12); o.detune.value = det; o.connect(f); o.start(t); o.stop(t + dur * 1.1); } }
+}
+
 // ---- music: soft pentatonic arpeggio + bass, slowly mutating
 const music = {
   on: false, step: 0, next: 0, timer: null, mood: 0,
@@ -110,6 +126,7 @@ const music = {
       const w = this.next - ctx.currentTime;
       if (n >= 0) tone('triangle', base * Math.pow(2, this.scale[n] / 12), base * Math.pow(2, this.scale[n] / 12), 0.22, 0.05, w, musBus);
       if (s % 4 === 0) tone('sine', base / 2, base / 2, 0.5, 0.11, w, musBus);
+      if (s === 0) pad(base, w, spb * 16);
       if (s % 8 === 4) { const t = this.next; const src = ctx.createBufferSource(); src.buffer = noiseBuf; const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7000; const g = ctx.createGain(); g.gain.setValueAtTime(0.03, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05); src.connect(f); f.connect(g); g.connect(musBus); src.start(t); src.stop(t + 0.06); }
       this.step++; this.next += spb;
       if (this.step % 64 === 0 && Math.random() < 0.6) this.pattern = this.newPattern();

@@ -16,10 +16,22 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } },
 };
-const save = store.get('bn-save', { unlocked: 0, done: [] });
-if (!save.cogs) save.cogs = [];
+// Saves are stored by level NAME (v2), so adding shifts never scrambles progress.
+// In memory, done/cogs are level indices into ALL.
+const save = (() => {
+  const raw = store.get('bn-save', { unlocked: 0, done: [] });
+  const idx = n => ALL.findIndex(L => L.name === n);
+  if (raw.v === 2) return { ...raw, done: raw.done.map(idx).filter(i => i >= 0), cogs: (raw.cogs || []).map(idx).filter(i => i >= 0), unlocked: Math.max(0, idx(raw.cur)) };
+  // v1 saved indices; main shifts never moved, Overtime indices did, so keep only the first 16 shifts
+  const keep = a => (a || []).filter(i => i < 16);
+  return { unlocked: Math.min(raw.unlocked || 0, 16), done: keep(raw.done), cogs: keep(raw.cogs), finished: raw.finished };
+})();
+function saveGame() {
+  store.set('bn-save', { v: 2, done: save.done.map(i => ALL[i].name), cogs: save.cogs.map(i => ALL[i].name), cur: LEVELS[Math.min(save.unlocked, NMAIN - 1)].name, finished: !!save.finished });
+}
 // new shifts get added over time: anything after a finished shift is unlocked
 if (save.done && save.done.length) save.unlocked = Math.max(save.unlocked, Math.min(NMAIN - 1, Math.max(...save.done.filter(d => d < NMAIN), -1) + 1));
+saveGame();
 const opts = Object.assign({ master: 8, music: 5, sfx: 8, narrAuto: false, quality: 'auto' }, store.get('bn-opts', {}));
 const saveOpts = () => { store.set('bn-opts', opts); setVolumes({ master: opts.master / 10, music: opts.music / 10, sfx: opts.sfx / 10 }); };
 
@@ -41,6 +53,8 @@ $('c').addEventListener('webglcontextlost', e => { e.preventDefault(); toast('Gr
 const narr = {
   q: [], cur: null, shown: 0, el: $('narr'), txt: $('narrTxt'), next: $('narrNext'), hold: 0,
   say(lines, front = false) { lines = [].concat(lines).filter(Boolean); if (front) this.q.unshift(...lines); else this.q.push(...lines); },
+  // the players reached a new area: anything still queued (or on screen) about earlier areas is stale, so drop it
+  moveOn() { this.q = []; if (this.cur) { this.cur = null; } },
   sayIfQuiet(line) { if (!this.cur && !this.q.length) this.say(line); },
   clear() { this.q = []; this.cur = null; this.el.classList.remove('on'); },
   busy() { return !!this.cur || this.q.length > 0; },
@@ -104,12 +118,14 @@ function menuInput(m) {
 let mode = 'title'; // title | join | play | paused | complete | credits
 let world = null, levelIdx = 0, hint = null, lastProgress = 0, idleSaid = 0, firsts = {}, lineCd = {}, completeT = -1, accumulator = 0;
 let hudT = 0;
+const latch = [{}, {}];
 
+function fadeIn(ms = 550) { const f = $('fade'); f.style.transition = 'none'; f.style.opacity = '1'; void f.offsetWidth; f.style.transition = `opacity ${ms}ms ease`; f.style.opacity = '0'; }
 function setScreen(id) { for (const s of ['title', 'join', 'hud', 'credits']) $(s).classList.toggle('on', s === id); }
 
 function goTitle() {
   mode = 'title'; closeMenu(); narr.clear(); SFX.stopAll(); setMood(0);
-  world = createWorld(0); view.build(world);
+  world = createWorld(0); view.build(world); fadeIn(800);
   setScreen('title');
   const cont = save.unlocked > 0;
   openMenu({
@@ -202,7 +218,7 @@ function joinUpdate() {
 
 /* ---------------- playing ---------------- */
 function startLevel(i) {
-  levelIdx = i; world = createWorld(i); view.build(world); closeMenu();
+  levelIdx = i; world = createWorld(i); view.build(world); closeMenu(); fadeIn();
   mode = 'play'; setScreen('hud'); narr.clear(); hint = null; firsts = {}; lineCd = {}; completeT = -1; accumulator = 0;
   lastProgress = performance.now(); idleSaid = 0; hudT = 0;
   setMood(ALL[i].theme === 5 || ALL[i].theme === 11 ? 1 : 0);
@@ -251,17 +267,17 @@ function handleEvents(evts) {
       case 'pull-miss': SFX.pullMiss(); break;
       case 'hang': SFX.hang(); if (!firsts.hang) { firsts.hang = 1; narr.sayIfQuiet(LINES.hangFirst); } break;
       case 'push': SFX.push(); view.pushRing(e.x, e.y - 0.2, e.z); Input.rumble(1, 0.35, 120); break;
-      case 'launch': SFX.launch(); Input.rumble(e.who, 0.6, 200); if (!firsts.launch) { firsts.launch = 1; narr.sayIfQuiet(LINES.launchFirst); } lastProgress = performance.now(); break;
+      case 'launch': SFX.launch(); view.shake(0.18); Input.rumble(e.who, 0.6, 200); if (!firsts.launch) { firsts.launch = 1; narr.sayIfQuiet(LINES.launchFirst); } lastProgress = performance.now(); break;
       case 'crate-launch': SFX.crate(); break;
-      case 'rocket': SFX.rocket(); { const p = world.players[1]; view.burst(p.pos.x, p.pos.y - 0.4, p.pos.z, 0x8fc4ff, 16, 3, 0.5, 0.5); } if (!firsts.rocket) { firsts.rocket = 1; narr.sayIfQuiet(LINES.rocketFirst); } break;
-      case 'zap': SFX.zap(); view.burst(e.x, e.y, e.z, 0xff2e4d, 18, 5, 3, 0.6); Input.rumble(e.who, 0.8, 250); say('zap', e.who, 15); break;
+      case 'rocket': SFX.rocket(); view.shake(0.22); { const p = world.players[1]; view.burst(p.pos.x, p.pos.y - 0.4, p.pos.z, 0x8fc4ff, 16, 3, 0.5, 0.5); } if (!firsts.rocket) { firsts.rocket = 1; narr.sayIfQuiet(LINES.rocketFirst); } break;
+      case 'zap': SFX.zap(); view.shake(0.3); view.burst(e.x, e.y, e.z, 0xff2e4d, 18, 5, 3, 0.6); Input.rumble(e.who, 0.8, 250); say('zap', e.who, 15); break;
       case 'fall': SFX.fall(); Input.rumble(e.who, 0.5, 200); say('fall', e.who, 18); break;
       case 'respawn': SFX.respawn(); { const p = world.players[e.who]; view.burst(p.pos.x, p.pos.y, p.pos.z, e.who ? 0x3d8bfd : 0xe5484d, 14, 3, 3, 0.6); } break;
       case 'plate': SFX.plate(e.on); if (e.on) lastProgress = performance.now(); break;
       case 'gate': SFX.gate(e.open); break;
-      case 'cog': SFX.cog(); view.burst(e.x, e.y, e.z, 0xffc53d, 26, 5, 4, 0.8); Input.rumble(e.who, 0.4, 150); { const had = save.cogs.includes(levelIdx); if (!had) { save.cogs.push(levelIdx); store.set('bn-save', save); } narr.sayIfQuiet(had ? LINES.cogAgain : pick(LINES.cog).replace('{n}', String(save.cogs.filter(i => i < NMAIN).length))); } break;
+      case 'cog': SFX.cog(); view.burst(e.x, e.y, e.z, 0xffc53d, 26, 5, 4, 0.8); Input.rumble(e.who, 0.4, 150); { const had = save.cogs.includes(levelIdx); if (!had) { save.cogs.push(levelIdx); saveGame(); } narr.sayIfQuiet(had ? LINES.cogAgain : pick(LINES.cog).replace('{n}', String(save.cogs.filter(i => i < NMAIN).length))); } break;
       case 'tube': SFX.whoosh(); view.burst(e.fx, e.fy, e.fz, 0x9fd8ff, 10, 3, 3, 0.4); view.burst(e.x, e.y, e.z, 0x9fd8ff, 14, 4, 4, 0.5); if (!firsts.tube && e.who !== undefined) { firsts.tube = 1; narr.sayIfQuiet(LINES.tubeFirst); } break;
-      case 'spring': SFX.boing(); view.burst(e.x, e.y + 0.1, e.z, 0xf2b84b, 8, 3, 2, 0.4); if (e.who !== undefined) Input.rumble(e.who, 0.3, 90); if (!firsts.spring && e.who !== undefined) { firsts.spring = 1; narr.sayIfQuiet(LINES.springFirst); } break;
+      case 'spring': SFX.boing(); view.shake(0.1); view.burst(e.x, e.y + 0.1, e.z, 0xf2b84b, 8, 3, 2, 0.4); if (e.who !== undefined) Input.rumble(e.who, 0.3, 90); if (!firsts.spring && e.who !== undefined) { firsts.spring = 1; narr.sayIfQuiet(LINES.springFirst); } break;
       case 'switch': SFX.toggle(e.on); lastProgress = performance.now(); if (!firsts.sw) { firsts.sw = 1; narr.sayIfQuiet(LINES.switchFirst); } break;
       case 'bridge': SFX.bridge(e.on); break;
       case 'checkpoint': SFX.checkpoint(); lastProgress = performance.now(); break;
@@ -269,7 +285,7 @@ function handleEvents(evts) {
       case 'exit-one': if (!firsts.exit) { firsts.exit = 1; narr.sayIfQuiet(pick(LINES.exitOne)); } break;
       case 'zone': {
         const z = ALL[levelIdx].zones[e.id]; lastProgress = performance.now();
-        if (z) { if (z.say) narr.say(z.say); if (z.hint) hint = z.hint; }
+        if (z) { if (z.say) { narr.moveOn(); narr.say(z.say); } if (z.hint) hint = z.hint; }
         break;
       }
       case 'complete': SFX.complete(); SFX.stopAll(); completeT = 0; break;
@@ -278,11 +294,12 @@ function handleEvents(evts) {
 }
 function finishLevel() {
   mode = 'complete';
+  { const e = world.exit, x = (e.min.x + e.max.x) / 2, z = (e.min.z + e.max.z) / 2; for (const c of [0xe5484d, 0x3d8bfd, 0xffc53d, 0x2ec4b6, 0xf15bb5]) view.burst(x, e.top + 1, z, c, 14, 5, 7, 1.6); view.shake(0.15); }
   const L = ALL[levelIdx], ot = !!L.ot;
   if (!save.done.includes(levelIdx)) save.done.push(levelIdx);
   if (!ot) save.unlocked = Math.max(save.unlocked, Math.min(NMAIN - 1, levelIdx + 1));
   if (levelIdx === NMAIN - 1) save.finished = true;
-  store.set('bn-save', save);
+  saveGame();
   const s = world.stats;
   const last = levelIdx === NMAIN - 1;
   const newOt = OVERTIME.findIndex(o => o.after === levelIdx);
@@ -304,8 +321,13 @@ function finishLevel() {
   });
 }
 function goCredits() {
-  mode = 'credits'; closeMenu(); setScreen('credits'); narr.clear();
-  narr.say(['That concludes orientation. You may now call yourselves Attraction Industries employees. There is no pay. There is cake. The cake is also a crate.', 'More shifts are being built as we speak. Margaret will be here. Margaret is always here.']);
+  mode = 'credits'; closeMenu(); setScreen('credits'); narr.clear(); fadeIn(900);
+  const cogs = save.cogs.filter(i => i < NMAIN).length, ot = save.done.filter(i => i >= NMAIN).length;
+  $('credStats').innerHTML = `Shifts worked: ${NMAIN} of ${NMAIN} · Golden cogs: ${cogs} of ${NMAIN} · Overtime done: ${ot} of ${OVERTIME.length}`;
+  narr.say(['And that is the year. Every shift, every crate, every laser you walked into on purpose.',
+    'Your annual review is complete. Result: exceeds expectations. Expectations have been informed.',
+    cogs < NMAIN ? `There are still ${NMAIN - cogs} golden cogs hiding in the factory. Management would love them back. Management would love anything back.` : 'You found every golden cog. Management has nothing left to hide. Management is nervous.',
+    'Thank you for working at Attraction Industries. Opposites attract. You two proved it. Now go home. Or do overtime. Mostly overtime.']);
 }
 
 /* ---------------- main loop ---------------- */
@@ -333,13 +355,14 @@ function frame(now) {
     }
     if (mode === 'play') {
       if (Input.playerPressed('narrP') || (m.narr && Input.assign.some(a => a && a[0] === 'k'))) narr.advance();
+      for (let i = 0; i < 2; i++) { const pi = Input.player(i); if (pi) { if (pi.jumpP) latch[i].jumpP = 1; if (pi.powerP) latch[i].powerP = 1; } }
       accumulator += dt;
       let steps = 0;
       while (accumulator >= 1 / 60 && steps < 5) {
         world.events = [];
         const ins = [Input.player(0), Input.player(1)];
-        if (steps > 0 && ins[0]) { ins[0].jumpP = false; ins[0].powerP = false; }
-        if (steps > 0 && ins[1]) { ins[1].jumpP = false; ins[1].powerP = false; }
+        // a press that landed on a frame with no sim step is kept until a step uses it
+        for (let i = 0; i < 2; i++) if (ins[i]) { ins[i].jumpP = !!latch[i].jumpP; ins[i].powerP = !!latch[i].powerP; latch[i] = {}; }
         step(world, ins, 1 / 60);
         handleEvents(world.events);
         accumulator -= 1 / 60; steps++;

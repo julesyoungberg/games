@@ -324,13 +324,16 @@ function updatePlayer(w, p, inp, dt) {
   if (p.id === 0) {
     p.lastAnchorT = Math.max(0, (p.lastAnchorT || 0) - dt);
     if (p.target && p.target.kind === 'anchor' && inp && inp.jumpP) { releaseTarget(w, p); p.vel.y = C.jumpV; p.vel.x = p.face.x * 3; p.vel.z = p.face.z * 3; p.jumpHeld = true; emit(w, 'jump', { who: 0 }); }
-    if (inp && inp.powerP && !p.target) {
+    // holding X keeps trying: a press made before anything was in range still grabs once something is
+    if (!inp || !inp.power) p.wantPull = false;
+    const retry = inp && inp.power && p.wantPull && !p.target;
+    if ((inp && inp.powerP && !p.target) || retry) {
       const t = pickTarget(w, p);
-      if (t) {
+      if (t) { p.wantPull = false;
         p.target = t; w.stats.pulls++;
         if (t.kind !== 'anchor') { t.obj.pulledBy = p; if (t.obj.kind === 'player' && t.obj.target) releaseTarget(w, t.obj); }
         emit(w, 'pull', { kind: t.kind });
-      } else emit(w, 'pull-miss');
+      } else if (!retry) { p.wantPull = true; emit(w, 'pull-miss'); }
     }
     if (p.target && (!inp || !inp.power)) releaseTarget(w, p);
     if (p.target && p.target.kind !== 'anchor') {
@@ -340,7 +343,10 @@ function updatePlayer(w, p, inp, dt) {
     }
   }
   // --- Nut: push
-  if (p.id === 1 && inp && inp.powerP && p.cd <= 0) {
+  // a push pressed during the cooldown fires as soon as the cooldown ends
+  if (p.id === 1 && inp && inp.powerP && p.cd > 0) p.pushBuf = 0.18; else if (p.id === 1) p.pushBuf = Math.max(0, (p.pushBuf || 0) - dt);
+  if (p.id === 1 && inp && (inp.powerP || p.pushBuf > 0) && p.cd <= 0) {
+    p.pushBuf = 0;
     p.cd = C.pushCd; w.stats.pushes++;
     const grounded = p.grounded || p.coyote > 0;
     let hit = false;

@@ -94,13 +94,21 @@ export function makeSurfaces() {
     for (let y = 0; y < S; y++) { g.fillStyle = `rgba(${r() < 0.5 ? '255,255,255' : '0,0,0'},${0.03 + r() * 0.05})`; g.fillRect(0, y, S, 1); }
   });
   // gate shutters: diagonal stripes inside a frame
+  // gate shutters: horizontal roller slats
   const hazard = make(128, (g, S, r) => {
-    grime(g, S, r, 245, 8, 3);
-    g.fillStyle = grey(150);
-    for (let x = -S; x < S * 2; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 16, 0); g.lineTo(x + 16 - S, S); g.lineTo(x - S, S); g.fill(); }
-    g.fillStyle = grey(200); g.fillRect(0, 0, S, 4); g.fillRect(0, S - 4, S, 4);
+    grime(g, S, r, 240, 8, 3);
+    for (let y = 0; y < S; y += 32) {
+      const gr = g.createLinearGradient(0, y, 0, y + 32); gr.addColorStop(0, grey(255)); gr.addColorStop(0.7, grey(215)); gr.addColorStop(1, grey(150));
+      g.fillStyle = gr; g.fillRect(0, y, S, 32); g.fillStyle = grey(120); g.fillRect(0, y + 30, S, 2);
+    }
   });
-  return { tile, panel, iron, wall, steel, hazard };
+  // pressure plate top: grooved rings and a centre dot
+  const plate = make(128, (g, S, r) => {
+    g.fillStyle = grey(235); g.fillRect(0, 0, S, S);
+    for (let k = 0; k < 4; k++) { g.strokeStyle = grey(170); g.lineWidth = 3; g.beginPath(); g.arc(S / 2, S / 2, S * (0.14 + k * 0.1), 0, 7); g.stroke(); }
+    g.fillStyle = grey(255); g.beginPath(); g.arc(S / 2, S / 2, S * 0.08, 0, 7); g.fill();
+  }, { repeat: false });
+  return { tile, panel, iron, wall, steel, hazard, plate };
 }
 
 // vertical gradient for the sky / hall behind the level

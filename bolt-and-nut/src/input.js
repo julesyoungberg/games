@@ -99,7 +99,7 @@ export const Input = {
     if (d === 'k1') return 'Keyboard (WASD)'; if (d === 'k2') return 'Keyboard (arrows)';
     const m = /^g(\d+)([LR]?)$/.exec(d); const p = pads[+m[1]];
     const nm = p ? (p.id || 'Controller').replace(/\(.*?\)/g, '').replace(/Vendor.*$/, '').trim().slice(0, 26) : 'Controller';
-    return (m[2] === 'L' ? 'Left half of ' : m[2] === 'R' ? 'Right half of ' : '') + (nm || 'Controller ' + (+m[1] + 1));
+    return (m[2] === 'L' ? 'Left half of ' : m[2] === 'R' ? 'Right half of ' : '') + (nm || 'Controller ' + (+m[1] + 1)) + (p && p.mapping !== 'standard' ? ' (unusual button layout: try another browser if buttons feel wrong)' : '');
   },
   connected() { return pads.filter(p => p && p.connected).length; },
   rumble(i, strong = 0.4, ms = 120) {

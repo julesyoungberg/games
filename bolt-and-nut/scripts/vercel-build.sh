@@ -17,6 +17,7 @@ rm -rf public && mkdir -p public/play
 cp app/dist/BoltAndNut-"$VERSION".AppImage public/BoltAndNut.AppImage
 cp dist/index.html public/play/index.html
 cp app/build/icon.png public/icon.png
+cp site/shot.jpg public/shot.jpg
 SIZE_MB=$(( ($(stat -c %s public/BoltAndNut.AppImage) + 524288) / 1048576 ))
 sed -e "s/__VERSION__/$VERSION/g" -e "s/__SIZE_MB__/$SIZE_MB/g" site/index.html > public/index.html
 if grep -q "__VERSION__\|__SIZE_MB__" public/index.html; then echo "placeholder left in landing page" >&2; exit 1; fi

@@ -9,6 +9,7 @@
 * { box-sizing: border-box; }
 html, body { margin:0; height:100%; overflow:hidden; background:#f6d9b8; font-weight:700; font-family:"Nunito","Trebuchet MS","DejaVu Sans","Noto Sans",Verdana,sans-serif; color:var(--ink); user-select:none; cursor:none; }
 #vig { position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 55%, rgba(20,14,30,.28) 100%); }
+#fade { position:fixed; inset:0; background:#1a1424; opacity:0; pointer-events:none; z-index:30; }
 canvas#c { position:fixed; inset:0; width:100vw; height:100vh; display:block; image-rendering:auto; }
 .screen { position:fixed; inset:0; display:none; pointer-events:none; }
 .screen.on { display:block; }
@@ -86,13 +87,14 @@ canvas#c { position:fixed; inset:0; width:100vw; height:100vh; display:block; im
 </head><body>
 <canvas id="c"></canvas>
 <div id="vig"></div>
+<div id="fade"></div>
 <div id="title" class="screen"><div class="logo"><h1><span class="b">Bolt</span> <span class="amp">&amp;</span> <span class="n">Nut</span></h1><div class="tag">a couch co-op about opposites, attraction, and a very patient orientation facilitator</div></div></div>
 <div id="join" class="screen"><h2>Who is who?</h2><div id="joinCards"></div><div id="joinFoot"></div></div>
 <div id="hud" class="screen">
   <div id="banner"><div class="n" id="bannerN"></div><div class="t" id="bannerT"></div><div class="s" id="bannerS"></div></div>
   <div id="ctrls"><div id="ctrlB"></div><div id="ctrlN"></div><div id="ctrlM"></div></div>
 </div>
-<div id="credits" class="screen"><div class="box"><h2>All shifts complete</h2><p>Bolt &amp; Nut: employees of the month. Every month. There are two employees.</p><p style="font-size:18px">More shifts are on the way. Management is building them right now. Badly.</p><p style="font-size:18px">Press A to return to the title</p></div></div>
+<div id="credits" class="screen"><div class="box"><h2>Year complete</h2><p>Bolt &amp; Nut: employees of the month. Every month. There are two employees.</p><p id="credStats" style="font-size:18px"></p><p style="font-size:17px;opacity:.9">Made for two people on one couch. Designed and built with Claude.</p><p style="font-size:18px">Press A to return to the title</p></div></div>
 <div id="narr"><div class="who">Margaret · Orientation Facilitator</div><div id="narrTxt"></div><div id="narrMore"></div><div id="narrNext"><span class="y">Y</span> ▸</div></div>
 <div id="menu"></div>
 <div id="toast"></div>
