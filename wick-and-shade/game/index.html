@@ -46,7 +46,7 @@ function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)
 let run = { deaths: [0, 0], abandon: 0, throws: 0, waves: 0, start: 0 };
 // options (Options menu on the title screen and in the pause menu)
 const OPT_KEY = 'wick-and-shade-options-v1';
-let opts = { music: 6, sfx: 8, narrator: 'wait' };
+let opts = { music: 6, sfx: 8, narrator: 'wait', rumble: true };
 try { const o = JSON.parse(localStorage.getItem(OPT_KEY)); if (o && typeof o === 'object') opts = Object.assign(opts, o); } catch (e) {}
 function writeOpts() { try { localStorage.setItem(OPT_KEY, JSON.stringify(opts)); } catch (e) {} applyOpts(); }
 function applyOpts() {
@@ -235,6 +235,13 @@ function devName(d) {
   return (m[2] === 'L' ? 'Left half of ' : m[2] === 'R' ? 'Right half of ' : '') + (nm || 'Controller ' + (+m[1] + 1));
 }
 const splitMode = () => assign[0] && /L$/.test(assign[0]);
+// controller rumble for player i (a split pad rumbles for both halves; phones and keyboards just skip it)
+function rumble(i, strong, weak, ms) {
+  if (!opts.rumble || forced) return;
+  const m = assign[i] && /^g(\d+)/.exec(assign[i]); if (!m) return;
+  const pad = pads[+m[1]], va = pad && pad.vibrationActuator; if (!va || !va.playEffect) return;
+  try { const r = va.playEffect('dual-rumble', { startDelay: 0, duration: ms, strongMagnitude: strong, weakMagnitude: weak }); if (r && r.catch) r.catch(() => {}); } catch (e) {}
+}
 
 /* ------------------------------ narrator ------------------------------ */
 const narr = {
@@ -3561,7 +3568,7 @@ function drawCrates(t) {
 function killPlayer(p, i) {
   if (p.dead > 0 || lv.complete) return;
   p.dead = 0.9; run.deaths[i]++;
-  SFX.die();
+  SFX.die(); rumble(i, 0.8, 0.5, 220);
   burst(p.x + p.w / 2, p.y + p.h / 2, p.kind === 'wick' ? '#f2e6cc' : '#8a5cff', 26);
   if (narr.deathCd <= 0) {
     const other = players[1 - i].name;
@@ -3641,10 +3648,10 @@ function updatePlayer(p, inp, dt, i) {
   if (p.onDrum && !(my > 0.5)) {
     // drums: land on one and it throws you high, unless you hold down
     p.vy = -1060; p.onGround = false; p.coyote = 0; p.jbuf = 0; p.jumpHeld = false;
-    lv.drumHit[p.onDrum - 1] = lv.time; SFX.drum(); dust(p);
+    lv.drumHit[p.onDrum - 1] = lv.time; SFX.drum(); dust(p); rumble(players.indexOf(p), 0.45, 0.3, 120);
     if (!flags.drum) { flags.drum = true; narr.say(LINES.drumFirst, { ifQuiet: true }); }
   }
-  if (p.onGround && !wasGround && vyBefore > 300) { p.landT = 1; SFX.land(); dust(p); }
+  if (p.onGround && !wasGround && vyBefore > 300) { p.landT = 1; SFX.land(); dust(p); if (vyBefore > 700) rumble(players.indexOf(p), 0.25, 0.15, 70); }
   if (!p.onGround) p.airT += dt; else p.airT = 0;
   // soft footsteps
   if (p.onGround && Math.abs(p.vx) > 60 && !(shade && p.embedded)) { p.stepT = (p.stepT || 0) - dt; if (p.stepT <= 0) { p.stepT = shade ? 0.34 : 0.27; SFX.step(shade); } } else p.stepT = 0.08;
@@ -4390,10 +4397,12 @@ function optionItems(back) {
   const vol = v => '◂ ' + '●'.repeat(v) + '○'.repeat(10 - v) + ' ▸';
   const step = (k, d) => { opts[k] = clamp(opts[k] + d, 0, 10); writeOpts(); SFX.menu(); };
   const flipN = () => { opts.narrator = opts.narrator === 'auto' ? 'wait' : 'auto'; writeOpts(); SFX.menu(); };
+  const flipR = () => { opts.rumble = !opts.rumble; writeOpts(); SFX.menu(); if (opts.rumble) { rumble(0, 0.5, 0.3, 150); rumble(1, 0.5, 0.3, 150); } };
   return [
     { label: 'Music   ' + vol(opts.music), adj: d => step('music', d), act: () => step('music', opts.music >= 10 ? -10 : 1) },
     { label: 'Sound   ' + vol(opts.sfx), adj: d => step('sfx', d), act: () => step('sfx', opts.sfx >= 10 ? -10 : 1) },
     { label: 'Narrator   ◂ ' + (opts.narrator === 'auto' ? 'moves on by itself' : 'waits for Y') + ' ▸', adj: flipN, act: flipN },
+    { label: 'Rumble   ◂ ' + (opts.rumble ? 'on' : 'off') + ' ▸', adj: flipR, act: flipR },
     { label: 'Back', act: back },
   ];
 }
