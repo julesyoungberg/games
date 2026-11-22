@@ -441,7 +441,7 @@ export function step(w, inputs, dt = 1 / 60) {
     }
     if (b.grounded && b.ground && b.ground.spring && !b.pulledBy) {
       const sp = b.ground.spring; sp.t = w.t;
-      b.vel.y = sp.v; b.grounded = false; b.ground = null;
+      b.vel.y = sp.v; b.grounded = false; b.ground = null; if (b.kind === 'player') { b.beltV = null; b.drift = null; }
       if (b.kind === 'player') { b.launched = true; b.coyote = 0; b.jumpHeld = false; }
       emit(w, 'spring', { x: b.pos.x, y: b.pos.y - b.half.y, z: b.pos.z, who: b.id });
     }
@@ -455,11 +455,17 @@ export function step(w, inputs, dt = 1 / 60) {
     if (!g || b.pulledBy) {
       // a crate coming off a belt keeps some of its speed, so belts can deliver crates onto floors
       if (b.beltV && b.kind === 'crate' && !b.pulledBy) { b.vel.x = b.beltV.x; b.vel.z = b.beltV.z; }
+      // a robot that jumps off a belt keeps moving with it until it lands (no hopping up a fast belt)
+      if (b.kind === 'player') {
+        if (b.beltV && !b.grounded && !b.pulledBy) b.drift = b.beltV;
+        if (b.grounded || b.pulledBy || !b.alive || b.target) b.drift = null;
+        if (b.drift) { moveAxis(w, b, 'x', b.drift.x * dt); moveAxis(w, b, 'z', b.drift.z * dt); }
+      }
       b.beltV = null; continue;
     }
     const k = (g.rev ? -1 : 1);
     moveAxis(w, b, 'x', g.vx * k * dt); moveAxis(w, b, 'z', g.vz * k * dt);
-    b.beltV = { x: g.vx * k, z: g.vz * k };
+    b.beltV = { x: g.vx * k, z: g.vz * k }; b.drift = null;
   }
   // riders on bodies (standing on partner / on a crate being carried)
   for (const b of w.bodies) {
