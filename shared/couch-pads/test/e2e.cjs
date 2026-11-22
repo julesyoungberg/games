@@ -32,7 +32,8 @@ async function host(b, game, init) {
   const h = await ctx.newPage();
   h.on('pageerror', e => check(false, game + ' page error: ' + e.message));
   await h.goto(`http://127.0.0.1:9124/${game}/index.html?${Q}`);
-  await sleep(1200);
+  await h.waitForFunction(g => g === 'bolt' ? window.__bn && __bn.mode === 'title' : window.__ws && __ws.state === 'title', game, { timeout: 15000 });
+  await sleep(800);
   return h;
 }
 
@@ -44,7 +45,7 @@ async function host(b, game, init) {
   // Bolt & Nut: two phones (one direct, one through the relay) join and play
   {
     const h = await host(b, 'bolt');
-    await h.keyboard.press('Enter'); await sleep(300);
+    for (let i = 0; i < 6 && await h.evaluate(() => __bn.mode) !== 'join'; i++) { await h.keyboard.down('Enter'); await sleep(90); await h.keyboard.up('Enter'); await sleep(400); }
     check(await h.evaluate(() => __bn.mode) === 'join', 'Bolt: Enter on the title opens the join screen');
     await h.waitForFunction(() => CouchPads.status === 'open', null, { timeout: 8000 });
     const room = await h.evaluate(() => CouchPads.room);
@@ -77,7 +78,7 @@ async function host(b, game, init) {
         buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: i === 0 && window.__fakeA, touched: false, value: i === 0 && window.__fakeA ? 1 : 0 })) });
       Object.defineProperty(navigator, 'getGamepads', { value: () => [mk(), null, null, null], configurable: true, writable: true });
     });
-    await h.keyboard.press('Space'); await sleep(400);
+    for (let i = 0; i < 6 && await h.evaluate(() => __ws.state) !== 'join'; i++) { await h.keyboard.down('Space'); await sleep(90); await h.keyboard.up('Space'); await sleep(400); }
     check(await h.evaluate(() => __ws.state) === 'join', 'Wick: join screen');
     await h.waitForFunction(() => CouchPads.status === 'open', null, { timeout: 8000 });
     const room = await h.evaluate(() => CouchPads.room);
