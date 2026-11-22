@@ -547,7 +547,7 @@ export class View {
     });
     // signs
     for (const s of w.signs) {
-      const tex = canvasTex(512, 128, (c, W, H) => { c.fillStyle = 'rgba(255,255,255,0.0)'; c.clearRect(0, 0, W, H); c.fillStyle = '#ffffff'; c.globalAlpha = 0.85; let fs = 64; c.font = `bold ${fs}px sans-serif`; while (c.measureText(s.text).width > W - 16 && fs > 20) { fs -= 2; c.font = `bold ${fs}px sans-serif`; } c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s.text, W / 2, H / 2); });
+      const tex = canvasTex(512, 128, (c, W, H) => { c.fillStyle = 'rgba(255,255,255,0.0)'; c.clearRect(0, 0, W, H); c.fillStyle = '#ffffff'; c.globalAlpha = 0.85; let fs = 64; const fnt = () => `700 ${fs}px Fredoka, "Nunito", sans-serif`; c.font = fnt(); while (c.measureText(s.text).width > W - 16 && fs > 20) { fs -= 2; c.font = fnt(); } c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(s.text, W / 2, H / 2); c.globalCompositeOperation = 'destination-out'; c.globalAlpha = 0.5; for (let i = 0; i < 260; i++) { c.fillRect(Math.random() * W, Math.random() * H, 1 + Math.random() * 3, 1 + Math.random() * 2); } c.globalCompositeOperation = 'source-over'; });
       const m = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
       m.position.set(s.x, s.y, s.z + 0.02); this.level.add(m);
     }
