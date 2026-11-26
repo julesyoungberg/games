@@ -45,7 +45,7 @@ Download the new `WickAndShade.AppImage` and replace the old file in `/home/deck
 - Some hooks hang on a **rope and swing**. Hang the lantern on one and the light swings back and forth, and every shadow and sun-eye in the room changes with it. Catch the hook as it passes to take the lantern back.
 - **Curtains**: Shade slips through purple ink curtains and Wick can't; Wick walks through gold glow curtains and Shade can't. Light shines through both.
 - Little **sun-eyes** sit on some walls. While the lantern's light reaches one (and no ink block or crate is in the way), it works like a plate held down. Hide the light behind something and it lets go.
-- **Drums** throw whoever lands on them high into the air. Hold down to stand on one without bouncing. A dropped or thrown lantern bounces off drums too.
+- **Drums** throw whoever lands on them high into the air. Hold down to stand on one without bouncing. Pushing a crate never bounces you, so you can shove a crate off a drum. A dropped or thrown lantern bounces off drums too.
 - **Conveyor belts** carry whatever stands on them: you, crates, the lantern.
 - **Ink wells** are for Shade only: stand on one and press down to come up out of its partner. Wells pair up from left to right (the first with the second, the third with the fourth).
 - **Mirror balls** light up when the lantern can see them and shine too, a bit less far. They can open sun-eyes, hold up gold glass, melt dark glass and wipe out shadows. Hide one from the lantern (behind a crate or an ink block) to switch it off.
