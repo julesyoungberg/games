@@ -5,7 +5,8 @@
    - shows a QR code and a room code on the join screen (and a small reminder on the
      title and pause screens), plus the keyboard keys for two players on one keyboard
    - accepts phones that open /pad/ and enter the code, over a WebRTC data channel
-     (signaling through the free public PeerJS server, so nothing needs hosting or keys;
+     (signaling through the free public PeerJS server and, as a backup, two public MQTT brokers,
+     all at once, so nothing needs hosting or keys and one service being down doesn't matter;
      if the direct link can't be made, inputs travel over the signaling socket instead)
    - makes each phone look like a standard gamepad in navigator.getGamepads(), so a game's
      existing controller code handles it with no changes. Phones sit at gamepad index 4+,
@@ -32,6 +33,10 @@
   const qs = new URLSearchParams(location.search);
   const SIGNAL = qs.get('signal') || window.COUCH_PADS_SIGNAL || 'wss://0.peerjs.com/peerjs';
   const FORCE_RELAY = qs.get('padrelay') === '1';
+  // backup signaling: public MQTT brokers over secure websockets. Every message goes out on every channel that is up,
+  // and duplicates are dropped, so the phone connects as long as either side can reach any one of them.
+  const MQTT = qs.get('mqtt') ? qs.get('mqtt').split(',').filter(Boolean) : qs.get('signal') ? [] : window.COUCH_PADS_MQTT || ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
+  const NO_PEERJS = qs.get('nopeerjs') === '1';
   const ICE = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }];
   const PREFIX = 'ccgpad1-';
   const CODE_ALPHA = 'BCDFGHJKLMNPQRSTVWXZ'; // no vowels, so codes never spell words
@@ -47,7 +52,7 @@
   /* ---------------- signaling over the PeerJS server protocol ---------------- */
   // Only OFFER, ANSWER and CANDIDATE are relayed by the server, with any JSON payload.
   // Everything we send rides in one of those, tagged with payload.k.
-  function Signal(getId, onMsg, onState) {
+  function PeerJSSignal(getId, onMsg, onState) {
     let ws = null, hb = null, closed = false, retry = 0, isOpen = false;
     function open() {
       if (closed) return;
@@ -73,6 +78,74 @@
       send(dst, type, payload) { return raw({ type, dst, payload }); },
       reconnect() { if (ws) { try { ws.close(); } catch (e) { } } else open(); },
       close() { closed = true; clearInterval(hb); if (ws) try { ws.close(); } catch (e) { } },
+    };
+  }
+
+  // Minimal MQTT 3.1.1 client (QoS 0 only) over a websocket. Each peer listens on topic ccgpad1/<its id>.
+  function MqttSignal(url, getId, onMsg, onState) {
+    let ws = null, hb = null, closed = false, retry = 0, isOpen = false, buf = new Uint8Array(0), subId = '';
+    const enc = new TextEncoder(), dec = new TextDecoder();
+    const str = t => { const b = enc.encode(t); return [b.length >> 8, b.length & 255, ...b]; };
+    const pkt = (h, body) => { const len = []; let n = body.length; do { let d = n % 128; n = Math.floor(n / 128); if (n) d |= 128; len.push(d); } while (n); return new Uint8Array([h, ...len, ...body]); };
+    const topic = id => 'ccgpad1/' + id;
+    function send(bytes) { if (ws && ws.readyState === 1) { ws.send(bytes); return true; } return false; }
+    function subscribe() { subId = getId(); send(pkt(0x82, [0, 1, ...str(topic(subId)), 0])); }
+    function open() {
+      if (closed) return;
+      try { ws = new WebSocket(url, 'mqtt'); } catch (e) { onState('down'); return later(); }
+      ws.binaryType = 'arraybuffer';
+      ws.onopen = () => { const cid = 'ccp' + Math.random().toString(36).slice(2, 14); send(pkt(0x10, [...str('MQTT'), 4, 2, 0, 30, ...str(cid)])); };
+      ws.onmessage = e => {
+        const add = new Uint8Array(e.data), nb = new Uint8Array(buf.length + add.length); nb.set(buf); nb.set(add, buf.length); buf = nb;
+        for (;;) {
+          if (buf.length < 2) break;
+          let len = 0, mul = 1, i = 1, d;
+          do { if (i >= buf.length) return; d = buf[i++]; len += (d & 127) * mul; mul *= 128; } while (d & 128);
+          if (buf.length < i + len) break;
+          const type = buf[0] >> 4, body = buf.subarray(i, i + len); buf = buf.slice(i + len);
+          if (type === 2) { if (body[1] === 0) { retry = 0; isOpen = true; subscribe(); onState('open'); } else onState('error'); }
+          else if (type === 3) {
+            const tl = (body[0] << 8) | body[1], qos = (buf[0] >> 1) & 3, off = 2 + tl + (qos ? 2 : 0);
+            let m; try { m = JSON.parse(dec.decode(body.subarray(off))); } catch (err) { continue; }
+            if (m && m.src && m.payload && m.payload.k) onMsg(m.src, m.payload);
+          }
+        }
+      };
+      ws.onclose = () => { isOpen = false; clearInterval(hb); if (!closed) { onState('down'); later(); } };
+      ws.onerror = () => { };
+      hb = setInterval(() => { send(new Uint8Array([0xc0, 0])); if (isOpen && subId !== getId()) subscribe(); }, 20000);
+    }
+    function later() { setTimeout(open, Math.min(15000, 800 * 2 ** retry++)); }
+    open();
+    return {
+      get open() { return isOpen; },
+      send(dst, type, payload) { if (!isOpen) return false; if (subId !== getId()) subscribe(); return send(pkt(0x30, [...str(topic(dst)), ...enc.encode(JSON.stringify({ src: getId(), type, payload }))])); },
+      reconnect() { if (ws) { try { ws.close(); } catch (e) { } } else open(); },
+      close() { closed = true; clearInterval(hb); if (ws) try { ws.close(); } catch (e) { } },
+    };
+  }
+
+  // Signaling on every channel at once: PeerJS plus the MQTT brokers. Reported 'open' while any channel is up.
+  function Signal(getId, onMsg, onState) {
+    const seen = new Map(); // message id -> time, to drop the copies that arrive on the other channels
+    const recv = (src, p) => {
+      if (p.mid) { if (seen.has(p.mid)) return; seen.set(p.mid, Date.now()); if (seen.size > 400) for (const [k, t] of seen) if (Date.now() - t > 10000) seen.delete(k); }
+      onMsg(src, p);
+    };
+    let last = '';
+    const report = st => {
+      if (st === 'taken' || st === 'error' && !chans.some(c => c.open)) { onState(st); return; }
+      const now = chans.some(c => c.open) ? 'open' : 'down';
+      if (now !== last || st === 'open') { last = now; onState(now); }
+    };
+    const chans = [];
+    if (!NO_PEERJS) chans.push(PeerJSSignal(getId, recv, report));
+    for (const u of MQTT) chans.push(MqttSignal(u, getId, recv, report));
+    return {
+      get open() { return chans.some(c => c.open); },
+      send(dst, type, payload) { const p = { ...payload, mid: Math.random().toString(36).slice(2, 12) }; let ok = false; for (const c of chans) ok = c.send(dst, type, p) || ok; return ok; },
+      reconnect() { for (const c of chans) c.reconnect(); },
+      close() { for (const c of chans) c.close(); },
     };
   }
 

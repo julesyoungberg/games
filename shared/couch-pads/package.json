@@ -3,5 +3,5 @@
   "private": true,
   "description": "Test tooling for the shared phone-controller module. Nothing here is deployed.",
   "scripts": { "test": "node test/e2e.cjs" },
-  "devDependencies": { "peer": "1.0.2" }
+  "devDependencies": { "peer": "1.0.2", "aedes": "0.51.3", "websocket-stream": "5.5.2" }
 }

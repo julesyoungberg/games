@@ -51,3 +51,7 @@ It starts a local PeerJS server and file server, opens Bolt & Nut and Wick & Sha
 two phones (one direct, one forced through the relay), joins, moves, presses the narrator and pause buttons,
 reloads the game and checks the phone comes back. Any page can be pointed at a local signaling server with
 `?signal=ws://127.0.0.1:9000/peerjs`; `?padrelay=1` forces the relay path.
+
+
+## Signaling backup (2026-11-26)
+The public PeerJS server alone proved unreliable (phones showed "Can't reach the connection service"). Both sides now also connect to public MQTT brokers over secure websockets (`wss://broker.emqx.io:8084/mqtt`, `wss://broker.hivemq.com:8884/mqtt`), send every signaling message on every channel that is up, and drop duplicates by message id. Override with `?mqtt=url1,url2` or `window.COUCH_PADS_MQTT`; `?nopeerjs=1` turns PeerJS off. Tests: `MODE=peerjs|mqtt|both node test/e2e.cjs` (local servers, no internet needed).

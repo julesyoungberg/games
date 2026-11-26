@@ -13,7 +13,15 @@ function serve(req, res) {
   f = f === 'couch-pads.js' ? path.join(repo, 'shared/couch-pads/couch-pads.js') : MOUNT[top] && path.join(repo, MOUNT[top], f);
   fs.readFile(f || '', (e, d) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'content-type': f.endsWith('.js') ? 'text/javascript' : 'text/html' }); res.end(d); });
 }
-const Q = 'signal=' + encodeURIComponent('ws://127.0.0.1:9123/peerjs') + '&padsite=' + encodeURIComponent('http://127.0.0.1:9124');
+// MODE=peerjs (default): local PeerJS server only. MODE=mqtt: local MQTT broker only (the backup channel).
+// MODE=both: both channels (every message arrives twice and must be deduplicated).
+const MODE = process.env.MODE || 'peerjs';
+const Q = (MODE === 'mqtt' ? 'nopeerjs=1&mqtt=' + encodeURIComponent('ws://127.0.0.1:9125') : 'signal=' + encodeURIComponent('ws://127.0.0.1:9123/peerjs') + (MODE === 'both' ? '&mqtt=' + encodeURIComponent('ws://127.0.0.1:9125') : '')) + '&padsite=' + encodeURIComponent('http://127.0.0.1:9124');
+function mqttBroker() {
+  // needs aedes, ws and websocket-stream installed (npm install here)
+  const aedes = require('aedes')(), ws = require('websocket-stream');
+  const srv = http.createServer(); ws.createServer({ server: srv }, aedes.handle); srv.listen(9125, '127.0.0.1'); return srv;
+}
 let failed = 0;
 const check = (ok, msg) => { console.log((ok ? 'ok   ' : 'FAIL ') + msg); if (!ok) failed++; };
 
@@ -40,6 +48,7 @@ async function host(b, game, init) {
 (async () => {
   const peer = PeerServer({ port: 9123, host: '127.0.0.1', path: '/' });
   const web = http.createServer(serve).listen(9124, '127.0.0.1');
+  const mq = MODE !== 'peerjs' ? mqttBroker() : null;
   const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 
   // Bolt & Nut: two phones (one direct, one through the relay) join and play
@@ -98,7 +107,7 @@ async function host(b, game, init) {
     await h.waitForFunction(() => CouchPads.phones().some(x => x.live), null, { timeout: 20000 }).catch(() => { });
     check(await h.evaluate(() => CouchPads.phones().some(x => x.live)), 'Wick: phone reconnects by itself after the game reloads');
   }
-  await b.close(); peer.close && peer.close(); web.close();
+  await b.close(); peer.close && peer.close(); web.close(); mq && mq.close();
   console.log(failed ? `${failed} check(s) failed` : 'all phone-controller checks passed');
   process.exit(failed ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
