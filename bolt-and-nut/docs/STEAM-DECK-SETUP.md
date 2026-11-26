@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.14.0)
+## What's in this version (1.15.0)
+A new Overtime puzzle, Moving Target (after Fire Drill): ride a shuttle through a laser that blinks out of step with it, then catch a ring that slides back and forth over a gap. 37 in all.
+
+## 1.14.0
 A new shift before the finale: Fire Drill (a plate-powered fan lift, blinking alarm lasers, and a crate that tries to evacuate itself). 33 shifts in all.
 
 ## 1.13.0

@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.90'; // keep in step with package.json
+const GAME_VERSION = '1.0.91'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -5867,6 +5867,38 @@ const LEVELS = [
       [110, "Wait by the teal door and go through on the right swing. Hop the thorns, wait by the pink door, and go through on the left swing."],
     ],
     outro: "Right, left, out. The narrator would like to point out that this is also how you dance. Nobody asked.",
+  },
+  { name: "High Tide", sub: "The shadow comes in with the swing, and goes out with it.", ambient: 0.55, challenge: true, unlockAt: 118, swing: { reach: 2, period: 3.6 },
+    map: [
+      '################################',
+      '#........#.....................#',
+      '#........#.....................#',
+      '#........#.....................#',
+      '#........#.....................#',
+      '#....G...#.....................#',
+      '#........P.....................#',
+      '#........P.....................#',
+      '#..W.....Brrrr.................#',
+      '#####....B..........p..........#',
+      '#........B.....###########...E.#',
+      '#......##B.....#################',
+      '#........BQQQQQ#################',
+      '#..##....B.....#################',
+      '#........B.S...#################',
+      '#.....##.B######################',
+      '#.q......B######################',
+      '#########B######################',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "Shade is down in the dock, under a pink hatch. The light swings on a rope, and the shadow behind the ink wall comes and goes with it.",
+    ],
+    hints: [
+      [40, "Wick, hang the lantern on the swinging hook, then climb down and stand on the pink plate. The hatch over Shade opens."],
+      [110, "Shade, let the shadow carry you up, stand on top of it, and jump right for the ledge when it reaches furthest. The teal plate up there brings out the bridge. Wick, climb back up and cross."],
+    ],
+    outro: "Shade surfed the tide. The narrator has asked for a go. The narrator has been told no.",
   },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
