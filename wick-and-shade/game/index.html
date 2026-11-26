@@ -29,7 +29,7 @@
 const cv = document.getElementById('game'), ctx = cv.getContext('2d');
 const FONT_D = '"Fraunces", Georgia, serif', FONT_B = '"Lora", Georgia, serif';
 for (const f of ['400 20px Fraunces', 'italic 400 20px Fraunces', 'bold 20px Fraunces', 'italic bold 20px Fraunces', '20px Lora', 'italic 20px Lora', 'bold 20px Lora']) try { document.fonts.load(f); } catch (e) {}
-const GAME_VERSION = '1.0.88'; // keep in step with package.json
+const GAME_VERSION = '1.0.89'; // keep in step with package.json
 const W = 1280, H = 800, T = 40, COLS = 32, ROWS = 20, RL = 400, TAU = Math.PI * 2;
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -442,6 +442,7 @@ const LINES = {
   shadowFirst: 'Look at that. Shade, standing on nothing. Well, on a shadow. Which is nearly nothing.',
   floatFirst: 'Shade floats up through shadow like a bubble. A dark, slightly sad bubble.',
   hookFirst: 'Wick hung the lantern on a hook. Light from above. Very dramatic. Very gallery.',
+  swingFirst: 'The hook is swinging. So is the light. So is every shadow in the room. The narrator feels slightly seasick on everyone\'s behalf.',
   dropFirst: 'Wick put the lantern down. It will wait for you. Lanterns are patient like that.',
   throwFirst: "Wick threw the lantern! Wick. That is the light source. Be gentle with the light source.",
   waveFirst: 'Shade waves. Wick, I believe that is affection. Or a warning. Shade is hard to read.',
@@ -4542,16 +4543,16 @@ const LEVELS = [
     ],
     outro: "The lantern kept the door. Wick went back for it later. The narrator pretended not to notice it had been crying. Lanterns can't cry.",
   },
-  { name: "Boat Shed", sub: "Bounce up, hang the light, come down.", ambient: 0.6, cont: true,
+  { name: "Boat Shed", sub: "Bounce up, hang the light, mind the swing.", ambient: 0.6, cont: true,
     map: [
       '################################',
       '#....#..............#..........#',
+      '#....#......B..o....#..........#',
+      '#....#......B.###...#..........#',
+      '#....#......B.......#..........#',
+      '#....#......B.......#..........#',
       '#....#..............#..........#',
-      '#....#..............#..........#',
-      '#....#.........o....#..........#',
-      '#....#........###...#..........#',
-      '#....#..............#..........#',
-      '#....#....H.........#..........#',
+      '#....#.....G........#..........#',
       '#....#..............#..........#',
       '#....#..............#..........#',
       '#....#...#########..#..........#',
@@ -4566,12 +4567,12 @@ const LEVELS = [
       '################################',
     ],
     intro: [
-      "The boat shed. There's a drum by the door, a hook up on the loft, and a sun-eye up in the rafters that opens the way out.",
-      "Shade, the pink plate is a timer. Wick, the light needs to go up there and stay.",
+      "The boat shed. There's a drum by the door, a hook swinging over the loft, and a sun-eye up in the rafters that opens the way out.",
+      "The ink beam up there hides the sun-eye from half of the swing. The door will only be open for the other half.",
     ],
     hints: [
       [40, "Shade steps off the pink timer plate and you both get through the pink door before it shuts."],
-      [110, "Wick, bounce off the drum onto the loft and hang the lantern on the hook. The sun-eye opens the teal door. Then drop down and leave together."],
+      [110, "Wick, bounce off the drum onto the loft and hang the lantern on the swinging hook as it passes. When it swings right, the sun-eye sees it and the teal door opens. Wait by the door together and go on the right half of the swing."],
     ],
     outro: "The lantern stayed up in the loft, keeping the boats company. The narrator was told they get lonely. The narrator was told this by nobody.",
   },
@@ -5835,6 +5836,38 @@ const LEVELS = [
     ],
     outro: "You made the last train. The narrator missed it once. The narrator does not want to talk about it.",
   },
+  { name: "Swing Shift", sub: "Teal on the right swing. Pink on the left. Never both.", ambient: 0.55, challenge: true, unlockAt: 118,
+    map: [
+      '################################',
+      '#...................#....#.....#',
+      '#.....u..B..B..o....#....#.....#',
+      '#....###.B..B.###...#....#.....#',
+      '#........B..B.......#....#.....#',
+      '#........B..B.......#....#.....#',
+      '#...................#....#.....#',
+      '#..........G........#....#.....#',
+      '#...................#....#.....#',
+      '#...................#....#.....#',
+      '#........#######....#....#.....#',
+      '#...................#....#.....#',
+      '#...................#....#.....#',
+      '#...................P....Q.....#',
+      '#...................P....Q.....#',
+      '#...................P....Q.....#',
+      '#WS.................P....Q..E..#',
+      '#######j##############^^########',
+      '################################',
+      '################################',
+    ],
+    intro: [
+      "One swinging hook, two sun-eyes and two ink beams. When the light swings right, the teal door opens. When it swings left, the pink one does.",
+    ],
+    hints: [
+      [40, "Wick, bounce off the drum onto the loft and hang the lantern on the swinging hook as it passes."],
+      [110, "Wait by the teal door and go through on the right swing. Hop the thorns, wait by the pink door, and go through on the left swing."],
+    ],
+    outro: "Right, left, out. The narrator would like to point out that this is also how you dance. Nobody asked.",
+  },
 ];
 // Story chapters can span several rooms: a level with cont:true continues the chapter before it.
 // Challenge levels (challenge:true) live after the story and have their own menu.
@@ -5880,6 +5913,13 @@ function loadLevel(idx, opts = {}) {
     if (c === 'W' || c === 'S') { const p = players[c === 'W' ? 0 : 1]; p.sx = p.x = x * T + (T - p.w) / 2; p.sy = p.y = (y + 1) * T - p.h; grid[y][x] = '.'; }
     else if (c === 'L') { lanSpawn = [x, y]; grid[y][x] = '.'; }
     else if (c === 'H') { lv.hooks.push({ tx: x, ty: y }); grid[y][x] = '.'; }
+    else if (c === 'G') {
+      // swinging hook: hangs on a rope from the chalk above and swings side to side, taking the lantern (and every shadow) with it
+      let top = y; while (top > 0 && grid[top - 1][x] !== '#') top--;
+      const len = (y + 0.5 - top) * T, reach = (def.swing && def.swing.reach || 3) * T;
+      lv.hooks.push({ tx: x, ty: y, swing: true, px: (x + 0.5) * T, py: top * T, len, amp: Math.asin(Math.min(0.95, reach / len)), per: def.swing && def.swing.period || 3.4, ph: def.swing && def.swing.phase || 0, hx: (x + 0.5) * T, hy: (y + 0.5) * T });
+      grid[y][x] = '.';
+    }
     else if (c === 'k') { (lv.wells = lv.wells || []).push({ tx: x, ty: y }); }
     else if (c === 'f') { (lv.vents = lv.vents || []).push({ tx: x, ty: y, top: 0 }); }
     else if (c === 'm') { (lv.mirrors = lv.mirrors || []).push({ tx: x, ty: y, on: false }); }
@@ -6130,6 +6170,7 @@ function returnLantern(say = true) {
   if (say) narr.say(pick(LINES.lanternLost), { ifQuiet: true });
 }
 function updateLantern(dt) {
+  swingHooks();
   const wk = players[0];
   if (lantern.held) {
     // a held lantern swings a little on its handle when Wick starts, stops and turns
@@ -6143,7 +6184,7 @@ function updateLantern(dt) {
     placeHeldLantern(wk); return;
   }
   lantern.sw = lantern.sv = 0;
-  if (lantern.hung) { lantern.spin = 0; return; }
+  if (lantern.hung) { lantern.spin = 0; if (lantern.hung.swing) { lantern.x = lantern.hung.hx - 7; lantern.y = lantern.hung.hy - 6; } return; }
   lantern.spin *= 0.95;
   const n = Math.max(1, Math.ceil(dt / (1 / 240))), sdt = dt / n;
   lantern.vy = Math.min(lantern.vy + 1900 * dt, 900);
@@ -6434,15 +6475,22 @@ function shadeContact(p, adx = 0, ady = 0) {
   }
 }
 // hooks: Wick can hang the lantern on a hook just above head height, and take it back down
+function swingHooks() {
+  for (const h of lv.hooks) if (h.swing) {
+    const a = h.amp * Math.sin(TAU * lv.time / h.per + h.ph);
+    h.hx = h.px + Math.sin(a) * h.len; h.hy = h.py + Math.cos(a) * h.len;
+  }
+}
+const hookX = h => h.swing ? h.hx : h.tx * T + T / 2, hookY = h => h.swing ? h.hy : h.ty * T + T / 2;
 function hookNear(p) {
   let best = null, bd = 1e9;
   for (const h of lv.hooks) {
-    const hx = h.tx * T + T / 2, hy = h.ty * T + T / 2, dx = Math.abs(hx - (p.x + p.w / 2)), dy = (p.y + p.h / 2) - hy;
+    const hx = hookX(h), hy = hookY(h), dx = Math.abs(hx - (p.x + p.w / 2)), dy = (p.y + p.h / 2) - hy;
     if (dx < 34 && dy > -10 && dy < 130 && dx + Math.abs(dy) * 0.2 < bd) { bd = dx + Math.abs(dy) * 0.2; best = h; }
   }
   return best;
 }
-function hangLantern(h) { lantern.held = false; lantern.hung = h; lantern.vx = lantern.vy = 0; lantern.spin = 0; lantern.x = h.tx * T + 13; lantern.y = h.ty * T + 14; }
+function hangLantern(h) { lantern.held = false; lantern.hung = h; lantern.vx = lantern.vy = 0; lantern.spin = 0; lantern.x = hookX(h) - 7; lantern.y = hookY(h) - 6; if (h.swing && !flags.swing) { flags.swing = true; narr.say(LINES.swingFirst, { ifQuiet: true }); } }
 function wickInteract(p, inp) {
   const hk = lantern.held ? hookNear(p) : null;
   if (hk && Math.abs(inp.mx) <= 0.3) {
@@ -6703,6 +6751,7 @@ function buildStatic() {
   const chn = chapterOf(lv.idx), lm = LANDMARKS[chn]; lv.weather = WEATHER[chn] || null; if (lm) { lctx.save(); lm(lctx); lctx.restore(); drawHills(lctx, HILLS.slice(1)); }
   if (SKY_TINT[chn]) { lctx.save(); lctx.globalCompositeOperation = 'soft-light'; lctx.fillStyle = SKY_TINT[chn]; lctx.fillRect(0, 0, W, H); lctx.restore(); }
   for (const h of lv.hooks) {
+    if (h.swing) continue;
     const hx = h.tx * T + T / 2, hy = h.ty * T;
     let top = h.ty; while (top > 0 && tileAt(h.tx, top - 1) !== '#') top--;
     lctx.strokeStyle = 'rgba(214,201,166,0.45)'; lctx.lineWidth = 1.5; lctx.setLineDash([4, 3]);
@@ -7300,6 +7349,12 @@ function renderPlay(t) {
   drawCrates(t);
   drawShade(players[1], t);
   if (lv.ambient > 0.8) drawWick(players[0], t); // in the dark, still show Wick faintly lit by lantern
+  for (const h of lv.hooks) if (h.swing) {
+    ctx.strokeStyle = 'rgba(214,201,166,0.75)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(h.px, h.py); ctx.lineTo(h.hx, h.hy - 6); ctx.stroke();
+    ctx.fillStyle = '#efe5c8'; ctx.fillRect(h.px - 8, h.py, 16, 4);
+    ctx.save(); ctx.translate(h.hx, h.hy - 6); ctx.rotate(-Math.atan2(h.hx - h.px, h.hy - h.py));
+    ctx.strokeStyle = '#d6c9a6'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 8); ctx.arc(-5, 8, 5, 0, Math.PI * 0.9); ctx.stroke(); ctx.restore();
+  }
   drawLanternBody(t);
   if (lv.light) {
     ctx.globalCompositeOperation = 'lighter';
@@ -7497,6 +7552,7 @@ const GUIDE = [
   ['C', 'Crates', 'Anyone can push one. They hold plates, stack, make steps, throw shadows, and tip off edges.', ['...', '.C.', '###']],
   ['^', 'Thorns', 'Best avoided. You come back at the start of the room.', ['...', '...', '^^^']],
   ['H', 'Hooks', 'Wick can hang the lantern here with the lantern button, and take it back the same way.', ['.H.', '...', '###']],
+  ['G', 'Swinging hooks', 'A hook on a rope. Hang the lantern on it and the light swings, and every shadow swings with it. Catch it as it passes to take it back.', ['###', '.H.', '...']],
   ['v', 'Ink curtains', 'Shade slips through. Wick cannot. Light shines through.', ['.v.', '.v.', '###']],
   ['w', 'Glow curtains', 'Wick walks through. Shade cannot. Light shines through.', ['.w.', '.w.', '###']],
   ['o', 'Sun-eyes', 'Count as a plate held down while the light reaches them unblocked.', ['...', '.o.', '###']],
