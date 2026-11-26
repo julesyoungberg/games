@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.13.0)
+## What's in this version (1.14.0)
+A new shift before the finale: Fire Drill (a plate-powered fan lift, blinking alarm lasers, and a crate that tries to evacuate itself). 33 shifts in all.
+
+## 1.13.0
 Two more Overtime puzzles: Airlock (only one door may be open at a time) and Severance Package (one crate, two jobs; unlocks after the finale). 36 in all.
 
 ## 1.12.0
@@ -89,7 +92,7 @@ Fixes from playtesting: button presses are never dropped any more (jump, pull an
 ## Earlier (0.6.0)
 **New look:** a deep factory hall around every level (gears, columns, catwalks, lamps, dust in the air), new fonts, preview pictures and Done/cog badges in the level menus, real textures, metal and paint that catch the light, proper shadows, a soft glow on lights and lasers, and new robot models. On a computer that draws with software (no graphics card), the game keeps the old simple look so it stays smooth. Options, Picture quality: "sharp" always uses the new look, "fast" always uses the simple one.
 
-32 shifts (levels), about 6 hours for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review, Shipping, Switchboard, Lumber Room, Night Shift, Spring Cleaning, Quality Control, Pneumatic Post, Overhead Rail, Slippery Slope, Cling Film, Mixed Signals, Year-End Review, Quarterly Reset, Night Watch, Stocktake, Clearing the Air, Topping Out, Clearance, Interdepartmental, Outlook Unsettled, Last Posting Date, Staff Reunion, Open Plan Office, Closing Time.
+33 shifts (levels), about 6 hours for two people: Orientation, The Pull of Things, Push Comes to Shove, Iron Will, Logistics, Safety Lasers, Ventilation, Performance Review, Shipping, Switchboard, Lumber Room, Night Shift, Spring Cleaning, Quality Control, Pneumatic Post, Overhead Rail, Slippery Slope, Cling Film, Mixed Signals, Year-End Review, Quarterly Reset, Night Watch, Stocktake, Clearing the Air, Topping Out, Clearance, Interdepartmental, Outlook Unsettled, Last Posting Date, Staff Reunion, Fire Drill, Open Plan Office, Closing Time.
 
 Also **Overtime**: short, harder bonus puzzles on the title screen. They unlock as you finish shifts.
 

@@ -5,7 +5,7 @@ const BW = (L, x0, x1, top, h = 8) => L.box(x0, -9.5, x1, -8, top - 6, top + h, 
 const Y = 3.4; // the exam hall floor
 
 export default {
-  name: 'Final Exam', sub: 'Overtime. Unofficial. Unpaid. Unbelievably difficult.', theme: 11, after: 31,
+  name: 'Final Exam', sub: 'Overtime. Unofficial. Unpaid. Unbelievably difficult.', theme: 11, after: 32,
   intro: [
     'Good evening. Strictly speaking, you have finished. This is not an exam. It is an unofficial after-hours assessment that I wrote on a napkin.',
     'There are two questions. Show your working. No talking. You may talk.',
