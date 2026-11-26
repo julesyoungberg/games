@@ -98,7 +98,7 @@ function humOff() {
 }
 
 export const SFX = {
-  jump(who) { tone('square', who ? 330 : 260, who ? 620 : 520, 0.12, 0.06); },
+  jump(who) { tone('sine', who ? 330 : 250, who ? 760 : 600, 0.13, 0.09); tone('triangle', who ? 660 : 500, who ? 1100 : 900, 0.07, 0.025); noise(0.09, 0.05, 1800, 4000, 0.8, 0, 'bandpass'); },
   land(v = 9) { const k = Math.min(1.6, Math.max(0.5, (v - 6) / 6)); noise(0.14 * k, 0.22 * k, 700, 100, 0.8, 0, 'lowpass'); tone('sine', 110, 45, 0.16, 0.12 * k); if (v > 13) tone('triangle', 900, 700, 0.08, 0.03); },
   // footsteps: Bolt clanks, Nut taps; iron tread plate rings a little
   step(who, metal) {
@@ -128,49 +128,83 @@ export const SFX = {
   crate() { noise(0.1, 0.25, 900, 200, 1); tone('square', 120, 80, 0.1, 0.06); },
   complete() { [523, 659, 784, 1046, 784, 1046].forEach((f, i) => tone('triangle', f, f, 0.25, 0.1, i * 0.11)); },
   tick() { tone('square', 1300 + Math.random() * 300, 1200, 0.025, 0.015); },
-  menu() { tone('triangle', 660, 660, 0.06, 0.06); },
-  select() { tone('triangle', 660, 990, 0.12, 0.08); },
+  menu() { tone('sine', 880, 880, 0.07, 0.05); tone('sine', 1760, 1760, 0.03, 0.012); },
+  select() { tone('sine', 660, 660, 0.1, 0.07); tone('sine', 990, 990, 0.16, 0.06, 0.06); },
   join(who) { [who ? 392 : 330, who ? 587 : 494, who ? 784 : 659].forEach((f, i) => tone('triangle', f, f, 0.14, 0.09, i * 0.06)); },
   stopAll() { humOff(); },
 };
 
 // soft pad chord under each bar (slow attack, long release)
-function pad(base, when, dur) {
+function pad(base, when, dur, minor = false) {
   if (!ctx) return;
   const t = ctx.currentTime + when;
   const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 900;
   const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.01, t + dur * 0.35); g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 1.05);
   f.connect(g); g.connect(musBus);
-  for (const iv of [0, 4, 7, 12]) { for (const det of [-6, 6]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = base * Math.pow(2, iv / 12); o.detune.value = det; o.connect(f); o.start(t); o.stop(t + dur * 1.1); } }
+  for (const iv of [0, minor ? 3 : 4, 7, 12]) { for (const det of [-6, 6]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = base * Math.pow(2, iv / 12); o.detune.value = det; o.connect(f); o.start(t); o.stop(t + dur * 1.1); } }
 }
 
-// ---- music: soft pentatonic arpeggio + bass, slowly mutating
+// ---- music: a composed little factory tune. Four chords (I vi IV V, or i VI iv v when the mood is low),
+// two written melodies played A A B A, then a few bars with no tune so it breathes. Mallet lead, plucked bass,
+// a soft pad, a kick on 1 and 3 and a metal "clank" on 2 and 4.
+const _ = -99;
+const MEL = {
+  A: [[12, _, 7, _, 9, _, 7, 4, _, _, 2, 4, 7, _, _, _], [9, _, 12, _, 9, 7, 4, _, 9, _, _, 7, 4, _, _, _],
+      [5, _, 9, _, 12, _, 9, 7, 5, _, 4, _, 2, _, _, _], [7, _, _, 4, 2, _, 4, 7, 11, _, 9, _, 7, _, _, _]],
+  B: [[16, _, 14, 12, 14, _, 12, 7, 9, _, 7, 4, 7, _, _, _], [12, _, 9, _, 16, _, 12, _, 9, 7, 9, 12, 9, _, _, _],
+      [17, _, 16, _, 14, _, 12, _, 9, _, 12, _, 14, _, _, _], [11, _, 14, _, 19, _, 17, 14, 11, _, 7, _, 11, 12, 14, _]],
+};
+const FORM = ['A', 'A', 'B', 'A', 'rest'];
+const minorize = n => n === _ ? n : n + ([4, 9, 11].includes(((n % 12) + 12) % 12) ? -1 : 0);
+function mallet(f, when, gain) {
+  const t = ctx.currentTime + when;
+  for (const [mul, g, d] of [[1, gain, 0.42], [4, gain * 0.16, 0.12], [2.01, gain * 0.12, 0.25]]) {
+    const o = ctx.createOscillator(), e = ctx.createGain(); o.type = 'sine'; o.frequency.value = f * mul;
+    e.gain.setValueAtTime(0.0001, t); e.gain.exponentialRampToValueAtTime(g, t + 0.006); e.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(e); e.connect(musBus); o.start(t); o.stop(t + d + 0.05);
+  }
+}
+function pluckBass(f, when, gain) {
+  const t = ctx.currentTime + when;
+  const o = ctx.createOscillator(), lp = ctx.createBiquadFilter(), e = ctx.createGain(); o.type = 'triangle'; o.frequency.value = f;
+  lp.type = 'lowpass'; lp.frequency.setValueAtTime(900, t); lp.frequency.exponentialRampToValueAtTime(220, t + 0.3);
+  e.gain.setValueAtTime(0.0001, t); e.gain.exponentialRampToValueAtTime(gain, t + 0.01); e.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+  o.connect(lp); lp.connect(e); e.connect(musBus); o.start(t); o.stop(t + 0.5);
+}
+function kick(when, gain) {
+  const t = ctx.currentTime + when, o = ctx.createOscillator(), e = ctx.createGain();
+  o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.14);
+  e.gain.setValueAtTime(gain, t); e.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+  o.connect(e); e.connect(musBus); o.start(t); o.stop(t + 0.2);
+}
+function clank(when, gain) { // a small struck-metal hit: two inharmonic partials and a noise tick
+  const t = ctx.currentTime + when;
+  for (const [f, d] of [[1720, 0.09], [2630, 0.06]]) { const o = ctx.createOscillator(), e = ctx.createGain(); o.type = 'square'; o.frequency.value = f; e.gain.setValueAtTime(gain * 0.25, t); e.gain.exponentialRampToValueAtTime(0.0001, t + d); const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1500; o.connect(hp); hp.connect(e); e.connect(musBus); o.start(t); o.stop(t + d + 0.02); }
+  const src = ctx.createBufferSource(); src.buffer = noiseBuf; const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 6000; const g = ctx.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05); src.connect(f); f.connect(g); g.connect(musBus); src.start(t, Math.random() * 0.5); src.stop(t + 0.06);
+}
 const music = {
   on: false, step: 0, next: 0, timer: null, mood: 0, key: 0, bpm: 96,
-  scale: [0, 2, 4, 7, 9, 12, 14, 16, 19, 21],
-  scales: [[0, 2, 4, 7, 9, 12, 14, 16, 19, 21], [0, 3, 5, 7, 10, 12, 15, 17, 19, 22], [0, 2, 4, 7, 11, 12, 14, 16, 19, 23]],
   start() {
     if (this.on || !ctx) return;
     this.on = true; this.next = ctx.currentTime + 0.1;
-    this.pattern = this.newPattern();
     this.timer = setInterval(() => this.schedule(), 50);
   },
-  newPattern() { const p = []; for (let i = 0; i < 16; i++) p.push(Math.random() < 0.72 ? Math.floor(Math.random() * this.scale.length) : -1); return p; },
   schedule() {
     if (!ctx) return;
-    const spb = 60 / this.bpm / 2; // eighth notes
+    const spb = 60 / this.bpm / 2; // eighth notes; a "bar" here is 16 of them, one chord each
     while (this.next < ctx.currentTime + 0.25) {
-      const s = this.step % 16, bar = Math.floor(this.step / 16);
-      const roots = [0, -3, 5, -5][bar % 4] + this.key + (this.mood ? -2 : 0);
-      const base = 220 * Math.pow(2, roots / 12);
-      const n = this.pattern[s];
+      const s = this.step % 16, bar = Math.floor(this.step / 16), ci = bar % 4, sec = FORM[Math.floor(bar / 4) % FORM.length];
+      const m = this.mood, keyF = 220 * Math.pow(2, this.key / 12);
+      const root = (m ? [0, -4, 5, 7] : [0, -3, 5, 7])[ci], minorChord = m ? ci !== 1 : ci === 1;
+      const base = keyF * Math.pow(2, root / 12);
       const w = this.next - ctx.currentTime;
-      if (n >= 0) tone('triangle', base * Math.pow(2, this.scale[n] / 12), base * Math.pow(2, this.scale[n] / 12), 0.22, 0.05, w, musBus);
-      if (s % 4 === 0) tone('sine', base / 2, base / 2, 0.5, 0.11, w, musBus);
-      if (s === 0) pad(base, w, spb * 16);
-      if (s % 8 === 4) { const t = this.next; const src = ctx.createBufferSource(); src.buffer = noiseBuf; const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7000; const g = ctx.createGain(); g.gain.setValueAtTime(0.03, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05); src.connect(f); f.connect(g); g.connect(musBus); src.start(t); src.stop(t + 0.06); }
+      if (sec !== 'rest') { let n = MEL[sec][ci][s]; if (m) n = minorize(n); if (n !== _) mallet(keyF * Math.pow(2, n / 12), w, 0.055); }
+      if (s === 0 || s === 6 || s === 8 || s === 12) pluckBass(base / 2 * (s === 8 ? 1.5 : s === 12 ? 2 : 1), w, 0.14);
+      if (s === 0) pad(base, w, spb * 16, minorChord);
+      if (s === 0 || s === 8) kick(w, sec === 'rest' ? 0.05 : 0.09);
+      if (s === 4 || s === 12) clank(w, 0.025);
+      else if (s % 2 === 1) clank(w, 0.006);
       this.step++; this.next += spb;
-      if (this.step % 64 === 0 && Math.random() < 0.6) this.pattern = this.newPattern();
     }
   },
 };
@@ -179,6 +213,4 @@ export function setMood(m, theme = 0, fast = false) {
   music.mood = m;
   music.key = [0, 2, -3, 5, -2, -5, 3, -4, 1, 4, -1, -6][theme % 12];
   music.bpm = (m ? 84 : 96 + (theme % 3) * 4) + (fast ? 8 : 0);
-  const sc = m ? music.scales[1] : music.scales[theme % 4 === 3 ? 2 : 0];
-  if (sc !== music.scale) { music.scale = sc; music.pattern = music.newPattern(); }
 }

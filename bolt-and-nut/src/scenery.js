@@ -61,7 +61,7 @@ export function buildScenery(level, w, th, surf, dark) {
 
   // 1. the hall floor far below, so there is no void under the level
   const ft = surf.tile.clone(); ft.userData = {}; ft.needsUpdate = true; ft.repeat.set(L / 5, 160 / 5);
-  const hallFloor = new THREE.Mesh(new THREE.PlaneGeometry(L, 160), new THREE.MeshStandardMaterial({ map: ft, color: col(th.side).multiplyScalar(dark ? 0.6 : 0.85), roughness: 0.8 }));
+  const hallFloor = new THREE.Mesh(new THREE.PlaneGeometry(L, 160), new THREE.MeshStandardMaterial({ map: ft, color: col(th.side).lerp(col(th.wall), 0.4).multiplyScalar(dark ? 0.4 : 0.42), roughness: 0.8 }));
   hallFloor.rotation.x = -Math.PI / 2; hallFloor.position.set(cx, floorY, -20); level.add(hallFloor);
   // machines and tanks standing on it (in front of and behind the level)
   for (let x = x0 - 30; x < x1 + 30; x += 7 + R() * 6) {

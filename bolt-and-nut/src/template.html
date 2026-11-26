@@ -10,12 +10,25 @@
 html, body { margin:0; height:100%; overflow:hidden; background:#f6d9b8; font-weight:700; font-family:"Nunito","Trebuchet MS","DejaVu Sans","Noto Sans",Verdana,sans-serif; color:var(--ink); user-select:none; cursor:none; }
 #vig { position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 55%, rgba(20,14,30,.28) 100%); }
 #fade { position:fixed; inset:0; background:#1a1424; opacity:0; pointer-events:none; z-index:30; }
+/* shift-change shutters: two hazard-striped doors that roll open when a level starts */
+.shut { position:fixed; left:0; right:0; height:50.5vh; z-index:31; pointer-events:none; background:#2b2338; transform:translateY(-101%); }
+.shut.b { bottom:0; transform:translateY(101%); }
+.shut.t { top:0; }
+.shut::after { content:""; position:absolute; left:0; right:0; height:22px; background:repeating-linear-gradient(-45deg,#f2b84b 0 18px,#2b2338 18px 36px); }
+.shut.t::after { bottom:0; } .shut.b::after { top:0; }
+.shut::before { content:""; position:absolute; inset:0; background:repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 3px,rgba(0,0,0,0) 3px 46px,rgba(0,0,0,.25) 46px 50px); }
+.shut.closed { transform:none; transition:none; }
+.shut.open { transition:transform var(--ms,600ms) cubic-bezier(.6,-0.25,.35,1.15); }
 canvas#c { position:fixed; inset:0; width:100vw; height:100vh; display:block; image-rendering:auto; }
 .screen { position:fixed; inset:0; display:none; pointer-events:none; }
 .screen.on { display:block; }
 #title .logo { position:absolute; left:6vw; top:8vh; animation:bob 4s ease-in-out infinite; }
 @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 #title h1 { margin:0; font-family:var(--head); font-size:min(12vw,118px); line-height:.9; letter-spacing:0; color:var(--cream); -webkit-text-stroke:6px var(--ink); paint-order:stroke fill; text-shadow:0 7px 0 var(--ink), 0 14px 30px rgba(0,0,0,.3); font-weight:700; }
+#title h1 i { font-style:normal; display:inline-block; animation:drop .7s cubic-bezier(.3,1.6,.5,1) calc(var(--i) * 70ms + 150ms) both, wave 3.2s ease-in-out calc(var(--i) * 140ms + 1.2s) infinite; }
+@keyframes drop { from { transform:translateY(-70px) rotate(-8deg); opacity:0; } to { transform:none; opacity:1; } }
+@keyframes wave { 0%,100% { transform:none; } 20% { transform:translateY(-5px) rotate(-2deg); } 40% { transform:none; } }
+#title .tag { animation:tagIn .5s ease 1s both; } @keyframes tagIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
 #title h1 .b { color:var(--red); } #title h1 .n { color:var(--blue); } #title h1 .amp { color:var(--cream); font-size:.7em; }
 #title .tag { margin-top:18px; backdrop-filter:blur(6px); box-shadow:0 3px 0 rgba(43,35,56,.25); font-size:min(2.6vw,24px); font-weight:700; color:var(--ink); background:rgba(255,248,238,.8); display:inline-block; padding:6px 14px; border-radius:12px; }
 #press { position:fixed; bottom:4vh; right:4vw; font-size:16px; font-weight:700; background:rgba(43,35,56,.75); color:#fff; padding:8px 14px; border-radius:10px; display:none; }
@@ -98,8 +111,8 @@ body.carded #hud { opacity:0; transition:opacity .3s; }
 </head><body>
 <canvas id="c"></canvas>
 <div id="vig"></div>
-<div id="fade"></div>
-<div id="title" class="screen"><div class="logo"><h1><span class="b">Bolt</span> <span class="amp">&amp;</span> <span class="n">Nut</span></h1><div class="tag">a couch co-op about opposites, attraction, and a very patient orientation facilitator</div></div></div>
+<div id="fade"></div><div class="shut t" id="shutT"></div><div class="shut b" id="shutB"></div>
+<div id="title" class="screen"><div class="logo"><h1><span class="b"><i style="--i:0">B</i><i style="--i:1">o</i><i style="--i:2">l</i><i style="--i:3">t</i></span> <span class="amp"><i style="--i:4">&amp;</i></span> <span class="n"><i style="--i:5">N</i><i style="--i:6">u</i><i style="--i:7">t</i></span></h1><div class="tag">a couch co-op about opposites, attraction, and a very patient orientation facilitator</div></div></div>
 <div id="join" class="screen"><h2>Who is who?</h2><div id="joinCards"></div><div id="joinFoot"></div></div>
 <div id="hud" class="screen">
   <div id="banner"><div class="n" id="bannerN"></div><div class="t" id="bannerT"></div><div class="s" id="bannerS"></div></div>

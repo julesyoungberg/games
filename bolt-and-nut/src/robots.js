@@ -84,7 +84,7 @@ function mats(fancy) {
       paint: (c) => L(c), paintDark: (c) => L(c), steel: () => L(0xcfd4da), chrome: () => L(0xe4e8ee), darkSteel: () => L(0x5d6470),
       rubber: () => L(0x34343c), eyeWhite: () => L(0xffffff), pupil: () => new THREE.MeshBasicMaterial({ color: 0x15172a }),
       iris: (c) => L(c, { emissive: c, emissiveIntensity: 0.35 }), glint: () => new THREE.MeshBasicMaterial({ color: 0xffffff }),
-      led: (c) => new THREE.MeshBasicMaterial({ color: c }), glow: (c, e) => L(c, { emissive: e }), rim: () => L(0x2a2d3a), hole: () => new THREE.MeshBasicMaterial({ color: 0x14254a }),
+      lid: (c) => L(c, { side: THREE.DoubleSide }), led: (c) => new THREE.MeshBasicMaterial({ color: c }), glow: (c, e) => L(c, { emissive: e }), rim: () => L(0x2a2d3a), hole: () => new THREE.MeshBasicMaterial({ color: 0x14254a }),
     };
   }
   const T = textures();
@@ -101,6 +101,7 @@ function mats(fancy) {
     glint: () => new THREE.MeshBasicMaterial({ color: 0xffffff }),
     rim: () => new THREE.MeshPhysicalMaterial({ color: 0x23262f, metalness: 0.2, roughness: 0.55, clearcoat: 0.4, clearcoatRoughness: 0.35 }),
     led: (c) => new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 1.1, roughness: 0.2 }),
+    lid: (c) => new THREE.MeshPhysicalMaterial({ color: c, metalness: 0.15, roughness: 0.4, clearcoat: 1, clearcoatRoughness: 0.08, side: THREE.DoubleSide }),
     glow: (c, e) => new THREE.MeshPhysicalMaterial({ color: c, emissive: e, emissiveIntensity: 1, roughness: 0.15, transmission: 0, clearcoat: 1, clearcoatRoughness: 0.05 }),
     hole: () => new THREE.MeshStandardMaterial({ color: 0x1a1f2a, metalness: 0.8, roughness: 0.5 }),
   };
@@ -156,24 +157,38 @@ function rivet(r, q) { return new THREE.SphereGeometry(r, q ? 7 : 4, q ? 3 : 2, 
 /* ---------------- eyes ---------------- */
 // spherical cap of angular radius `ang` around +z (front of the eye); open-backed, so we never pay for hidden triangles
 function cap(r, ang, w, h) { return new THREE.SphereGeometry(r, w, h, 0, Math.PI * 2, 0, ang).rotateX(Math.PI / 2); }
-// Returns a Group placed at eye height; children sit at y = 0 so poseRobot's eyes.scale.y blink squashes in place.
-function makeEyes(parent, M, q, { y, z, spread, r, iris, bezel }) {
+// Returns a Group placed at eye height; children sit at y = 0 eyes.userData holds the lids and gaze groups render.js animates.
+function makeEyes(parent, M, q, { y, z, spread, r, iris, bezel, lid }) {
   const grp = new THREE.Group(); grp.position.y = y; parent.add(grp);
   const S = [1, 1.12, 0.62];
   const scl = cap(r, 1.6, q ? 20 : 12, q ? 8 : 5);
   const irg = cap(r * (q ? 1.012 : 1.03), 0.78, q ? 22 : 12, q ? 3 : 2);
   const pug = cap(r * (q ? 1.024 : 1.06), 0.46, q ? 22 : 12, 2);
   const glg = new THREE.SphereGeometry(r * 0.15, q ? 8 : 4, q ? 6 : 3);
+  // eyelids: hemispherical shells a touch bigger than the eye, hinged on the eye's centre.
+  // rotation.x of the upper lid: about -0.8 open, 0 half shut, PI/2 closed; the lower lid: 1.2 open, 0 half, -PI/2 closed
+  const lidG = new THREE.SphereGeometry(r * 1.13, q ? 20 : 10, q ? 6 : 3, 0, Math.PI * 2, 0, Math.PI / 2);
+  const lidM = M.lid(lid);
   const white = M.eyeWhite(), irisM = M.iris(iris), pupilM = M.pupil(), glintM = M.glint(), bezM = M.rim();
+  const lids = [], looks = [];
   for (const s of [-1, 1]) {
     const e = new THREE.Group(); e.position.set(s * spread, 0, z); e.rotation.y = s * 0.1; grp.add(e);
     mesh(scl, white, e, { scale: S });
-    mesh(irg, irisM, e, { scale: S, rot: [-0.05, 0, 0] });
-    mesh(pug, pupilM, e, { scale: S, rot: [-0.05, 0, 0] });
+    // iris + pupil turn together inside the white so the eyes can look around
+    const sg = new THREE.Group(); sg.scale.set(...S); e.add(sg); const look = new THREE.Group(); sg.add(look); looks.push(look); // scale outside the turn, so the iris slides over the squashed eye
+    mesh(irg, irisM, look, { rot: [-0.05, 0, 0] });
+    mesh(pug, pupilM, look, { rot: [-0.05, 0, 0] });
     mesh(glg, glintM, e, { pos: [r * 0.3, r * 0.32, r * 0.58], scale: [1, 1, 0.5], receive: false });
     if (q) mesh(new THREE.SphereGeometry(r * 0.07, 6, 4), glintM, e, { pos: [-r * 0.22, -r * 0.3, r * 0.6], receive: false });
     if (bezel) mesh(new THREE.TorusGeometry(r * 1.0, r * 0.13, q ? 5 : 3, q ? 24 : 10), bezM, e, { pos: [0, 0, -r * 0.02], scale: [1, 1.12, 1] });
+    // tilt group (brow angle) -> hinge (open/close)
+    const tilt = new THREE.Group(); tilt.scale.set(...S); e.add(tilt);
+    const up = new THREE.Group(); tilt.add(up); mesh(lidG, lidM, up, { receive: false }).castShadow = false;
+    const lo = new THREE.Group(); lo.rotation.z = Math.PI; tilt.add(lo); mesh(lidG, lidM, lo, { receive: false }).castShadow = false;
+    up.rotation.x = -0.8; lo.rotation.x = 1.2;
+    lids.push({ s, tilt, up, lo });
   }
+  grp.userData = { lids, looks };
   return grp;
 }
 
@@ -223,7 +238,7 @@ export function makeBolt(fancy = true) {
     mesh(new THREE.CylinderGeometry(MT + 0.002, MT + 0.002, 0.085, q ? 16 : 6), q ? chrome : steel, mag, { pos: [s * MR, MC + 0.128, 0] });
   }
   // eyes: big, glossy, set in chrome bezels on the shank
-  const eyesG = makeEyes(body, M, q, { y: 0.06, z: 0.27, spread: 0.135, r: 0.115, iris: 0xffa51f, bezel: true });
+  const eyesG = makeEyes(body, M, q, { y: 0.06, z: 0.27, spread: 0.135, r: 0.115, iris: 0xffa51f, bezel: true, lid: RED_DARK });
 
   // arms: little ball-jointed nubs
   for (const s of [-1, 1]) {
@@ -279,7 +294,7 @@ export function makeNut(fancy = true) {
   }
 
   // eyes on the front flat face
-  const eyesG = makeEyes(body, M, q, { y: 0.05, z: fr - 0.035, spread: 0.155, r: 0.12, iris: 0x2ad4c8, bezel: true });
+  const eyesG = makeEyes(body, M, q, { y: 0.05, z: fr - 0.035, spread: 0.155, r: 0.12, iris: 0x2ad4c8, bezel: true, lid: BLUE_DARK });
 
   // arms: shoulder joints + rounded mitts
   for (const s of [-1, 1]) {

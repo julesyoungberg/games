@@ -122,7 +122,11 @@ let world = null, levelIdx = 0, hint = null, lastProgress = 0, idleSaid = 0, fir
 let hudT = 0;
 const latch = [{}, {}];
 
-function fadeIn(ms = 550) { const f = $('fade'); f.style.transition = 'none'; f.style.opacity = '1'; void f.offsetWidth; f.style.transition = `opacity ${ms}ms ease`; f.style.opacity = '0'; }
+function fadeIn(ms = 550) {
+  const f = $('fade'); f.style.transition = 'none'; f.style.opacity = '1'; void f.offsetWidth; f.style.transition = `opacity ${ms}ms ease`; f.style.opacity = '0';
+  // the shutters roll open a beat later, over the fade
+  for (const id of ['shutT', 'shutB']) { const e = $(id); e.classList.remove('open'); e.classList.add('closed'); void e.offsetWidth; e.style.setProperty('--ms', (ms + 250) + 'ms'); e.classList.remove('closed'); e.classList.add('open'); }
+}
 function setScreen(id) { for (const s of ['title', 'join', 'hud', 'credits']) $(s).classList.toggle('on', s === id); }
 
 function goTitle() {
@@ -286,8 +290,8 @@ function say(key, who, cd = 12) {
 function handleEvents(evts) {
   for (const e of evts) {
     switch (e.type) {
-      case 'jump': SFX.jump(e.who); view.hop(e.who); break;
-      case 'land': SFX.land(e.v); { const p = world.players[e.who]; view.land(e.who, e.v); if (e.v > 7) view.burst(p.pos.x, p.pos.y - p.half.y, p.pos.z, 0xd8cdb8, Math.round(4 + e.v * 0.4), 2.5, 1, 0.35); if (e.v > 14) view.shake(0.06); } break;
+      case 'jump': SFX.jump(e.who); view.hop(e.who); { const p = world.players[e.who]; if (p.grounded || p.vel.y > 0) view.puff(p.pos.x, p.pos.y - p.half.y, p.pos.z, 4, 0.5, view.dustC, 0.25); } break;
+      case 'land': SFX.land(e.v); { const p = world.players[e.who]; view.land(e.who, e.v); if (e.v > 5) view.puff(p.pos.x, p.pos.y - p.half.y, p.pos.z, Math.round(5 + e.v * 0.35), Math.min(1.5, e.v / 10), view.dustC); if (e.v > 14) view.shake(0.06); } break;
       case 'pull': SFX.pullStart(); Input.rumble(0, 0.2, 80); if (!firsts.pull) { firsts.pull = 1; if (levelIdx >= 1) narr.sayIfQuiet(LINES.pullFirst); } break;
       case 'pull-end': SFX.pullEnd(); break;
       case 'pull-miss': SFX.pullMiss(); { const p = world.players[0]; view.burst(p.pos.x, p.pos.y + 1, p.pos.z, 0xff6b6b, 6, 1.5, 1, 0.3); } break; // the press registered: nothing in range yet (holding keeps trying)
@@ -298,15 +302,15 @@ function handleEvents(evts) {
       case 'rocket': SFX.rocket(); view.shake(0.22); { const p = world.players[1]; view.burst(p.pos.x, p.pos.y - 0.4, p.pos.z, 0x8fc4ff, 16, 3, 0.5, 0.5); } if (!firsts.rocket) { firsts.rocket = 1; narr.sayIfQuiet(LINES.rocketFirst); } break;
       case 'zap': SFX.zap(); view.shake(0.3); view.burst(e.x, e.y, e.z, 0xff2e4d, 18, 5, 3, 0.6); Input.rumble(e.who, 0.8, 250); say('zap', e.who, 15); break;
       case 'fall': SFX.fall(); Input.rumble(e.who, 0.5, 200); say('fall', e.who, 18); break;
-      case 'respawn': SFX.respawn(); { const p = world.players[e.who]; view.burst(p.pos.x, p.pos.y, p.pos.z, e.who ? 0x3d8bfd : 0xe5484d, 14, 3, 3, 0.6); } break;
+      case 'respawn': SFX.respawn(); { const p = world.players[e.who]; view.puff(p.pos.x, p.pos.y - p.half.y, p.pos.z, 10, 1.2, view.dustC); view.burst(p.pos.x, p.pos.y, p.pos.z, e.who ? 0x3d8bfd : 0xe5484d, 14, 3, 3, 0.6); } break;
       case 'plate': SFX.plate(e.on); if (e.on) lastProgress = performance.now(); break;
       case 'gate': SFX.gate(e.open); break;
-      case 'cog': SFX.cog(); view.burst(e.x, e.y, e.z, 0xffc53d, 26, 5, 4, 0.8); Input.rumble(e.who, 0.4, 150); { const had = save.cogs.includes(levelIdx); if (!had) { save.cogs.push(levelIdx); saveGame(); } if (!had) toast(ALL[levelIdx].ot ? '⚙ Golden cog found!' : `⚙ Golden cog found! ${save.cogs.filter(i => i < NMAIN).length} of ${NMAIN}`); narr.sayIfQuiet(had ? LINES.cogAgain : pick(LINES.cog).replace('{n}', String(save.cogs.filter(i => i < NMAIN).length))); } break;
+      case 'cog': SFX.cog(); view.cheer(); view.burst(e.x, e.y, e.z, 0xffc53d, 26, 5, 4, 0.8); Input.rumble(e.who, 0.4, 150); { const had = save.cogs.includes(levelIdx); if (!had) { save.cogs.push(levelIdx); saveGame(); } if (!had) toast(ALL[levelIdx].ot ? '⚙ Golden cog found!' : `⚙ Golden cog found! ${save.cogs.filter(i => i < NMAIN).length} of ${NMAIN}`); narr.sayIfQuiet(had ? LINES.cogAgain : pick(LINES.cog).replace('{n}', String(save.cogs.filter(i => i < NMAIN).length))); } break;
       case 'tube': SFX.whoosh(); view.burst(e.fx, e.fy, e.fz, 0x9fd8ff, 10, 3, 3, 0.4); view.burst(e.x, e.y, e.z, 0x9fd8ff, 14, 4, 4, 0.5); if (!firsts.tube && e.who !== undefined) { firsts.tube = 1; narr.sayIfQuiet(LINES.tubeFirst); } break;
       case 'spring': SFX.boing(); view.shake(0.1); view.burst(e.x, e.y + 0.1, e.z, 0xf2b84b, 8, 3, 2, 0.4); if (e.who !== undefined) Input.rumble(e.who, 0.3, 90); if (!firsts.spring && e.who !== undefined) { firsts.spring = 1; narr.sayIfQuiet(LINES.springFirst); } break;
       case 'switch': SFX.toggle(e.on); lastProgress = performance.now(); if (!firsts.sw) { firsts.sw = 1; narr.sayIfQuiet(LINES.switchFirst); } break;
       case 'bridge': SFX.bridge(e.on); break;
-      case 'checkpoint': SFX.checkpoint(); lastProgress = performance.now(); break;
+      case 'checkpoint': SFX.checkpoint(); view.cheer(); lastProgress = performance.now(); break;
       case 'crate-lost': if (!firsts.crate) { firsts.crate = 1; narr.sayIfQuiet(LINES.crateLost); } break;
       case 'exit-one': if (!firsts.exit) { firsts.exit = 1; narr.sayIfQuiet(pick(LINES.exitOne)); } break;
       case 'zone': {
@@ -314,7 +318,7 @@ function handleEvents(evts) {
         if (z) { if (z.say) { narr.moveOn(); narr.say(z.say); } if (z.hint) hint = z.hint; }
         break;
       }
-      case 'complete': SFX.complete(); SFX.stopAll(); completeT = 0; break;
+      case 'complete': SFX.complete(); SFX.stopAll(); view.cheer(undefined, 4); completeT = 0; break;
     }
   }
 }
@@ -404,7 +408,7 @@ function frame(now) {
       if (completeT >= 0) { completeT += dt; if (completeT > 1.2) finishLevel(); }
       // idle chatter
       if (performance.now() - lastProgress > 100000 && performance.now() - idleSaid > 150000) { idleSaid = performance.now(); narr.sayIfQuiet(pick(LINES.idle)); }
-      hudT += dt; $('ctrls').style.opacity = hudT < 25 ? 1 : 0.35;
+      hudT += dt; $('ctrls').style.opacity = hudT < 25 ? 1 : 0;
     }
   } else if (mode === 'paused' || mode === 'complete') {
     if (mode === 'complete' && Input.playerPressed('narrP')) narr.advance();

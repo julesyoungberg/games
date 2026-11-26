@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.15.0)
+## What's in this version (1.16.0)
+A look-and-feel pass. The robots now have eyelids: they blink, look at each other and at whatever Bolt is pulling, squint with effort, go wide-eyed when falling and smile at checkpoints. Bolt's magnet wobbles on its spring. New lighting: a warm key light over the play area with the factory hall falling away into a darker haze behind it, and a closer camera. Soft dust puffs when landing, jumping and running, and glowing sparks. Redesigned crates (steel ones carry a magnet stamp, wood ones a crossed-out magnet), springs with a real coil, hazard-striped lifts, and a Clock Out station at the exit. Shutter doors roll open at the start of each shift. A written soundtrack replaces the random tune: two melodies over a four-chord loop, mallet lead, plucked bass and factory percussion.
+
+## 1.15.0
 A new Overtime puzzle, Moving Target (after Fire Drill): ride a shuttle through a laser that blinks out of step with it, then catch a ring that slides back and forth over a gap. 37 in all.
 
 ## 1.14.0
