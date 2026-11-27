@@ -72,6 +72,8 @@ function makeBuilder(w) {
     // push switch: Nut's push flips it on/off; it holds its channel while on
     button(x, z, ch, top = 0) { const b = { x, z, top, ch, on: false }; w.switches.push(b); L.box(x - 0.35, z - 0.35, x + 0.35, z + 0.35, top, top + 1.1, 'switch', { sw: b }); return b; },
     sign(x, y, z, text, ry = 0) { w.signs.push({ x, y, z, text, ry }); },
+    // factory clock on a post: holds its channel for `on` seconds, then lets go for `off` seconds, over and over (ph shifts it)
+    clock(x, z, ch, on, off, ph = 0, top = 0) { const c = { x, z, top, ch, on, off, ph, lit: false }; w.clocks.push(c); return c; },
   };
   return L;
 }
@@ -93,7 +95,7 @@ export function createWorld(index) {
   // a level definition object can be passed directly (used by tests of work-in-progress levels)
   let def; if (typeof index === 'object') { def = index; index = -1; } else def = ALL[index];
   const w = {
-    index, def, t: 0, solids: [], gates: [], bridges: [], movers: [], plates: [], lasers: [], fans: [], anchors: [], crates: [], switches: [], springs: [], cogs: [], tubes: [], bodies: [], decos: [], zones: [], checkpoints: [], signs: [],
+    index, def, t: 0, solids: [], gates: [], bridges: [], movers: [], plates: [], lasers: [], fans: [], anchors: [], crates: [], switches: [], springs: [], cogs: [], tubes: [], clocks: [], bodies: [], decos: [], zones: [], checkpoints: [], signs: [],
     channels: {}, events: [], exit: null, exitT: 0, complete: false, spawn: null, stats: { falls: [0, 0], zaps: [0, 0], pulls: 0, pushes: 0, launches: 0 },
   };
   def.build(makeBuilder(w));
@@ -489,6 +491,7 @@ export function step(w, inputs, dt = 1 / 60) {
     if (pressed) ch[pl.ch] = true;
   }
   for (const sw of w.switches) if (sw.on) ch[sw.ch] = true;
+  for (const c of w.clocks) { const lit = ((w.t + c.ph) % (c.on + c.off)) < c.on; if (lit !== c.lit && w.t > 0.05) emit(w, 'clock', { on: lit, ch: c.ch }); c.lit = lit; if (lit) ch[c.ch] = true; }
   w.channels = ch;
   // lasers
   for (const l of w.lasers) {

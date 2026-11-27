@@ -60,6 +60,7 @@ import OT34 from './lv/ot34.js';
 import OT35 from './lv/ot35.js';
 import OT36 from './lv/ot36.js';
 import OT37 from './lv/ot37.js';
+import OT38 from './lv/ot38.js';
 
 const BW = (L, x0, x1, top, h = 3) => L.box(x0, -9.5, x1, -8, top - 6, top + h, 'backwall');
 
@@ -649,7 +650,7 @@ export const LEVELS = [
 ];
 
 // Overtime: short, harder bonus puzzles. Each unlocks when the main shift `after` (0-based) is done.
-export const OVERTIME = [OT1, OT2, OT3, OT4, OT5, OT6, OT7, OT8, OT9, OT10, OT11, OT12, OT13, OT14, OT15, OT16, OT17, OT18, OT19, OT20, OT21, OT22, OT23, OT24, OT25, OT26, OT27, OT28, OT29, OT30, OT31, OT32, OT33, OT34, OT35, OT36, OT37];
+export const OVERTIME = [OT1, OT2, OT3, OT4, OT5, OT6, OT7, OT8, OT9, OT10, OT11, OT12, OT13, OT14, OT15, OT16, OT17, OT18, OT19, OT20, OT21, OT22, OT23, OT24, OT25, OT26, OT27, OT28, OT29, OT30, OT31, OT32, OT33, OT34, OT35, OT36, OT37, OT38];
 // shown in the order they unlock (saves use names, so the order can change freely)
 OVERTIME.sort((a, b) => a.after - b.after);
 OVERTIME.forEach((L, k) => { L.ot = k + 1; });
@@ -683,6 +684,7 @@ export const LINES = {
   ],
   cogAgain: 'You already found this cog. It has been returned to its hiding place for, ah, quality reasons.',
   tubeFirst: 'The pneumatic tube! Our fastest delivery method. Also our only one that sounds like a sneeze.',
+  clockFirst: 'Hear that ticking? That is the factory clock. Anything wired to it comes and goes on the beat. Watch the hand, then move.',
   springFirst: 'Boing. That is the technical term. Springs throw whatever lands on them straight up. Including robots. Especially robots.',
   switchFirst: 'Click! Switches stay where you leave them. Unlike plates, which are needy.',
   crateLost: 'The crate fell out of the factory. A new crate has been issued. It is the same crate. Do not think about it.',

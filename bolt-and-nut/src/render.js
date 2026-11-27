@@ -442,6 +442,22 @@ export class View {
       const lever = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.55, 0.12), LM({ color: 0xf2b84b })); lever.position.set(0.38, 0.65, 0); g.add(lever);
       this.level.add(g); return { sw, bulbM, lever, c };
     });
+    // factory clocks: a post with a round face; the hand sweeps once per cycle and the bulb lights while it holds its channel
+    this.clockMeshes = (w.clocks || []).map(ck => {
+      const g = new THREE.Group(); g.position.set(ck.x, ck.top, ck.z);
+      const c = CH_COLORS[ck.ch] || 0x999999;
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.2, 0.25), LM({ color: 0x6b7385 })); post.position.y = 1.1; g.add(post);
+      const face = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.75, 0.16, 24), LM({ color: 0xf3ecd8 })); face.rotation.x = Math.PI / 2; face.position.set(0, 2.8, 0.05); g.add(face);
+      const rim = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.08, 6, 24), LM({ color: c, emissive: c, emissiveIntensity: 0.3 })); rim.position.set(0, 2.8, 0.14); g.add(rim);
+      // the on-part of the cycle, drawn as a coloured wedge on the face
+      const frac = ck.on / (ck.on + ck.off);
+      const wedge = new THREE.Mesh(new THREE.CircleGeometry(0.62, 24, Math.PI / 2 - frac * Math.PI * 2, frac * Math.PI * 2), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: 0.45 })); wedge.position.set(0, 2.8, 0.14); g.add(wedge);
+      const hand = new THREE.Group(); hand.position.set(0, 2.8, 0.18); g.add(hand);
+      const hm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.04), new THREE.MeshBasicMaterial({ color: 0x1b2230 })); hm.position.y = 0.28; hand.add(hm);
+      const bulbM = LM({ color: 0x8a8f99, emissive: 0x000000 });
+      const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8), bulbM); bulb.position.y = 3.75; g.add(bulb);
+      this.level.add(g); return { ck, hand, bulbM, c };
+    });
     this.crateMeshes = w.crates.map(c => {
       const tx = c.wood ? this.woodTex : this.crateTex;
       const m = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2, 1.2), LM({ map: tx }, c.wood ? { roughness: 0.85, metalness: 0, bumpMap: tx, bumpScale: 1.2 } : { roughness: 0.42, metalness: 0.65, bumpMap: tx, bumpScale: 1.6 }));
@@ -695,6 +711,7 @@ export class View {
     }
     // belts + switches
     for (const b of this.belts) { const dir = b.s.conv.rev ? -1 : 1; const tx = b.s.conv.rev ? b.tex2 : b.tex; if (b.mat.map !== tx) { tx.offset.copy(b.mat.map.offset); b.mat.map = tx; b.mat.needsUpdate = true; } tx.offset.x -= dir * b.s.conv.vx * dt / 1.2; tx.offset.y += dir * b.s.conv.vz * dt / 1.2; if (b.lamp) b.lamp.material.color.set(b.s.conv.rev ? CH_COLORS[b.s.conv.chs[0]] : 0x333333); }
+    for (const cm of this.clockMeshes || []) { const per = cm.ck.on + cm.ck.off, ph = ((w.t + cm.ck.ph) % per) / per; cm.hand.rotation.z = -ph * Math.PI * 2; const on = cm.ck.lit; cm.bulbM.color.set(on ? cm.c : 0x8a8f99); cm.bulbM.emissive.set(on ? cm.c : 0x000000); cm.bulbM.emissiveIntensity = on ? (this.fancy ? 2.4 : 0.7) : 0; }
     for (const sm of this.switchMeshes) { const on = sm.sw.on; sm.bulbM.color.set(on ? sm.c : 0x8a8f99); sm.bulbM.emissive.set(on ? sm.c : 0x000000); sm.bulbM.emissiveIntensity = on ? (this.fancy ? 2.4 : 0.7) : 0; sm.lever.rotation.z = on ? -0.6 : 0.6; }
     // fans
     for (const fm of this.fanMeshes) {

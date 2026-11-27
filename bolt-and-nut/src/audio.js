@@ -124,6 +124,7 @@ export const SFX = {
   plate(on) { tone('square', on ? 500 : 300, on ? 700 : 220, 0.08, 0.06); noise(0.05, 0.15, 1500, 800, 3); },
   gate(open) { noise(0.7, 0.18, open ? 200 : 400, open ? 500 : 150, 1.2, 0, 'lowpass'); tone('sawtooth', 60, open ? 45 : 70, 0.6, 0.06); },
   bridge(on) { tone('sine', on ? 660 : 990, on ? 990 : 660, 0.2, 0.08); },
+  clockTick(on) { tone('triangle', on ? 1760 : 1320, on ? 1760 : 1320, 0.05, 0.05); noise(0.03, 0.06, 3000, 2500, 4); },
   checkpoint() { [523, 659, 784].forEach((f, i) => tone('triangle', f, f, 0.18, 0.08, i * 0.07)); },
   crate() { noise(0.1, 0.25, 900, 200, 1); tone('square', 120, 80, 0.1, 0.06); },
   complete() { [523, 659, 784, 1046, 784, 1046].forEach((f, i) => tone('triangle', f, f, 0.25, 0.1, i * 0.11)); },
