@@ -36,7 +36,10 @@ You can also force a mode in Steam: game **Properties → Launch Options** → `
 ## The browser version
 `index.html` is the same game as a single web page (works offline). Open it in Chrome or Firefox on any computer. In a browser the graphics card is used automatically; if the browser has hardware acceleration switched off, the game shows a short note on how to turn it on.
 
-## What's in this version (1.16.0)
+## What's in this version (1.17.0)
+New Overtime puzzle Punch Clock (after Shift 32): a lift that only rises on the clock with a laser at the top, an airlock whose gate and bridge take turns, and a crane ring that glides over the last gap on the clock. Rings can now be wired to a clock, plate or switch. 39 in all.
+
+## 1.16.0
 A new kind of machine, the factory clock: anything wired to it comes and goes on the beat, and its face shows when. New Overtime puzzle Clockwork (after Fire Drill): hop across four bridges on two clocks that take turns, then ride a fan whose laser and gate run off the same clock. 38 in all.
 
 ## 1.15.0
@@ -102,6 +105,6 @@ Fixes from playtesting: button presses are never dropped any more (jump, pull an
 
 Also **Overtime**: short, harder bonus puzzles on the title screen. They unlock as you finish shifts.
 
-Toys added since 0.1.0: conveyor belts (some flip direction while their plate or switch is on), switches that Nut flips with a push (they stay on until pushed again), wooden crates that magnets can't move (walk into them to shove them), springs that bounce anything that lands on them, pneumatic tubes that shoot robots and crates to the other end, anchor rings that glide along overhead rails, slippery oil floors, magnet plates on walls that Bolt can cling to, and factory clocks that switch bridges, fans, lasers and gates on and off on the beat (the coloured part of the face is the on part). There are 38 Overtime bonus puzzles.
+Toys added since 0.1.0: conveyor belts (some flip direction while their plate or switch is on), switches that Nut flips with a push (they stay on until pushed again), wooden crates that magnets can't move (walk into them to shove them), springs that bounce anything that lands on them, pneumatic tubes that shoot robots and crates to the other end, anchor rings that glide along overhead rails, slippery oil floors, magnet plates on walls that Bolt can cling to, and factory clocks that switch bridges, fans, lasers and gates on and off on the beat (the coloured part of the face is the on part). There are 39 Overtime bonus puzzles.
 
 Every shift also hides one **golden cog** off the main path (usually needs a boost, a launch, or Nut's rocket). **Choose a shift** shows which ones you've found. Progress saves automatically. **Choose a shift** and **Overtime** on the title screen let you jump to any level at any time, so a lost save never matters. Every shift has been finished start to end by scripted test robots.

@@ -49,7 +49,7 @@ function makeBuilder(w) {
     // anchor ring; opt.path = [[0,0,0],[dx,dy,dz],...] makes it glide back and forth (opt.speed m/s, pausing at the ends)
     anchor(x, y, z, opt = {}) {
       const a = { x, y, z, kind: 'anchor' };
-      if (opt.path) { a.home = { x, y, z }; a.path = opt.path; a.speed = opt.speed || 2; a.s = 0; a.dir = 1; a.wait = 0; a.len = [0]; for (let i = 1; i < opt.path.length; i++) { const p0 = opt.path[i - 1], p1 = opt.path[i]; a.len.push(a.len[i - 1] + Math.hypot(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2])); } a.total = a.len[a.len.length - 1]; }
+      if (opt.path) { a.home = { x, y, z }; a.path = opt.path; a.speed = opt.speed || 2; a.s = 0; a.dir = 1; a.wait = 0; a.len = [0]; for (let i = 1; i < opt.path.length; i++) { const p0 = opt.path[i - 1], p1 = opt.path[i]; a.len.push(a.len[i - 1] + Math.hypot(p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2])); } a.total = a.len[a.len.length - 1]; if (opt.chs) a.chs = [].concat(opt.chs); }
       w.anchors.push(a); return a;
     },
     // oily floor: slippery, robots and crates keep sliding
@@ -186,9 +186,14 @@ function emit(w, type, data = {}) { w.events.push({ type, ...data }); }
 function updateAnchors(w, dt) {
   for (const a of w.anchors) {
     if (!a.path) continue;
-    if (a.wait > 0) { a.wait -= dt; continue; }
-    a.s += a.dir * a.speed * dt;
-    if (a.s >= a.total) { a.s = a.total; a.dir = -1; a.wait = 0.6; } else if (a.s <= 0) { a.s = 0; a.dir = 1; a.wait = 0.6; }
+    if (a.chs) { // wired ring: glides to the end of its rail while its channels are on, and back home when they are off
+      const goal = chActive(w, a.chs) ? a.total : 0;
+      a.s = goal > a.s ? Math.min(goal, a.s + a.speed * dt) : Math.max(goal, a.s - a.speed * dt);
+    } else {
+      if (a.wait > 0) { a.wait -= dt; continue; }
+      a.s += a.dir * a.speed * dt;
+      if (a.s >= a.total) { a.s = a.total; a.dir = -1; a.wait = 0.6; } else if (a.s <= 0) { a.s = 0; a.dir = 1; a.wait = 0.6; }
+    }
     let i = 1; while (i < a.len.length - 1 && a.len[i] < a.s) i++;
     const f = (a.s - a.len[i - 1]) / Math.max(1e-6, a.len[i] - a.len[i - 1]), p0 = a.path[i - 1], p1 = a.path[i];
     a.x = a.home.x + p0[0] + (p1[0] - p0[0]) * f; a.y = a.home.y + p0[1] + (p1[1] - p0[1]) * f; a.z = a.home.z + p0[2] + (p1[2] - p0[2]) * f;

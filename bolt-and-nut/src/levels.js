@@ -61,6 +61,7 @@ import OT35 from './lv/ot35.js';
 import OT36 from './lv/ot36.js';
 import OT37 from './lv/ot37.js';
 import OT38 from './lv/ot38.js';
+import OT39 from './lv/ot39.js';
 
 const BW = (L, x0, x1, top, h = 3) => L.box(x0, -9.5, x1, -8, top - 6, top + h, 'backwall');
 
@@ -650,7 +651,7 @@ export const LEVELS = [
 ];
 
 // Overtime: short, harder bonus puzzles. Each unlocks when the main shift `after` (0-based) is done.
-export const OVERTIME = [OT1, OT2, OT3, OT4, OT5, OT6, OT7, OT8, OT9, OT10, OT11, OT12, OT13, OT14, OT15, OT16, OT17, OT18, OT19, OT20, OT21, OT22, OT23, OT24, OT25, OT26, OT27, OT28, OT29, OT30, OT31, OT32, OT33, OT34, OT35, OT36, OT37, OT38];
+export const OVERTIME = [OT1, OT2, OT3, OT4, OT5, OT6, OT7, OT8, OT9, OT10, OT11, OT12, OT13, OT14, OT15, OT16, OT17, OT18, OT19, OT20, OT21, OT22, OT23, OT24, OT25, OT26, OT27, OT28, OT29, OT30, OT31, OT32, OT33, OT34, OT35, OT36, OT37, OT38, OT39];
 // shown in the order they unlock (saves use names, so the order can change freely)
 OVERTIME.sort((a, b) => a.after - b.after);
 OVERTIME.forEach((L, k) => { L.ot = k + 1; });
